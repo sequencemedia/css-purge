@@ -1,28 +1,29 @@
 {
-  "name": "css-purge",
-  "version": "3.1.8",
+  "name": "@sequencemedia/css-purge",
+  "version": "1.0.0",
   "description": "A CSS tool written in Node JS as a command line app or library for the purging, burning, reducing, shortening, compressing, cleaning, trimming and formatting of duplicate, extra, excess or bloated CSS.",
-  "homepage": "http://rbtech.github.io/css-purge",
+  "homepage": "https://github.com/sequencemedia",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rbtech/css-purge.git"
+    "url": "https://github.com/sequencemedia/css-purge.git"
   },
   "bugs": {
-    "url": "https://github.com/rbtech/css-purge/issues"
+    "url": "https://github.com/sequencemedia/css-purge/issues"
   },
-  "readmeFilename": "README.md",
-  "main": "./lib/css-purge.js",
+  "main": "./src/css-purge.mjs",
+  "type": "module",
   "scripts": {
-    "start": "node css-purge.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node .",
+    "lint": "eslint . --ext .mjs --ext .cjs",
+    "lint:fix": "npm run lint -- --fix"
   },
   "bin": {
-    "css-purge": "./css-purge.js"
+    "css-purge": "./bin/css-purge.mjs"
   },
-  "requires": true,
-  "author": "Andrew Quan <andrewq@redblueprint.com> (http://redblueprint.com)",
+  "contributors": [
+    "Andrew Quan <andrewq@redblueprint.com> (http://redblueprint.com)"
+  ],
   "license": "MIT",
-  "lockfileVersion": 1,
   "keywords": [
     "css",
     "css minifier",
@@ -49,9 +50,9 @@
     "not used css"
   ],
   "dependencies": {
+    "@adobe/css-tools": "^4.3.0-beta.2",
     "cli-color": "^1.4.0",
     "commander": "^2.19.0",
-    "css": "^2.2.4",
     "htmlparser2": "^3.10.0",
     "jsdom": "^16.5.0",
     "parse-css-font": "^2.0.2",
@@ -59,5 +60,22 @@
     "through2": "^2.0.5",
     "valid-url": "^1.0.9"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@babel/core": "^7.22.1",
+    "@babel/eslint-parser": "^7.21.8",
+    "@babel/preset-env": "^7.22.4",
+    "@sequencemedia/hooks": "^1.0.432",
+    "eslint": "^8.42.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "husky": "^8.0.3"
+  },
+  "imports": {
+    "#css-purge": "./src/css-purge.mjs"
+  },
+  "exports": {
+    ".": "./src/css-purge.mjs"
+  }
 }
