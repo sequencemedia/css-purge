@@ -1,6 +1,4 @@
 {
-	"options": {
-
         "css_output": "purged.min.css",
 
         "new_reduce_common_into_parent": false,
@@ -66,6 +64,5 @@
 
         "report_file_location": "purged_css_report_data.json",
 
-        "reduce_declarations_file_location": "config_reduce_declarations.json"
-	}
+        "reduce_declarations_file_location": "default_options_reduce_declarations.json"
 }

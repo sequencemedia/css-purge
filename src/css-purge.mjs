@@ -39,6 +39,11 @@ import processOutline from './process-outline.mjs'
 import processPadding from './process-padding.mjs'
 import processZero from './process-zero.mjs'
 
+import trim from './css/trim.mjs'
+import hack from './css/hack.mjs'
+
+import getTokens from './utils/get-tokens.mjs'
+
 import filterForDeclarations from './utils/filter-for-declarations.mjs'
 import filterForRule from './utils/filter-for-rule.mjs'
 
@@ -58,6 +63,7 @@ import filterForPadding from './utils/filter-for-padding.mjs'
 
 import formatFontFamily from './utils/format-font-family.mjs'
 
+import getSelectors from './utils/get-selectors.mjs'
 import getValueOfFontProp from './utils/get-value-of-font-prop.mjs'
 import getValueOfTriProp from './utils/get-value-of-tri-prop.mjs'
 import getValueOfSquareProp from './utils/get-value-of-square-prop.mjs'
@@ -67,8 +73,6 @@ import getFileSizeInKB from './utils/get-file-size-in-kilo-bytes.mjs'
 import getSizeInKB from './utils/get-size-in-kilo-bytes.mjs'
 import roundTo from './utils/round-to.mjs'
 import escape from './utils/escape.mjs'
-
-const hasInherit = ({ value }) => value.toLowerCase().includes('inherit')
 
 const DEFAULT_BACKGROUND_PROPS = ['background-color', 'background-image', 'background-repeat', 'background-attachment', 'background-position']
 const DEFAULT_FONT_PROPS = ['font-style', 'font-variant', 'font-weight', 'font-stretch', 'font-size', 'line-height', 'font-family']
@@ -101,6 +105,65 @@ const cool = clc.xterm(105)
 
 let hash
 
+const hasInherit = ({ value }) => value.toLowerCase().includes('inherit')
+
+function getSummaryStatsFor (collector) {
+  return function getSummaryStats ({ declarations, type }) {
+    if (Array.isArray(declarations)) {
+      collector.noComments = declarations.filter(({ type }) => type === 'comment').length
+    }
+
+    if (type === 'comment') {
+      collector.noComments += 1
+    }
+
+    if (type === 'rule') {
+      collector.noRules += 1
+
+      collector.noDeclarations += declarations.length
+    }
+
+    switch (type) {
+      case 'charset':
+        collector.noCharset += 1
+        break
+      case 'custom-media':
+        collector.noCustomMedia += 1
+        break
+      case 'document':
+        collector.noDocument += 1
+        break
+      case 'font-face':
+        collector.noFontFace += 1
+        break
+      case 'host':
+        collector.noHost += 1
+        break
+      case 'import':
+        collector.noImport += 1
+        break
+      case 'keyframes':
+        collector.noKeyframes += 1
+        break
+      case 'keyframe':
+        collector.noKeyframe += 1
+        break
+      case 'media':
+        collector.noMedia += 1
+        break
+      case 'namespace':
+        collector.noNamespace += 1
+        break
+      case 'page':
+        collector.noPage += 1
+        break
+      case 'supports':
+        collector.noSupports += 1
+        break
+    }
+  }
+}
+
 class CSSPurgeEmitter extends EventEmitter {}
 
 class CSSPurge {
@@ -109,127 +172,73 @@ class CSSPurge {
 
     const cssPurgeEventEmitter = new CSSPurgeEmitter()
 
-    let CONFIG = {
-      options: {
-        css: ['demo/test1.css'],
+    let DEFAULT_OPTIONS = {
+      css: ['demo/test1.css'],
 
-        new_reduce_common_into_parent: false,
+      new_reduce_common_into_parent: false,
 
-        trim: true,
-        trim_keep_non_standard_inline_comments: false,
-        trim_removed_rules_previous_comment: false,
-        trim_comments: false,
-        trim_whitespace: false,
-        trim_breaklines: false,
-        trim_last_semicolon: false,
-        bypass_media_rules: true,
-        bypass_document_rules: false,
-        bypass_supports_rules: false,
-        bypass_page_rules: false,
-        bypass_charset: false,
-        shorten: true,
-        shorten_zero: false,
-        shorten_hexcolor: false,
-        shorten_hexcolor_extended_names: false,
-        shorten_hexcolor_UPPERCASE: false,
-        shorten_font: false,
-        shorten_background: false,
-        shorten_background_min: 2,
-        shorten_margin: false,
-        shorten_padding: false,
-        shorten_list_style: false,
-        shorten_outline: false,
-        shorten_border: false,
-        shorten_border_top: false,
-        shorten_border_right: false,
-        shorten_border_bottom: false,
-        shorten_border_left: false,
-        shorten_border_radius: false,
-        format: true,
-        format_font_family: false,
-        format_4095_rules_legacy_limit: false,
-        special_convert_rem: false,
-        special_convert_rem_browser_default_px: '16',
-        special_convert_rem_desired_html_px: '10',
-        special_convert_rem_font_size: true,
-        special_reduce_with_html: false,
-        special_reduce_with_html_ignore_selectors: [
-          '@-ms-',
-          ':-ms-',
-          '::',
-          ':valid',
-          ':invalid',
-          '+.',
-          ':-'
-        ],
+      trim: true,
+      trim_keep_non_standard_inline_comments: false,
+      trim_removed_rules_previous_comment: false,
+      trim_comments: false,
+      trim_whitespace: false,
+      trim_breaklines: false,
+      trim_last_semicolon: false,
+      bypass_media_rules: true,
+      bypass_document_rules: false,
+      bypass_supports_rules: false,
+      bypass_page_rules: false,
+      bypass_charset: false,
+      shorten: true,
+      shorten_zero: false,
+      shorten_hexcolor: false,
+      shorten_hexcolor_extended_names: false,
+      shorten_hexcolor_UPPERCASE: false,
+      shorten_font: false,
+      shorten_background: false,
+      shorten_background_min: 2,
+      shorten_margin: false,
+      shorten_padding: false,
+      shorten_list_style: false,
+      shorten_outline: false,
+      shorten_border: false,
+      shorten_border_top: false,
+      shorten_border_right: false,
+      shorten_border_bottom: false,
+      shorten_border_left: false,
+      shorten_border_radius: false,
+      format: true,
+      format_font_family: false,
+      format_4095_rules_legacy_limit: false,
+      special_convert_rem: false,
+      special_convert_rem_browser_default_px: '16',
+      special_convert_rem_desired_html_px: '10',
+      special_convert_rem_font_size: true,
+      special_reduce_with_html: false,
+      special_reduce_with_html_ignore_selectors: [
+        '@-ms-',
+        ':-ms-',
+        '::',
+        ':valid',
+        ':invalid',
+        '+.',
+        ':-'
+      ],
 
-        generate_report: false,
-        report_file_location: 'css_purge_report.json',
+      generate_report: false,
+      report_file_location: 'css_purge_report.json',
 
-        verbose: false,
-        zero_units: 'em, ex, %, px, cm, mm, in, pt, pc, ch, rem, vh, vw, vmin, vmax',
-        zero_ignore_declaration: ['filter'],
-        reduce_declarations_file_location: 'config_reduce_declarations.json'
-      }
+      verbose: false,
+      zero_units: 'em, ex, %, px, cm, mm, in, pt, pc, ch, rem, vh, vw, vmin, vmax',
+      zero_ignore_declaration: ['filter'],
+      reduce_declarations_file_location: 'default_options_reduce_declarations.json'
     }
 
     let OPTIONS = {
-      css_output: CONFIG.options.css_output,
-      css: CONFIG.options.css,
-      html: CONFIG.options.html,
-      js: CONFIG.options.js,
-
-      new_reduce_common_into_parent: CONFIG.options.new_reduce_common_into_parent,
-
-      trim: CONFIG.options.trim,
-      trim_keep_non_standard_inline_comments: CONFIG.options.trim_keep_non_standard_inline_comments,
-      trim_removed_rules_previous_comment: CONFIG.options.trim_removed_rules_previous_comment,
-      trim_comments: CONFIG.options.trim_comments,
-      trim_whitespace: CONFIG.options.trim_whitespace,
-      trim_breaklines: CONFIG.options.trim_breaklines,
-      trim_last_semicolon: CONFIG.options.trim_last_semicolon,
-      bypass_media_rules: CONFIG.options.bypass_media_rules,
-      bypass_document_rules: CONFIG.options.bypass_document_rules,
-      bypass_supports_rules: CONFIG.options.bypass_supports_rules,
-      bypass_page_rules: CONFIG.options.bypass_page_rules,
-      bypass_charset: CONFIG.options.bypass_charset,
-      shorten: CONFIG.options.shorten,
-      shorten_zero: CONFIG.options.shorten_zero,
-      shorten_hexcolor: CONFIG.options.shorten_hexcolor,
-      shorten_hexcolor_extended_names: CONFIG.options.shorten_hexcolor_extended_names,
-      shorten_hexcolor_UPPERCASE: CONFIG.options.shorten_hexcolor_UPPERCASE,
-      shorten_font: CONFIG.options.shorten_font,
-      shorten_background: CONFIG.options.shorten_background,
-      shorten_background_min: CONFIG.options.shorten_background_min,
-      shorten_margin: CONFIG.options.shorten_margin,
-      shorten_padding: CONFIG.options.shorten_padding,
-      shorten_list_style: CONFIG.options.shorten_list_style,
-      shorten_outline: CONFIG.options.shorten_outline,
-      shorten_border: CONFIG.options.shorten_border,
-      shorten_border_top: CONFIG.options.shorten_border_top,
-      shorten_border_right: CONFIG.options.shorten_border_right,
-      shorten_border_bottom: CONFIG.options.shorten_border_bottom,
-      shorten_border_left: CONFIG.options.shorten_border_left,
-      shorten_border_radius: CONFIG.options.shorten_border_radius,
-      format: CONFIG.options.format,
-      format_font_family: CONFIG.options.format_font_family,
-      format_4095_rules_legacy_limit: CONFIG.options.format_4095_rules_legacy_limit,
-      special_convert_rem: CONFIG.options.special_convert_rem,
-      special_convert_rem_browser_default_px: CONFIG.options.special_convert_rem_browser_default_px,
-      special_convert_rem_desired_html_px: CONFIG.options.special_convert_rem_desired_html_px,
-      special_convert_rem_font_size: CONFIG.options.special_convert_rem_font_size,
-      special_reduce_with_html: CONFIG.options.special_reduce_with_html,
-      special_reduce_with_html_ignore_selectors: CONFIG.options.special_reduce_with_html_ignore_selectors,
-
-      generate_report: CONFIG.options.generate_report,
-      verbose: CONFIG.options.verbose,
-      zero_units: CONFIG.options.zero_units,
-      zero_ignore_declaration: CONFIG.options.zero_ignore_declaration,
-      report_file_location: CONFIG.options.report_file_location,
-      reduce_declarations_file_location: CONFIG.options.reduce_declarations_file_location
+      ...DEFAULT_OPTIONS
     }
 
-    let currentConfig = null
+    let CURRENT_CONFIG_FILE_PATH = null
 
     const dataCSSIn = []
     let dataHTMLIn = []
@@ -238,12 +247,11 @@ class CSSPurge {
     let jsDom = null
     let jsDomWindow = null
     let jsDomDoc = null
-    const resultsCount = 0
 
-    let REPORT_DUPLICATE_CSS = CONFIG.options.report_file_location
+    let REPORT_DUPLICATE_CSS = DEFAULT_OPTIONS.report_file_location
 
     // summary
-    const summary = {
+    const SUMMARY = {
       files: {
         input: [],
         output: [],
@@ -301,7 +309,7 @@ class CSSPurge {
     }
 
     // stats
-    const stats = {
+    const STATS = {
       files: {
         css: [],
         html: [],
@@ -392,7 +400,7 @@ class CSSPurge {
     }
 
     /* read declaration reduce lists */
-    let CONFIG_REDUCE_DECLARATIONS = 'config_reduce_declarations.json'
+    let DEFAULT_OPTIONS_REDUCE_DECLARATIONS = 'default_options_reduce_declarations.json'
     let hasReadReduceDeclarations = false
 
     let selectors = ''
@@ -404,16 +412,11 @@ class CSSPurge {
     ]
     let declarationNamesCount = declarationNames.length
 
-    const configFileLocation = 'config_css.json'
+    const configFileLocation = 'default_options.json'
     let fileLocation = 'demo/test1.css'
-    // const outputFileLocation = 'demo/test1_out.css'
-    // let htmlFileLocation = ''
-    let readStream
-    let readHTMLStream
-    // let readJSStream
+
     let readCSSFileCount = 0
     let readHTMLFileCount = 0
-    // const readJSFileCount = 0
     let fileSizeKB = 0
 
     let declarations
@@ -432,176 +435,9 @@ class CSSPurge {
 
     let files
 
-    let RULES_COUNT
-    let rulesCount2
-    let rulesCount3
-    let rulesCount4
-
-    let charset
-    let charset2
-
     let duplicateIds
 
-    const fontValuesOutput = []
-
-    const fontVal = null
-
-    let background = null
-    const backgroundValuesOutput = []
-
-    const hasMultipleBackgrounds = false
-    const hasGradient = false
-
-    const margin = null
-    const marginValuesOutput = []
-
-    const padding = null
-    const paddingValuesOutput = []
-
-    const listStyle = null
-    const listStyleValuesOutput = []
-
-    const outline = null
-    const outlineValuesOutput = []
-
-    const border = null
-    const borderValuesOutput = []
-
-    const borderTop = null
-    const borderTopValuesOutput = []
-
-    const borderRight = null
-    const borderRightValuesOutput = []
-
-    const borderBottom = null
-    const borderBottomValuesOutput = []
-
-    const borderLeft = null
-    const borderLeftValuesOutput = []
-
-    const borderTopRightBottomLeftValuesOutput = []
-
-    const borderRadius = null
-    const borderRadiusValuesOutput = []
-
-    const tokensComments = []
-    const _3tokenValues = []
-    const _4tokenValues = []
-    const _5tokenValues = []
-    const _6tokenValues = []
-    const _7tokenValues = []
-
-    const h = 0
-    const i = 0
-    const j = 0
-    const k = 0
-    const l = 0
-
     let DECLARATION_COUNT = 0
-
-    let cCount = 0
-    const ilen = 0
-    const jlen = 0
-    const klen = 0
-
-    function trimCSS (outputCSSIn) {
-      // imports - move imports to top of page
-      let imports = ''
-      outputCSSIn = outputCSSIn.replace(/@import.*(([\n\r\t]*)(\s*)\/\*(_cssp_sc).\*\/)?([\n\r\t])+/gm, (match) => {
-        imports += match.substring(0, match.length - 1)
-        return ''
-      })
-      outputCSSIn = imports + outputCSSIn
-
-      // charset - move charset to top of page
-      let charset = ''
-      outputCSSIn = outputCSSIn.replace(/@charset.*(([\n\r\t]*)(\s*)\/\*(_cssp_sc).\*\/)?([\n\r\t])+/gm, (match) => {
-        charset += match
-        return ''
-      })
-      outputCSSIn = charset + outputCSSIn
-
-      if (OPTIONS.trim_breaklines || OPTIONS.trim) {
-        outputCSSIn = outputCSSIn.replace(/\r?\n|\r/g, '')
-      }
-
-      if (OPTIONS.trim_whitespace || OPTIONS.trim) {
-        if (OPTIONS.trim_comments || OPTIONS.trim) {
-          // remove any left over comments and tabs
-          outputCSSIn = outputCSSIn.replace(/\/\*(?:(?!\*\/)[\s\S])*\*\/|[\t]+/g, '')
-        }
-
-        // remove single adjacent spaces
-        outputCSSIn = outputCSSIn.replace(/ {2,}/g, ' ')
-        outputCSSIn = outputCSSIn.replace(/ ([{:}]) /g, '$1')
-        outputCSSIn = outputCSSIn.replace(/([{:}]) /g, '$1')
-        outputCSSIn = outputCSSIn.replace(/([;,]) /g, '$1')
-        outputCSSIn = outputCSSIn.replace(/\(\s*/g, '(')
-        outputCSSIn = outputCSSIn.replace(/\s*\)/g, ')')
-        outputCSSIn = outputCSSIn.replace(/ !/g, '!')
-      }
-
-      if (OPTIONS.trim_last_semicolon || OPTIONS.trim) {
-        outputCSSIn = outputCSSIn.replace(/{([^}]*)}/gm, function (match, capture) {
-          summary.stats.summary.noLastSemiColonsTrimmed += 1
-          // return "{" + capture + "}";
-          return `{${capture.replace(/\;(?=[^;]*$)/, '')}}`
-        })
-      }
-
-      return outputCSSIn
-    }
-
-    function restoreHacks (outputCSSIn) {
-      // tokens
-      /// /hacks
-      /// **/
-      outputCSSIn = outputCSSIn.replace(/(_1token_hck)/g, '/**/')
-
-      /// *\**/
-      outputCSSIn = outputCSSIn.replace(/(_2token_hck)/g, '/*\\**/')
-
-      // (specialchar)property
-      outputCSSIn = outputCSSIn.replace(/(_3token_hck_([0-9]*): ;)/g, (match) => {
-        const value = _3tokenValues[match.substring(12, match.length - 3) - 1]
-        return value + ';'
-      })
-
-      // (;
-      outputCSSIn = outputCSSIn.replace(/(_4token_hck_)[0-9]*[:][\s]*[;]/g, (match) => {
-        const value = _4tokenValues[match.substring(12, match.length - 3) - 1]
-        return value.substring(0, value.length - 2)
-      })
-
-      // [;
-      outputCSSIn = outputCSSIn.replace(/(_5token_hck_)[0-9]*[:][\s]*[;]/g, (match) => {
-        const value = _5tokenValues[match.substring(12, match.length - 3) - 1]
-        return value.substring(0, value.length - 2)
-      })
-
-      // tokens - data:image
-      outputCSSIn = outputCSSIn.replace(/(_6token_dataimage_)[0-9]*[:][\s]*/g, (match) => {
-        const value = _6tokenValues[match.substring(18, match.length - 1) - 1]
-        return value + ';'
-      })
-
-      // tokens - allow multi-keyframe selectors
-      outputCSSIn = outputCSSIn.replace(/(@keyframes _7token_)[0-9]*[\s]*/g, (match) => {
-        const value = _7tokenValues[match.substring(19, match.length) - 1]
-        return trimCSS(value)
-      })
-
-      // tokens - replace side comments
-      Object
-        .entries(tokensComments)
-        .forEach(([key, value]) => {
-          const regExp = new RegExp(`([\\n\\r\\t]*)(\\s*)\\/\\*(${key})\\*\\/`, 'gm')
-          outputCSSIn = outputCSSIn.replace(regExp, value)
-        })
-
-      // tokens - end of replace side comments
-      return outputCSSIn
-    }
 
     function processHTMLSelectors (cssSelectors, htmlDataIn = null, htmlOptionsIn = null) {
       if (OPTIONS.verbose) { console.log(info('Process - HTML - Determine Rules to Remove')) }
@@ -670,19 +506,19 @@ class CSSPurge {
       jsDomWindow = jsDom.window
       jsDomDoc = jsDomWindow.document
 
-      for (let i = 0, resultsCount = cssSelectors.length; i < resultsCount; ++i) {
-        for (let j = 0, jlen = results.length; j < jlen; ++j) {
+      for (let i = 0, cssSelectorsLength = cssSelectors.length; i < cssSelectorsLength; ++i) {
+        for (let j = 0, resultsLength = results.length; j < resultsLength; ++j) {
           if (cssSelectors[i] === results[j]) {
             cssSelectors.splice(i, 1)
-            resultsCount -= 1
+            cssSelectorsLength -= 1
             i -= 1
             break
           }
         }
 
-        if (jsDomDoc.querySelector(cssSelectors[i]) != null) {
+        if (jsDomDoc.querySelector(cssSelectors[i]) !== null) {
           cssSelectors.splice(i, 1)
-          resultsCount -= 1
+          cssSelectorsLength -= 1
           i -= 1
         }
       }
@@ -762,7 +598,7 @@ class CSSPurge {
 
         readHTMLFile(htmlFiles)
 
-        cssPurgeEventEmitter.on('HTML_READ_AGAIN', function () {
+        cssPurgeEventEmitter.on('HTML_READ_AGAIN', () => {
           // process selectors
           processHTMLSelectors(cssSelectors, htmlDataIn, htmlOptionsIn)
 
@@ -770,7 +606,7 @@ class CSSPurge {
           dataHTMLIn = []
           readHTMLFile(htmlFiles)
         })
-        cssPurgeEventEmitter.on('HTML_READ_END', function () {
+        cssPurgeEventEmitter.on('HTML_READ_END', () => {
           // process selectors
           processHTMLSelectors(cssSelectors, htmlDataIn, htmlOptionsIn)
 
@@ -805,7 +641,7 @@ class CSSPurge {
             fileSizeKB = getSizeInKB(body) / 1000
           }
 
-          stats.files.html.push({
+          STATS.files.html.push({
             fileName: files[readHTMLFileCount],
             fileSizeKB
           })
@@ -813,13 +649,13 @@ class CSSPurge {
       } else {
         const fileSizeKB = getFileSizeInKB(files[readHTMLFileCount])
 
-        stats.files.html.push({
+        STATS.files.html.push({
           fileName: files[readHTMLFileCount],
           fileSizeKB
         })
       }
 
-      summary.files.input_html.push(files[readHTMLFileCount])
+      SUMMARY.files.input_html.push(files[readHTMLFileCount])
 
       if (validUrl.isUri(files[readHTMLFileCount])) {
         request(files[readHTMLFileCount], function (err, response, body) {
@@ -861,23 +697,26 @@ class CSSPurge {
           }
         })
       } else {
-        readHTMLStream = createReadStream(files[readHTMLFileCount], 'utf8')
+        const readHTMLStream = createReadStream(files[readHTMLFileCount], 'utf8')
 
-        readHTMLStream.on('data', function (chunk) {
-          dataHTMLIn.push(chunk)
-        }).on('end', function () {
-          readHTMLFileCount += 1
-          if (readHTMLFileCount < files.length) {
-            cssPurgeEventEmitter.emit('HTML_READ_AGAIN')
-          } else {
-            cssPurgeEventEmitter.emit('HTML_READ_END')
-          }
-        }).on('error', function (e) {
-          cssPurgeEventEmitter.emit('HTML_READ_ERROR')
-          console.log(error('HTML File read error: Something went wrong while reading the file(s), check your HTML files and please try again.'))
-          console.log(e)
-          process.exit(1)
-        })
+        readHTMLStream
+          .on('data', function (chunk) {
+            dataHTMLIn.push(chunk)
+          })
+          .on('end', () => {
+            readHTMLFileCount += 1
+            if (readHTMLFileCount < files.length) {
+              cssPurgeEventEmitter.emit('HTML_READ_AGAIN')
+            } else {
+              cssPurgeEventEmitter.emit('HTML_READ_END')
+            }
+          })
+          .on('error', (e) => {
+            cssPurgeEventEmitter.emit('HTML_READ_ERROR')
+            console.log(error('HTML File read error: Something went wrong while reading the file(s), check your HTML files and please try again.'))
+            console.log(e)
+            process.exit(1)
+          })
       }
     } // end of readHTMLFile
 
@@ -926,10 +765,12 @@ class CSSPurge {
         }
 
         hasReadReduceDeclarations = true
-        cssPurgeEventEmitter.emit('CONFIG_READ_REDUCE_PROPS_END', OPTIONS)
+        cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_REDUCE_PROPS_END', OPTIONS)
       } else {
         let jsonConfig = ''
-        readStream = createReadStream(CONFIG_REDUCE_DECLARATIONS, 'utf8')
+
+        const readStream = createReadStream(DEFAULT_OPTIONS_REDUCE_DECLARATIONS, 'utf8')
+
         readStream
           .on('data', (chunk) => {
             jsonConfig += chunk
@@ -979,11 +820,11 @@ class CSSPurge {
             }
 
             hasReadReduceDeclarations = true
-            cssPurgeEventEmitter.emit('CONFIG_READ_REDUCE_PROPS_END', OPTIONS)
+            cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_REDUCE_PROPS_END', OPTIONS)
           })
           .on('error', (e) => {
-            cssPurgeEventEmitter.emit('CONFIG_READ_REDUCE_PROPS_ERROR', OPTIONS)
-            console.log(error('Reduce Properties Config File read error: Something went wrong while reading the file, check your config_reduce_declarations.json and please try again.'))
+            cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_REDUCE_PROPS_ERROR', OPTIONS)
+            console.log(error('Reduce Properties Config File read error: Something went wrong while reading the file, check your default_options_reduce_declarations.json and please try again.'))
             console.log(e)
             process.exit(1)
           })
@@ -991,53 +832,55 @@ class CSSPurge {
     } // end of readReduceDeclarations
 
     function readConfig (configFilePath = '', optionsIn = null) {
-      let tmpCONFIG = ''
+      let default_options = ''
+      let readStream
+
       if (configFilePath === '') {
         readStream = createReadStream(configFileLocation, 'utf8')
       } else {
         if (configFilePath === 'cmd_default') {
-          CONFIG = {}
-          CONFIG.options = optionsIn
-          if (CONFIG.options.trim) {
-            OPTIONS.trim_removed_rules_previous_comment = CONFIG.options.trim
-            OPTIONS.trim_comments = CONFIG.options.trim
-            OPTIONS.trim_whitespace = CONFIG.options.trim
-            OPTIONS.trim_breaklines = CONFIG.options.trim
-            OPTIONS.trim_last_semicolon = CONFIG.options.trim
+          DEFAULT_OPTIONS = {}
+          DEFAULT_OPTIONS = optionsIn
+          if (DEFAULT_OPTIONS.trim) {
+            OPTIONS.trim_removed_rules_previous_comment = DEFAULT_OPTIONS.trim
+            OPTIONS.trim_comments = DEFAULT_OPTIONS.trim
+            OPTIONS.trim_whitespace = DEFAULT_OPTIONS.trim
+            OPTIONS.trim_breaklines = DEFAULT_OPTIONS.trim
+            OPTIONS.trim_last_semicolon = DEFAULT_OPTIONS.trim
           }
-          if (CONFIG.options.shorten) {
-            OPTIONS.shorten_zero = CONFIG.options.shorten
-            OPTIONS.shorten_hexcolor = CONFIG.options.shorten
-            OPTIONS.shorten_hexcolor_extended_names = CONFIG.options.shorten
-            OPTIONS.shorten_font = CONFIG.options.shorten
-            OPTIONS.shorten_background = CONFIG.options.shorten
-            OPTIONS.shorten_margin = CONFIG.options.shorten
-            OPTIONS.shorten_padding = CONFIG.options.shorten
-            OPTIONS.shorten_list_style = CONFIG.options.shorten
-            OPTIONS.shorten_outline = CONFIG.options.shorten
-            OPTIONS.shorten_border = CONFIG.options.shorten
-            OPTIONS.shorten_border_top = CONFIG.options.shorten
-            OPTIONS.shorten_border_right = CONFIG.options.shorten
-            OPTIONS.shorten_border_bottom = CONFIG.options.shorten
-            OPTIONS.shorten_border_left = CONFIG.options.shorten
-            OPTIONS.shorten_border_radius = CONFIG.options.shorten
+          if (DEFAULT_OPTIONS.shorten) {
+            OPTIONS.shorten_zero = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_hexcolor = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_hexcolor_extended_names = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_font = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_background = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_margin = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_padding = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_list_style = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_outline = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_border = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_border_top = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_border_right = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_border_bottom = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_border_left = DEFAULT_OPTIONS.shorten
+            OPTIONS.shorten_border_radius = DEFAULT_OPTIONS.shorten
           }
-          if (CONFIG.options.special_reduce_with_html) {
-            OPTIONS.special_reduce_with_html = CONFIG.special_reduce_with_html
+          if (DEFAULT_OPTIONS.special_reduce_with_html) {
+            OPTIONS.special_reduce_with_html = DEFAULT_OPTIONS.special_reduce_with_html
           }
-          if (CONFIG.options.css_output) {
-            OPTIONS.css_output = CONFIG.options.css_output
+          if (DEFAULT_OPTIONS.css_output) {
+            OPTIONS.css_output = DEFAULT_OPTIONS.css_output
           }
-          if (CONFIG.options.verbose) {
-            OPTIONS.verbose = CONFIG.options.verbose
+          if (DEFAULT_OPTIONS.verbose) {
+            OPTIONS.verbose = DEFAULT_OPTIONS.verbose
           }
 
-          summary.files.output.push(CONFIG.options.css_output)
+          SUMMARY.files.output.push(DEFAULT_OPTIONS.css_output)
           REPORT_DUPLICATE_CSS = OPTIONS.report_file_location
-          CONFIG_REDUCE_DECLARATIONS = OPTIONS.reduce_declarations_file_location
-          summary.options_used = OPTIONS
+          DEFAULT_OPTIONS_REDUCE_DECLARATIONS = OPTIONS.reduce_declarations_file_location
+          SUMMARY.options_used = OPTIONS
 
-          cssPurgeEventEmitter.emit('CONFIG_READ_END', OPTIONS)
+          cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_END', OPTIONS)
 
           return true
         } else { // custom
@@ -1045,73 +888,77 @@ class CSSPurge {
         }
       }
 
-      readStream.on('data', function (chunk) {
-        tmpCONFIG += chunk
-      }).on('end', function () {
-        if (tmpCONFIG !== '') {
-          try {
-            CONFIG = JSON.parse(tmpCONFIG)
-          } catch (err) {
-            console.log(error('Config File read error: ' + configFileLocation + ', check your syntax, especially commas, then please try again.'))
-            console.log(err)
-            process.exit(1)
-          }
-          summary.files.output.push(CONFIG.options.css_output)
-          REPORT_DUPLICATE_CSS = CONFIG.options.report_file_location
-          CONFIG_REDUCE_DECLARATIONS = CONFIG.options.reduce_declarations_file_location
+      readStream
+        .on('data', function (chunk) {
+          default_options += chunk
+        })
+        .on('end', () => {
+          if (default_options !== '') {
+            try {
+              DEFAULT_OPTIONS = JSON.parse(default_options)
+            } catch (err) {
+              console.log(error('Config File read error: ' + configFileLocation + ', check your syntax, especially commas, then please try again.'))
+              console.log(err)
+              process.exit(1)
+            }
 
-          if (CONFIG.options.trim) {
-            CONFIG.options.trim_removed_rules_previous_comment = CONFIG.options.trim
-            CONFIG.options.trim_comments = CONFIG.options.trim
-            CONFIG.options.trim_whitespace = CONFIG.options.trim
-            CONFIG.options.trim_breaklines = CONFIG.options.trim
-            CONFIG.options.trim_last_semicolon = CONFIG.options.trim
-          }
-          if (CONFIG.options.shorten) {
-            CONFIG.options.shorten_zero = CONFIG.options.shorten
-            CONFIG.options.shorten_hexcolor = CONFIG.options.shorten
-            CONFIG.options.shorten_hexcolor_extended_names = CONFIG.options.shorten
-            CONFIG.options.shorten_font = CONFIG.options.shorten
-            CONFIG.options.shorten_background = CONFIG.options.shorten
-            CONFIG.options.shorten_margin = CONFIG.options.shorten
-            CONFIG.options.shorten_padding = CONFIG.options.shorten
-            CONFIG.options.shorten_list_style = CONFIG.options.shorten
-            CONFIG.options.shorten_outline = CONFIG.options.shorten
-            CONFIG.options.shorten_border = CONFIG.options.shorten
-            CONFIG.options.shorten_border_top = CONFIG.options.shorten
-            CONFIG.options.shorten_border_right = CONFIG.options.shorten
-            CONFIG.options.shorten_border_bottom = CONFIG.options.shorten
-            CONFIG.options.shorten_border_left = CONFIG.options.shorten
-            CONFIG.options.shorten_border_radius = CONFIG.options.shorten
-          }
-          OPTIONS = CONFIG.options
-          summary.options_used = OPTIONS
-        }
+            SUMMARY.files.output.push(DEFAULT_OPTIONS.css_output)
+            REPORT_DUPLICATE_CSS = DEFAULT_OPTIONS.report_file_location
+            DEFAULT_OPTIONS_REDUCE_DECLARATIONS = DEFAULT_OPTIONS.reduce_declarations_file_location
 
-        cssPurgeEventEmitter.emit('CONFIG_READ_END', OPTIONS)
-      }).on('error', function (e) {
-        cssPurgeEventEmitter.emit('CONFIG_READ_ERROR')
-        console.log(error('Config File read error: Something went wrong while reading the file, check your ' + configFileLocation + ' and please try again.'))
-        console.log(e)
-        process.exit(1)
-      })
+            if (DEFAULT_OPTIONS.trim) {
+              DEFAULT_OPTIONS.trim_removed_rules_previous_comment = DEFAULT_OPTIONS.trim
+              DEFAULT_OPTIONS.trim_comments = DEFAULT_OPTIONS.trim
+              DEFAULT_OPTIONS.trim_whitespace = DEFAULT_OPTIONS.trim
+              DEFAULT_OPTIONS.trim_breaklines = DEFAULT_OPTIONS.trim
+              DEFAULT_OPTIONS.trim_last_semicolon = DEFAULT_OPTIONS.trim
+            }
+
+            if (DEFAULT_OPTIONS.shorten) {
+              DEFAULT_OPTIONS.shorten_zero = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_hexcolor = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_hexcolor_extended_names = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_font = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_background = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_margin = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_padding = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_list_style = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_outline = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_border = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_border_top = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_border_right = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_border_bottom = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_border_left = DEFAULT_OPTIONS.shorten
+              DEFAULT_OPTIONS.shorten_border_radius = DEFAULT_OPTIONS.shorten
+            }
+
+            OPTIONS = DEFAULT_OPTIONS
+            SUMMARY.options_used = OPTIONS
+          }
+
+          cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_END', OPTIONS)
+        })
+        .on('error', (e) => {
+          cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_ERROR')
+          console.log(error('Config File read error: Something went wrong while reading the file, check your ' + configFileLocation + ' and please try again.'))
+          console.log(e)
+          process.exit(1)
+        })
 
       return readStream
     }
 
     /* read css input files */
     function processCSSFiles (optionsIn = null, configFilePath = '') {
-      function continueCSSFilesProcess (optionsIn2) {
-        // console.log(optionsIn2)
-        // console.log(optionsIn2.css)
-        cssPurgeEventEmitter.removeListener('CONFIG_READ_REDUCE_PROPS_END', continueCSSFilesProcess)
+      function continueCSSFilesProcess () {
+        cssPurgeEventEmitter.removeListener('DEFAULT_OPTIONS_READ_REDUCE_PROPS_END', continueCSSFilesProcess)
 
-        const continueCSSFilesProcessAfterConfig = function (optionsIn3) {
+        function continueCSSFilesProcessAfterConfig () {
           cssPurgeEventEmitter.removeListener('continueCSSFilesProcessAfterConfig', continueCSSFilesProcessAfterConfig)
 
           // config
-          if (OPTIONS.css === undefined && CONFIG.options.css) {
-            OPTIONS.css = CONFIG.options.css
+          if (OPTIONS.css === undefined && DEFAULT_OPTIONS.css) {
+            OPTIONS.css = DEFAULT_OPTIONS.css
           }
 
           // Options
@@ -1120,14 +967,7 @@ class CSSPurge {
               OPTIONS[key] = optionsIn[key]
             }
           }
-          // console.log(CONFIG)
-          // console.log(optionsIn.css)
-          // console.log(optionsIn3)
-          // CSS Files
-          // let files = CONFIG.options.css;
-          // if (optionsIn.css !== null && optionsIn.css !== undefined) {
-          // files = optionsIn.css;
-          // }
+
           files = OPTIONS.css
 
           if (files !== undefined && files !== '') {
@@ -1184,12 +1024,13 @@ class CSSPurge {
 
             fileLocation = files.toString()
 
-            cssPurgeEventEmitter.on('CSS_READ_AGAIN', function () {
+            cssPurgeEventEmitter.on('CSS_READ_AGAIN', () => {
               readCSSFile(files)
             })
-            cssPurgeEventEmitter.on('CSS_READ_END', function () {
-              // cssPurgeEventEmitter.emit('CONFIG_READ_REDUCE_PROPS_END');
-              processCSS(null, OPTIONS, function () {
+
+            cssPurgeEventEmitter.on('CSS_READ_END', () => {
+              // cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_REDUCE_PROPS_END');
+              processCSS(null, OPTIONS, () => {
               })
             })
 
@@ -1199,36 +1040,37 @@ class CSSPurge {
           }
         }
 
-        if (currentConfig != configFilePath) { // don't read same config
-          cssPurgeEventEmitter.on('CONFIG_READ_END', continueCSSFilesProcessAfterConfig) // end of config read
+        if (CURRENT_CONFIG_FILE_PATH !== configFilePath) { // don't read same config
+          cssPurgeEventEmitter.on('DEFAULT_OPTIONS_READ_END', continueCSSFilesProcessAfterConfig) // end of config read
         }
 
-        currentConfig = configFilePath
+        CURRENT_CONFIG_FILE_PATH = configFilePath
 
-        if (configFilePath != 'cmd_default') {
+        if (configFilePath !== 'cmd_default') {
           readConfig(configFilePath)
         } else if (configFilePath === 'cmd_default') {
           readConfig(configFilePath, optionsIn)
         }
       }
 
-      cssPurgeEventEmitter.on('CONFIG_READ_REDUCE_PROPS_END', continueCSSFilesProcess) // end of reduce config read
+      cssPurgeEventEmitter.on('DEFAULT_OPTIONS_READ_REDUCE_PROPS_END', continueCSSFilesProcess) // end of reduce config read
 
       if (!hasReadReduceDeclarations && existsSync(OPTIONS.reduce_declarations_file_location)) {
         readReduceDeclarations()
       }
 
       if (!hasReadReduceDeclarations && !existsSync(OPTIONS.reduce_declarations_file_location)) {
+        if (optionsIn !== null && (optionsIn.reduceDeclarations === undefined || optionsIn.reduceDeclarations === null)) {
         // default process settings
-        const default_reduce_declarations_config = {
-          declaration_names: [
-            ...DEFAULT_DECLARATION_NAMES
-          ]
-        }
+          const defaultReduceDeclarations = {
+            declaration_names: [
+              ...DEFAULT_DECLARATION_NAMES
+            ]
+          }
 
-        if (optionsIn !== null && (optionsIn.reduceConfig === undefined || optionsIn.reduceConfig === null)) {
-          optionsIn.reduceConfig = default_reduce_declarations_config
-          readReduceDeclarations(optionsIn.reduceConfig)
+          optionsIn.reduceDeclarations = defaultReduceDeclarations
+
+          readReduceDeclarations(defaultReduceDeclarations)
         } else {
           readReduceDeclarations()
         }
@@ -1257,23 +1099,23 @@ class CSSPurge {
             fileSizeKB = getSizeInKB(body) / 1000
           }
 
-          stats.files.css.push({
+          STATS.files.css.push({
             fileName: files[readCSSFileCount],
             fileSizeKB
           })
-          stats.before.totalFileSizeKB += fileSizeKB
+          STATS.before.totalFileSizeKB += fileSizeKB
         })
       } else {
         const fileSizeKB = getFileSizeInKB(files[readCSSFileCount])
 
-        stats.files.css.push({
+        STATS.files.css.push({
           fileName: files[readCSSFileCount],
           fileSizeKB
         })
-        stats.before.totalFileSizeKB += fileSizeKB
+        STATS.before.totalFileSizeKB += fileSizeKB
       }
 
-      summary.files.input.push(files[readCSSFileCount])
+      SUMMARY.files.input.push(files[readCSSFileCount])
 
       if (validUrl.isUri(files[readCSSFileCount])) {
         request(files[readCSSFileCount], function (err, response, body) {
@@ -1315,23 +1157,26 @@ class CSSPurge {
           }
         })
       } else {
-        readStream = createReadStream(files[readCSSFileCount], 'utf8')
+        const readStream = createReadStream(files[readCSSFileCount], 'utf8')
 
-        readStream.on('data', function (chunk) {
-          dataCSSIn.push(chunk)
-        }).on('end', function () {
-          readCSSFileCount += 1
-          if (readCSSFileCount < files.length) {
-            cssPurgeEventEmitter.emit('CSS_READ_AGAIN')
-          } else {
-            cssPurgeEventEmitter.emit('CSS_READ_END')
-          }
-        }).on('error', function (e) {
-          cssPurgeEventEmitter.emit('CSS_READ_ERROR')
-          console.log(error('CSS File read error: Something went wrong while reading the file(s), check your CSS files and please try again.'))
-          console.log(e)
-          process.exit(1)
-        })
+        readStream
+          .on('data', function (chunk) {
+            dataCSSIn.push(chunk)
+          })
+          .on('end', () => {
+            readCSSFileCount += 1
+            if (readCSSFileCount < files.length) {
+              cssPurgeEventEmitter.emit('CSS_READ_AGAIN')
+            } else {
+              cssPurgeEventEmitter.emit('CSS_READ_END')
+            }
+          })
+          .on('error', (e) => {
+            cssPurgeEventEmitter.emit('CSS_READ_ERROR')
+            console.log(error('CSS File read error: Something went wrong while reading the file(s), check your CSS files and please try again.'))
+            console.log(e)
+            process.exit(1)
+          })
       } // end of url check
     } // end of readCSSFile
 
@@ -1377,7 +1222,7 @@ class CSSPurge {
 
           if (SHORTEN || SHORTEN_BORDER_RADIUS) processBorderRadius(rule, OPTIONS)
 
-          if (SHORTEN || SHORTEN_HEXCOLOR) processHexColor(rule, OPTIONS, summary)
+          if (SHORTEN || SHORTEN_HEXCOLOR) processHexColor(rule, OPTIONS, SUMMARY)
 
           if (SHORTEN || SHORTEN_FONT) processFont(rule, OPTIONS)
 
@@ -1745,7 +1590,7 @@ class CSSPurge {
                 })
 
                 DECLARATION_COUNT += 1
-                summary.stats.summary.noFontsShortened += 1
+                SUMMARY.stats.summary.noFontsShortened += 1
 
                 let fontIndex
 
@@ -1809,7 +1654,7 @@ class CSSPurge {
 
           // background
           if (SHORTEN || SHORTEN_BACKGROUND) {
-            background = rules[i].declarations.filter(filterForBackground)
+            const background = rules[i].declarations.filter(filterForBackground)
             let backgroundProps = background.map(toProperty)
 
             if (backgroundProps.length >= OPTIONS.shorten_background_min) {
@@ -1938,7 +1783,7 @@ class CSSPurge {
                   })
 
                   DECLARATION_COUNT += 1
-                  summary.stats.summary.noBackgroundsShortened += 1
+                  SUMMARY.stats.summary.noBackgroundsShortened += 1
 
                   let backgroundIndex
 
@@ -2088,7 +1933,7 @@ class CSSPurge {
                 })
 
                 DECLARATION_COUNT += 1
-                summary.stats.summary.noListStylesShortened += 1
+                SUMMARY.stats.summary.noListStylesShortened += 1
 
                 let listStyleIndex
 
@@ -2223,7 +2068,7 @@ class CSSPurge {
                 })
 
                 DECLARATION_COUNT += 1
-                summary.stats.summary.noOutlinesShortened += 1
+                SUMMARY.stats.summary.noOutlinesShortened += 1
 
                 let outlineIndex
 
@@ -2359,7 +2204,7 @@ class CSSPurge {
                 })
 
                 DECLARATION_COUNT += 1
-                summary.stats.summary.noBorderTopsShortened += 1
+                SUMMARY.stats.summary.noBorderTopsShortened += 1
 
                 let borderTopIndex
 
@@ -2493,7 +2338,7 @@ class CSSPurge {
                 })
 
                 DECLARATION_COUNT += 1
-                summary.stats.summary.noBorderRightsShortened += 1
+                SUMMARY.stats.summary.noBorderRightsShortened += 1
 
                 let borderRightIndex
 
@@ -2628,7 +2473,7 @@ class CSSPurge {
                 })
 
                 DECLARATION_COUNT += 1
-                summary.stats.summary.noBorderBottomsShortened += 1
+                SUMMARY.stats.summary.noBorderBottomsShortened += 1
 
                 let borderBottomIndex
 
@@ -2764,7 +2609,7 @@ class CSSPurge {
                 })
 
                 DECLARATION_COUNT += 1
-                summary.stats.summary.noBorderLeftsShortened += 1
+                SUMMARY.stats.summary.noBorderLeftsShortened += 1
 
                 let borderLeftIndex
 
@@ -2891,7 +2736,7 @@ class CSSPurge {
                     })
 
                     DECLARATION_COUNT += 1
-                    summary.stats.summary.noBorderTopRightBottomLeftsShortened += 1
+                    SUMMARY.stats.summary.noBorderTopRightBottomLeftsShortened += 1
 
                     let borderTopRightBottomLeftIndex
 
@@ -3027,7 +2872,7 @@ class CSSPurge {
                   })
 
                   DECLARATION_COUNT += 1
-                  summary.stats.summary.noBordersShortened += 1
+                  SUMMARY.stats.summary.noBordersShortened += 1
 
                   let borderIndex
 
@@ -3149,10 +2994,10 @@ class CSSPurge {
                   borderBottomRightRadiusIndex !== -1 &&
                   borderTopRightRadiusIndex !== -1
                 ) {
-                  const borderTopLeftRadiusValue = borderRadiusValues[borderTopLeftRadiusIndex]
-                  const borderTopRightRadiusValue = borderRadiusValues[borderTopRightRadiusIndex]
-                  const borderBottomLeftRadiusValue = borderRadiusValues[borderBottomLeftRadiusIndex]
-                  const borderBottomRightRadiusValue = borderRadiusValues[borderBottomRightRadiusIndex]
+                  const borderTopLeftRadiusValue = borderRadiusValues[borderTopLeftRadiusIndex] ?? ''
+                  const borderTopRightRadiusValue = borderRadiusValues[borderTopRightRadiusIndex] ?? ''
+                  const borderBottomLeftRadiusValue = borderRadiusValues[borderBottomLeftRadiusIndex] ?? ''
+                  const borderBottomRightRadiusValue = borderRadiusValues[borderBottomRightRadiusIndex] ?? ''
 
                   // 1 value
                   if (
@@ -3236,7 +3081,7 @@ class CSSPurge {
                 })
 
                 DECLARATION_COUNT += 1
-                summary.stats.summary.noPaddingsShortened += 1
+                SUMMARY.stats.summary.noPaddingsShortened += 1
 
                 let borderRadiusIndex
 
@@ -3385,10 +3230,10 @@ class CSSPurge {
                   marginLeftIndex !== -1 &&
                   marginRightIndex !== -1
                 ) {
-                  const marginTopValue = marginValues[marginTopIndex]
-                  const marginRightValue = marginValues[marginRightIndex]
-                  const marginBottomValue = marginValues[marginBottomIndex]
-                  const marginLeftValue = marginValues[marginLeftIndex]
+                  const marginTopValue = marginValues[marginTopIndex] ?? ''
+                  const marginRightValue = marginValues[marginRightIndex] ?? ''
+                  const marginBottomValue = marginValues[marginBottomIndex] ?? ''
+                  const marginLeftValue = marginValues[marginLeftIndex] ?? ''
 
                   // 1 value
                   if (
@@ -3461,7 +3306,7 @@ class CSSPurge {
                 })
 
                 DECLARATION_COUNT += 1
-                summary.stats.summary.noMarginsShortened += 1
+                SUMMARY.stats.summary.noMarginsShortened += 1
 
                 let marginIndex
 
@@ -3610,10 +3455,10 @@ class CSSPurge {
                   paddingLeftIndex !== -1 &&
                   paddingRightIndex !== -1
                 ) {
-                  const paddingTopValue = paddingValues[paddingTopIndex]
-                  const paddingRightValue = paddingValues[paddingRightIndex]
-                  const paddingBottomValue = paddingValues[paddingBottomIndex]
-                  const paddingLeftValue = paddingValues[paddingLeftIndex]
+                  const paddingTopValue = paddingValues[paddingTopIndex] ?? ''
+                  const paddingRightValue = paddingValues[paddingRightIndex] ?? ''
+                  const paddingBottomValue = paddingValues[paddingBottomIndex] ?? ''
+                  const paddingLeftValue = paddingValues[paddingLeftIndex] ?? ''
 
                   // 1 value
                   if (
@@ -3686,7 +3531,7 @@ class CSSPurge {
                 })
 
                 DECLARATION_COUNT += 1
-                summary.stats.summary.noPaddingsShortened += 1
+                SUMMARY.stats.summary.noPaddingsShortened += 1
 
                 let paddingIndex
 
@@ -3743,7 +3588,7 @@ class CSSPurge {
                   if (value.match(/[^#]\b0+[^1-9a-zA-Z.,;%()\[\]\s\/\\!]/gm)) {
                     value = value.replace(/\b0+[^1-9a-zA-Z.,;%()\[\]\s\/\\!]/gm, '') // remove single duplicate 0
 
-                    summary.stats.summary.noZerosShortened += 1
+                    SUMMARY.stats.summary.noZerosShortened += 1
 
                     if (OPTIONS.verbose) { console.log(success('Process - Values - Zero : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
                   }
@@ -3754,7 +3599,7 @@ class CSSPurge {
                     value = 0
 
                     if (OPTIONS.verbose) { console.log(success('Process - Values - Zero : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
-                    summary.stats.summary.noZerosShortened += 1
+                    SUMMARY.stats.summary.noZerosShortened += 1
                   }
 
                   rules[i].declarations[l].value = value
@@ -3793,7 +3638,7 @@ class CSSPurge {
                 )) {
                 let value = '' + rules[i].declarations[l].value
                 if (value !== 'undefined' && !value.includes('Microsoft')) {
-                  value = processColor(value, rules[i].selectors, OPTIONS, summary)
+                  value = processColor(value, rules[i].selectors, OPTIONS, SUMMARY)
                   rules[i].declarations[l].value = value
                 }
               } // end of options check
@@ -4019,7 +3864,7 @@ class CSSPurge {
             for (let j = 0; j < DECLARATION_COUNT; ++j) {
               // check for empty properties
               if (rules[i].declarations[j].value === '') {
-                summary.empty_declarations.push({
+                SUMMARY.empty_declarations.push({
                   selectors: rules[i].selectors,
                   property: rules[i].declarations[j]
                 })
@@ -4072,16 +3917,16 @@ class CSSPurge {
                 if (OPTIONS.verbose) { console.log(success('Process - Rules - Group Duplicate Rule : ' + (rules[j].selectors ? rules[j].selectors.join(', ') : ''))) }
 
                 // copy + reduce
-                summary.stats.summary.noDuplicateRules += 1
+                SUMMARY.stats.summary.noDuplicateRules += 1
                 if (j < i && (j - i) > 1) { // check comparison distance
-                  summary.duplicate_rules.push({
+                  SUMMARY.duplicate_rules.push({
                     selectors: (rules[i].type === 'page') ? '@page' : rules[i].selectors,
                     position: rules[i].position
                   })
                   rules[j].declarations = rules[j].declarations.concat(rules[i].declarations)
                   rules.splice(i, 1)
                 } else {
-                  summary.duplicate_rules.push({
+                  SUMMARY.duplicate_rules.push({
                     selectors: (rules[j].type === 'page') ? '@page' : rules[j].selectors,
                     position: rules[j].position
                   })
@@ -4098,7 +3943,7 @@ class CSSPurge {
             if (rules[i] !== undefined && rules[i].type === 'media' &&
               rules[i].media !== undefined &&
               rules[j] !== undefined && rules[j].media !== undefined &&
-              OPTIONS.bypass_media_rules != true) {
+              OPTIONS.bypass_media_rules !== true) {
               // duplicate rule found
               if (rules[i].media.toString() === rules[j].media.toString()) {
                 // remove previous comment in root
@@ -4114,16 +3959,16 @@ class CSSPurge {
                 if (OPTIONS.verbose) { console.log(info('Process - Rules - @media - Group Duplicate Rule : ' + (rules[j].selectors ? rules[j].selectors.join(', ') : ''))) }
 
                 // copy + reduce
-                summary.stats.summary.noDuplicateRules += 1
+                SUMMARY.stats.summary.noDuplicateRules += 1
                 if (j < i && (j - i) > 1) { // check comparison distance
-                  summary.duplicate_rules.push({
+                  SUMMARY.duplicate_rules.push({
                     selectors: '@media ' + rules[i].media,
                     position: rules[i].position
                   })
                   rules[j].rules = rules[j].rules.concat(rules[i].rules)
                   rules.splice(i, 1)
                 } else {
-                  summary.duplicate_rules.push({
+                  SUMMARY.duplicate_rules.push({
                     selectors: '@media ' + rules[j].media,
                     position: rules[j].position
                   })
@@ -4155,16 +4000,16 @@ class CSSPurge {
                 if (OPTIONS.verbose) { console.log(success('Process - Rules - @document - Group Duplicate Rule : ' + (rules[j].selectors ? rules[j].selectors.join(', ') : ''))) }
 
                 // copy + reduce
-                summary.stats.summary.noDuplicateRules += 1
+                SUMMARY.stats.summary.noDuplicateRules += 1
                 if (j < i && (j - i) > 1) { // check comparison distance
-                  summary.duplicate_rules.push({
+                  SUMMARY.duplicate_rules.push({
                     selectors: '@document ' + rules[i].document,
                     position: rules[i].position
                   })
                   rules[j].rules = rules[j].rules.concat(rules[i].rules)
                   rules.splice(i, 1)
                 } else {
-                  summary.duplicate_rules.push({
+                  SUMMARY.duplicate_rules.push({
                     selectors: '@document ' + rules[j].document,
                     position: rules[j].position
                   })
@@ -4196,16 +4041,16 @@ class CSSPurge {
                 if (OPTIONS.verbose) { console.log(success('Process - Rules - @supports - Group Duplicate Rule : ' + (rules[j].supports ? rules[j].supports : ''))) }
 
                 // copy + reduce
-                summary.stats.summary.noDuplicateRules += 1
+                SUMMARY.stats.summary.noDuplicateRules += 1
                 if (j < i && (j - i) > 1) { // check comparison distance
-                  summary.duplicate_rules.push({
+                  SUMMARY.duplicate_rules.push({
                     selectors: '@supports ' + rules[i].supports,
                     position: rules[i].position
                   })
                   rules[j].rules = rules[j].rules.concat(rules[i].rules)
                   rules.splice(i, 1)
                 } else {
-                  summary.duplicate_rules.push({
+                  SUMMARY.duplicate_rules.push({
                     selectors: '@supports ' + rules[j].supports,
                     position: rules[j].position
                   })
@@ -4272,61 +4117,59 @@ class CSSPurge {
             amountRemoved = 1
 
             for (const key in declarationsValueCounts) {
-              if (declarationsValueCounts.hasOwnProperty(key)) {
-                if (declarationsValueCounts[key].count > 1) {
-                  duplicateIds = declarationsValueCounts[key].id.split(',')
+              if (declarationsValueCounts[key].count > 1) {
+                duplicateIds = declarationsValueCounts[key].id.split(',')
 
-                  amountRemoved = 1 // shift the ids by the amount removed
+                amountRemoved = 1 // shift the ids by the amount removed
 
-                  for (let l = 0; l < duplicateIds.length - 1; ++l) { // -1 to leave last behind
-                    // remove previous comment above declaration to be removed
-                    if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                      if (rules[i].declarations[duplicateIds[l] - 1] !== undefined && rules[i].declarations[duplicateIds[l] - 1].type === 'comment') {
-                        rules[i].declarations.splice(duplicateIds[l] - 1, 1)
-                        DECLARATION_COUNT -= 1
+                for (let l = 0; l < duplicateIds.length - 1; ++l) { // -1 to leave last behind
+                  // remove previous comment above declaration to be removed
+                  if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+                    if (rules[i].declarations[duplicateIds[l] - 1] !== undefined && rules[i].declarations[duplicateIds[l] - 1].type === 'comment') {
+                      rules[i].declarations.splice(duplicateIds[l] - 1, 1)
+                      DECLARATION_COUNT -= 1
 
-                        // adjust removal ids by amount already removed
-                        if (duplicateIds[l] !== undefined) {
-                          duplicateIds[l] -= amountRemoved // shift the ids by the amount removed
-                        }
-                        amountRemoved += 1
+                      // adjust removal ids by amount already removed
+                      if (duplicateIds[l] !== undefined) {
+                        duplicateIds[l] -= amountRemoved // shift the ids by the amount removed
                       }
+                      amountRemoved += 1
                     }
-
-                    if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
-
-                    summary.duplicate_declarations.push(rules[i].declarations[duplicateIds[l]])
-                    summary.stats.summary.noDuplicateDeclarations += 1
-                    rules[i].declarations.splice(duplicateIds[l], 1)
-                    DECLARATION_COUNT -= 1
-
-                    // adjust removal ids by amount already removed
-                    if (duplicateIds[l + 1] !== undefined) {
-                      duplicateIds[l + 1] -= amountRemoved // shift the ids by the amount removed
-
-                      // shift all the ids of the declarations afterwards
-                      for (const key2 in declarationsValueCounts) {
-                        if (declarationsValueCounts.hasOwnProperty(key2) && (key2 != key)) {
-                          if (typeof declarationsValueCounts[key2].id === 'number') {
-                            duplicateIds = []
-                            duplicateIds[0] = declarationsValueCounts[key2].id
-                          } else {
-                            duplicateIds = declarationsValueCounts[key2].id.split(',')
-                          }
-
-                          for (let l = 0; l < duplicateIds.length; ++l) {
-                            if (duplicateIds[l] !== undefined) {
-                              duplicateIds[l] -= amountRemoved
-                            }
-                          }
-                          declarationsValueCounts[key2].id = duplicateIds.join()
-                        }
-                      }
-                      // end of shifting all ids
-                    }
-                    amountRemoved += 1
                   }
-                } // end of if
+
+                  if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
+
+                  SUMMARY.duplicate_declarations.push(rules[i].declarations[duplicateIds[l]])
+                  SUMMARY.stats.summary.noDuplicateDeclarations += 1
+                  rules[i].declarations.splice(duplicateIds[l], 1)
+                  DECLARATION_COUNT -= 1
+
+                  // adjust removal ids by amount already removed
+                  if (duplicateIds[l + 1] !== undefined) {
+                    duplicateIds[l + 1] -= amountRemoved // shift the ids by the amount removed
+
+                    // shift all the ids of the declarations afterwards
+                    for (const key2 in declarationsValueCounts) {
+                      if (declarationsValueCounts.hasOwnProperty(key2) && (key2 !== key)) {
+                        if (typeof declarationsValueCounts[key2].id === 'number') {
+                          duplicateIds = []
+                          duplicateIds[0] = declarationsValueCounts[key2].id
+                        } else {
+                          duplicateIds = declarationsValueCounts[key2].id.split(',')
+                        }
+
+                        for (let l = 0; l < duplicateIds.length; ++l) {
+                          if (duplicateIds[l] !== undefined) {
+                            duplicateIds[l] -= amountRemoved
+                          }
+                        }
+                        declarationsValueCounts[key2].id = duplicateIds.join()
+                      }
+                    }
+                    // end of shifting all ids
+                  }
+                  amountRemoved += 1
+                }
               } // end of if
             } // end of for in
 
@@ -4334,48 +4177,46 @@ class CSSPurge {
             for (let k = 0; k < declarationNamesCount; ++k) {
               // declarations reduction
               for (const key in declarationsNameCounts) {
-                if (declarationsNameCounts.hasOwnProperty(key)) {
-                  if (declarationsNameCounts[key] > 1) {
-                    for (let l = 0; l < DECLARATION_COUNT; ++l) {
-                      if (rules[i].declarations[l].type === 'declaration') {
-                        if (rules[i].declarations[l].property === key &&
-                          declarationsNameCounts[key] > 1 // leave behind 1
-                        ) {
-                          // reduce according to list
-                          if (rules[i].declarations[l].property === declarationNames[k]) {
-                            // console.log(declarationsNameCounts[key])
-                            // console.log(key)
-                            // console.log(rules[i].declarations[l].property)
-                            // console.log(declarationNames[k])
-                            // remove previous comment above declaration to be removed
-                            if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                              if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
-                                rules[i].declarations.splice(l - 1, 1)
-                                l -= 1
-                                DECLARATION_COUNT -= 1
-                              }
+                if (declarationsNameCounts[key] > 1) {
+                  for (let l = 0; l < DECLARATION_COUNT; ++l) {
+                    if (rules[i].declarations[l].type === 'declaration') {
+                      if (rules[i].declarations[l].property === key &&
+                        declarationsNameCounts[key] > 1 // leave behind 1
+                      ) {
+                        // reduce according to list
+                        if (rules[i].declarations[l].property === declarationNames[k]) {
+                          // console.log(declarationsNameCounts[key])
+                          // console.log(key)
+                          // console.log(rules[i].declarations[l].property)
+                          // console.log(declarationNames[k])
+                          // remove previous comment above declaration to be removed
+                          if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+                            if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
+                              rules[i].declarations.splice(l - 1, 1)
+                              l -= 1
+                              DECLARATION_COUNT -= 1
                             }
-
-                            if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
-
-                            // console.log(rules[i].declarations[l].value.indexOf('!important') !== -1)
-                            // console.log(rules[i].declarations[l].value)
-                            // console.log(rules[i].declarations[l+1].value)
-                            // prioritises !important declarations
-                            if (rules[i].declarations[l].value.indexOf('!important') !== -1) {
-                              summary.duplicate_declarations.push(rules[i].declarations[l + 1])
-                              summary.stats.summary.noDuplicateDeclarations += 1
-                              rules[i].declarations.splice(l + 1, 1)
-                            } else {
-                              summary.duplicate_declarations.push(rules[i].declarations[l])
-                              summary.stats.summary.noDuplicateDeclarations += 1
-                              rules[i].declarations.splice(l, 1)
-                            }
-
-                            l -= 1
-                            DECLARATION_COUNT -= 1
-                            declarationsNameCounts[key] -= 1
                           }
+
+                          if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
+
+                          // console.log(rules[i].declarations[l].value.indexOf('!important') !== -1)
+                          // console.log(rules[i].declarations[l].value)
+                          // console.log(rules[i].declarations[l+1].value)
+                          // prioritises !important declarations
+                          if (rules[i].declarations[l].value.indexOf('!important') !== -1) {
+                            SUMMARY.duplicate_declarations.push(rules[i].declarations[l + 1])
+                            SUMMARY.stats.summary.noDuplicateDeclarations += 1
+                            rules[i].declarations.splice(l + 1, 1)
+                          } else {
+                            SUMMARY.duplicate_declarations.push(rules[i].declarations[l])
+                            SUMMARY.stats.summary.noDuplicateDeclarations += 1
+                            rules[i].declarations.splice(l, 1)
+                          }
+
+                          l -= 1
+                          DECLARATION_COUNT -= 1
+                          declarationsNameCounts[key] -= 1
                         }
                       }
                     }
@@ -4428,8 +4269,8 @@ class CSSPurge {
                               }
 
                               if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
-                              summary.duplicate_declarations.push(rules[i].declarations[l])
-                              summary.stats.summary.noDuplicateDeclarations += 1
+                              SUMMARY.duplicate_declarations.push(rules[i].declarations[l])
+                              SUMMARY.stats.summary.noDuplicateDeclarations += 1
                               rules[i].declarations.splice(l, 1)
                               l -= 1
                               DECLARATION_COUNT -= 1
@@ -4448,8 +4289,8 @@ class CSSPurge {
                               }
 
                               if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
-                              summary.duplicate_declarations.push(rules[i].declarations[l])
-                              summary.stats.summary.noDuplicateDeclarations += 1
+                              SUMMARY.duplicate_declarations.push(rules[i].declarations[l])
+                              SUMMARY.stats.summary.noDuplicateDeclarations += 1
                               rules[i].declarations.splice(l, 1)
                               l -= 1
                               DECLARATION_COUNT -= 1
@@ -4664,93 +4505,45 @@ class CSSPurge {
       processRules(rulesIn)
 
       // after
-      stats.after.totalFileSizeKB = 0
-      stats.after.noNodes = 0
-      stats.after.noRules = 0
-      stats.after.noDeclarations = 0
-      stats.after.noComments = 0
-      stats.after.noCharset = 0
-      stats.after.noCustomMedia = 0
-      stats.after.noDocument = 0
-      stats.after.noFontFace = 0
-      stats.after.noHost = 0
-      stats.after.noImport = 0
-      stats.after.noKeyframes = 0
-      stats.after.noKeyframe = 0
-      stats.after.noMedia = 0
-      stats.after.noNamespace = 0
-      stats.after.noPage = 0
-      stats.after.noSupports = 0
+      STATS.after.totalFileSizeKB = 0
+      STATS.after.noNodes = 0
+      STATS.after.noRules = 0
+      STATS.after.noDeclarations = 0
+      STATS.after.noComments = 0
+      STATS.after.noCharset = 0
+      STATS.after.noCustomMedia = 0
+      STATS.after.noDocument = 0
+      STATS.after.noFontFace = 0
+      STATS.after.noHost = 0
+      STATS.after.noImport = 0
+      STATS.after.noKeyframes = 0
+      STATS.after.noKeyframe = 0
+      STATS.after.noMedia = 0
+      STATS.after.noNamespace = 0
+      STATS.after.noPage = 0
+      STATS.after.noSupports = 0
+      STATS.after.noNodes = rulesIn.length
 
-      stats.after.noNodes = rulesIn.length
-      for (let i = 0; i < stats.after.noNodes; ++i) {
-        if (rulesIn[i] !== undefined) {
-          if (rulesIn[i].declarations !== undefined) {
-            DECLARATION_COUNT = rulesIn[i].declarations.length
+      rulesIn
+        .filter(Boolean)
+        .forEach(getSummaryStatsFor(SUMMARY.stats.after))
 
-            for (let j = 0; j < DECLARATION_COUNT; ++j) {
-              if (rulesIn[i].declarations[j].type === 'comment') {
-                summary.stats.after.noComments += 1
-              }
-            }
-          }
-
-          if (rulesIn[i].type === 'comment') {
-            summary.stats.after.noComments += 1
-          }
-
-          if (rulesIn[i].type === 'rule') {
-            summary.stats.after.noRules += 1
-
-            summary.stats.after.noDeclarations += rulesIn[i].declarations.length
-          }
-
-          switch (rulesIn[i].type) {
-            case 'charset': summary.stats.after.noCharset += 1
-              break
-            case 'custom-media': summary.stats.after.noCustomMedia += 1
-              break
-            case 'document': summary.stats.after.noDocument += 1
-              break
-            case 'font-face': summary.stats.after.noFontFace += 1
-              break
-            case 'host': summary.stats.after.noHost += 1
-              break
-            case 'import': summary.stats.after.noImport += 1
-              break
-            case 'keyframes': summary.stats.after.noKeyframes += 1
-              break
-            case 'keyframe': summary.stats.after.noKeyframe += 1
-              break
-            case 'media': summary.stats.after.noMedia += 1
-              break
-            case 'namespace': summary.stats.after.noNamespace += 1
-              break
-            case 'page': summary.stats.after.noPage += 1
-              break
-            case 'supports': summary.stats.after.noSupports += 1
-              break
-          }
-        }
-      } // end of after count
-
-      // calc reductions
-      summary.stats.summary.noReductions.noNodes = summary.stats.before.noNodes - summary.stats.after.noNodes
-      summary.stats.summary.noReductions.noRules = summary.stats.before.noRules - summary.stats.after.noRules
-      summary.stats.summary.noReductions.noDeclarations = summary.stats.before.noDeclarations - summary.stats.after.noDeclarations
-      summary.stats.summary.noReductions.noComments = summary.stats.before.noComments - summary.stats.after.noComments
-      summary.stats.summary.noReductions.noCharset = summary.stats.before.noCharset - summary.stats.after.noCharset
-      summary.stats.summary.noReductions.noCustomMedia = summary.stats.before.noCustomMedia - summary.stats.after.noCustomMedia
-      summary.stats.summary.noReductions.noDocument = summary.stats.before.noDocument - summary.stats.after.noDocument
-      summary.stats.summary.noReductions.noFontFace = summary.stats.before.noFontFace - summary.stats.after.noFontFace
-      summary.stats.summary.noReductions.noHost = summary.stats.before.noHost - summary.stats.after.noHost
-      summary.stats.summary.noReductions.noImport = summary.stats.before.noImport - summary.stats.after.noImport
-      summary.stats.summary.noReductions.noKeyframes = summary.stats.before.noKeyframes - summary.stats.after.noKeyframes
-      summary.stats.summary.noReductions.noKeyframe = summary.stats.before.noKeyframe - summary.stats.after.noKeyframe
-      summary.stats.summary.noReductions.noMedia = summary.stats.before.noMedia - summary.stats.after.noMedia
-      summary.stats.summary.noReductions.noNamespace = summary.stats.before.noNamespace - summary.stats.after.noNamespace
-      summary.stats.summary.noReductions.noPage = summary.stats.before.noPage - summary.stats.after.noPage
-      summary.stats.summary.noReductions.noSupports = summary.stats.before.noSupports - summary.stats.after.noSupports
+      SUMMARY.stats.summary.noReductions.noRules = SUMMARY.stats.before.noRules - SUMMARY.stats.after.noRules
+      SUMMARY.stats.summary.noReductions.noDeclarations = SUMMARY.stats.before.noDeclarations - SUMMARY.stats.after.noDeclarations
+      SUMMARY.stats.summary.noReductions.noComments = SUMMARY.stats.before.noComments - SUMMARY.stats.after.noComments
+      SUMMARY.stats.summary.noReductions.noCharset = SUMMARY.stats.before.noCharset - SUMMARY.stats.after.noCharset
+      SUMMARY.stats.summary.noReductions.noCustomMedia = SUMMARY.stats.before.noCustomMedia - SUMMARY.stats.after.noCustomMedia
+      SUMMARY.stats.summary.noReductions.noDocument = SUMMARY.stats.before.noDocument - SUMMARY.stats.after.noDocument
+      SUMMARY.stats.summary.noReductions.noFontFace = SUMMARY.stats.before.noFontFace - SUMMARY.stats.after.noFontFace
+      SUMMARY.stats.summary.noReductions.noHost = SUMMARY.stats.before.noHost - SUMMARY.stats.after.noHost
+      SUMMARY.stats.summary.noReductions.noImport = SUMMARY.stats.before.noImport - SUMMARY.stats.after.noImport
+      SUMMARY.stats.summary.noReductions.noKeyframes = SUMMARY.stats.before.noKeyframes - SUMMARY.stats.after.noKeyframes
+      SUMMARY.stats.summary.noReductions.noKeyframe = SUMMARY.stats.before.noKeyframe - SUMMARY.stats.after.noKeyframe
+      SUMMARY.stats.summary.noReductions.noMedia = SUMMARY.stats.before.noMedia - SUMMARY.stats.after.noMedia
+      SUMMARY.stats.summary.noReductions.noNamespace = SUMMARY.stats.before.noNamespace - SUMMARY.stats.after.noNamespace
+      SUMMARY.stats.summary.noReductions.noPage = SUMMARY.stats.before.noPage - SUMMARY.stats.after.noPage
+      SUMMARY.stats.summary.noReductions.noSupports = SUMMARY.stats.before.noSupports - SUMMARY.stats.after.noSupports
+      SUMMARY.stats.summary.noReductions.noNodes = SUMMARY.stats.before.noNodes - SUMMARY.stats.after.noNodes
 
       outputAST = {
         type: 'stylesheet',
@@ -4770,12 +4563,12 @@ class CSSPurge {
         // write output
         try {
           if (OPTIONS.format_4095_rules_legacy_limit) {
-            // console.log(summary.stats.after.noRules)
-            const noOutputFilesNeeded = Math.ceil(summary.stats.after.noRules / 4095)
+            // console.log(SUMMARY.stats.after.noRules)
+            const noOutputFilesNeeded = Math.ceil(SUMMARY.stats.after.noRules / 4095)
             // console.log(noOutputFilesNeeded)
             if (noOutputFilesNeeded === 1) {
-              outputCSS = trimCSS(outputCSS)
-              outputCSS = restoreHacks(outputCSS)
+              outputCSS = trim(outputCSS, OPTIONS, SUMMARY)
+              outputCSS = hack(outputCSS, OPTIONS, SUMMARY, getTokens())
               writeFileSync(OPTIONS.css_output, outputCSS)
               fileSizeKB = getFileSizeInKB(OPTIONS.css_output)
             } else { // group 4095 rules
@@ -4792,13 +4585,13 @@ class CSSPurge {
               }
 
               const rulesGroups = []
-              let rulesGroupsLen = 0
+              let rulesGroupsLength = 0
               const rules = ast.stylesheet.rules
-              const ruleslen = rules.length
+              const rulesLength = rules.length
               let ruleCount = 0
               let groupCount = 0
 
-              for (let i = 0; i < ruleslen; ++i) {
+              for (let i = 0; i < rulesLength; ++i) {
                 if (rulesGroups[groupCount] === undefined) {
                   rulesGroups[groupCount] = []
                 }
@@ -4809,10 +4602,11 @@ class CSSPurge {
                   groupCount += 1
                 }
               }
-              rulesGroupsLen = rulesGroups.length
+
+              rulesGroupsLength = rulesGroups.length
               fileSizeKB = 0
-              outputFilename = ''
-              for (let i = 0; i < rulesGroupsLen; i++) {
+
+              for (let i = 0; i < rulesGroupsLength; i++) {
                 outputAST = {
                   type: 'stylesheet',
                   stylesheet: {
@@ -4821,17 +4615,17 @@ class CSSPurge {
                 }
                 outputCSS = cssTools.stringify(outputAST)
 
-                outputCSS = trimCSS(outputCSS)
-                outputCSS = restoreHacks(outputCSS)
-                outputFilename = OPTIONS.css_output.substr(0, OPTIONS.css_output.length - 4) + '_' + i + '.css'
-                writeFileSync(outputFilename, outputCSS)
+                outputCSS = trim(outputCSS, OPTIONS, SUMMARY)
+                outputCSS = hack(outputCSS, OPTIONS, SUMMARY, getTokens())
+                const outputFileName = OPTIONS.css_output.substr(0, OPTIONS.css_output.length - 4) + '_' + i + '.css'
+                writeFileSync(outputFileName, outputCSS)
 
-                fileSizeKB += getFileSizeInKB(outputFilename)
+                fileSizeKB += getFileSizeInKB(outputFileName)
               }
             }
           } else {
-            outputCSS = trimCSS(outputCSS)
-            outputCSS = restoreHacks(outputCSS)
+            outputCSS = trim(outputCSS, OPTIONS, SUMMARY)
+            outputCSS = hack(outputCSS, OPTIONS, SUMMARY, getTokens())
             if (OPTIONS.css_output === null || OPTIONS.css_output === undefined || OPTIONS.css_output === '') {
               const size = getSizeInKB(outputCSS)
               fileSizeKB = size / 1000
@@ -4841,37 +4635,35 @@ class CSSPurge {
             }
           }
         } catch (e) {
-          console.log(error('Output file error: Something went wrong while writing the file, check your folder permissions, config_css.json and please try again.'))
+          console.log(error('Output file error: Something went wrong while writing the file, check your folder permissions, default_options.json and please try again.'))
           console.log(e)
           process.exit(1)
         }
       } else {
-        outputCSS = trimCSS(outputCSS)
-        outputCSS = restoreHacks(outputCSS)
+        outputCSS = trim(outputCSS, OPTIONS, SUMMARY)
+        outputCSS = hack(outputCSS, OPTIONS, SUMMARY, getTokens())
         fileSizeKB = getSizeInKB(outputCSS)
       }
 
-      summary.stats.after.totalFileSizeKB += fileSizeKB
-      summary.stats.summary.savingsKB = roundTo(summary.stats.before.totalFileSizeKB - summary.stats.after.totalFileSizeKB, 4)
-      summary.stats.summary.savingsPercentage = roundTo(summary.stats.summary.savingsKB / summary.stats.before.totalFileSizeKB * 100, 2)
+      SUMMARY.stats.after.totalFileSizeKB += fileSizeKB
+      SUMMARY.stats.summary.savingsKB = roundTo(SUMMARY.stats.before.totalFileSizeKB - SUMMARY.stats.after.totalFileSizeKB, 4)
+      SUMMARY.stats.summary.savingsPercentage = roundTo(SUMMARY.stats.summary.savingsKB / SUMMARY.stats.before.totalFileSizeKB * 100, 2)
 
       // write report
       if (OPTIONS.generate_report) {
         try {
-          writeFileSync(REPORT_DUPLICATE_CSS, JSON.stringify(summary, null, '\t'))
+          writeFileSync(REPORT_DUPLICATE_CSS, JSON.stringify(SUMMARY, null, '\t'))
         } catch (e) {
-          console.log(error('Report output file error: Something went wrong while writing the file, check your folder permissions, config_css.json and please try again.'))
+          console.log(error('Report output file error: Something went wrong while writing the file, check your folder permissions, default_options.json and please try again.'))
           console.log(e)
           process.exit(1)
         }
       }
 
       if (OPTIONS.verbose) {
-        console.log(cool('Before: ' + summary.stats.before.totalFileSizeKB + 'KB'))
-        console.log(cool('After: ' + summary.stats.after.totalFileSizeKB + 'KB'))
-        console.log(cool('Saved: ' + summary.stats.summary.savingsKB + 'KB (' + summary.stats.summary.savingsPercentage + '%)'))
-
-        // date = new Date()
+        console.log(cool('Before: ' + SUMMARY.stats.before.totalFileSizeKB + 'KB'))
+        console.log(cool('After: ' + SUMMARY.stats.after.totalFileSizeKB + 'KB'))
+        console.log(cool('Saved: ' + SUMMARY.stats.summary.savingsKB + 'KB (' + SUMMARY.stats.summary.savingsPercentage + '%)'))
 
         console.timeEnd(logoRed('Purged ' + date + ' in'))
       }
@@ -4883,7 +4675,7 @@ class CSSPurge {
 
     function processCSS (cssDataIn = null, optionsIn = null, callback = () => {}) {
       function continueCSSProcess () {
-        cssPurgeEventEmitter.removeListener('CONFIG_READ_REDUCE_PROPS_END', continueCSSProcess)
+        cssPurgeEventEmitter.removeListener('DEFAULT_OPTIONS_READ_REDUCE_PROPS_END', continueCSSProcess)
 
         let cssData = dataCSSIn.join('')
 
@@ -4892,7 +4684,7 @@ class CSSPurge {
 
           fileSizeKB = getSizeInKB(cssDataIn)
 
-          stats.before.totalFileSizeKB += fileSizeKB
+          STATS.before.totalFileSizeKB += fileSizeKB
         }
 
         if (optionsIn !== null && optionsIn !== undefined) {
@@ -4902,16 +4694,21 @@ class CSSPurge {
         }
 
         if (OPTIONS.verbose) {
-          date = Date()
-
-          if (OPTIONS.css_output !== undefined && OPTIONS.css_output !== '') {
-            date = OPTIONS.css_output
-          }
+          date = (OPTIONS.css_output) ? OPTIONS.css_output : new Date()
 
           console.time(logoRed('Purged ' + date + ' in'))
         }
 
         if (OPTIONS.verbose) { console.log(info('Process - CSS')) }
+
+        const {
+          _3tokenValues,
+          _4tokenValues,
+          _5tokenValues,
+          _6tokenValues,
+          _7tokenValues,
+          tokenComments
+        } = getTokens()
 
         // tokens - allow multi-keyframe selectors
         cssData = cssData.replace(/(@(-?)[a-zA-Z\-]*(keyframes)*\s[a-zA-Z\-]*(\s*,?\s*)){2,}/g, (match) => {
@@ -4927,9 +4724,9 @@ class CSSPurge {
 
         // remove non-standard commented lines
         cssData = cssData.replace(/([^(:;,a-zA-Z0-9]|^)\/\/.*$/gm, (match) => {
-          stats.summary.noInlineCommentsTrimmed += 1
+          STATS.summary.noInlineCommentsTrimmed += 1
 
-          if (OPTIONS.trim_keep_non_standard_inline_comments && OPTIONS.trim_comments != true) {
+          if (OPTIONS.trim_keep_non_standard_inline_comments && OPTIONS.trim_comments !== true) {
             return '/*' + match.substring(3, match.length) + ' */'
           } else {
             return ''
@@ -4963,12 +4760,15 @@ class CSSPurge {
 
         /// /end of hacks
         // tokens - replace side comments
-        if (OPTIONS.trim_comments != true) {
+        if (OPTIONS.trim_comments !== true) {
           cssData = cssData.replace(/[;]([^\n][\s]*?)\/\*([\s\S]*?)\*\//gm, (match) => {
-            tokensComments['_cssp_sc' + (Object.keys(tokensComments).length + 1)] = match
-            return '; /*_cssp_sc' + Object.keys(tokensComments).length + '*/'
+            const i = Object.keys(tokenComments).length + 1
+            const k = '_cssp_sc' + i
+            tokenComments[k] = match
+            return '; /*_cssp_sc' + i + '*/'
           })
         }
+        // tokens - end of replace side comments
 
         let ast
         try {
@@ -4982,161 +4782,124 @@ class CSSPurge {
           process.exit(1)
         }
 
-        const fRules = ast.stylesheet.rules
-        let fRulesCount = fRules.length
+        const rules = ast.stylesheet.rules
 
-        stats.before.noNodes = fRulesCount
+        SUMMARY.stats = STATS
 
-        summary.stats = stats
+        STATS.before.noNodes = rules.length
 
-        // before
-        for (let i = 0; i < fRulesCount; ++i) {
-          if (fRules[i] !== undefined) {
-            if (fRules[i].declarations !== undefined) {
-              DECLARATION_COUNT = fRules[i].declarations.length
-
-              for (let j = 0; j < DECLARATION_COUNT; ++j) {
-                if (fRules[i].declarations[j].type === 'comment') {
-                  summary.stats.before.noComments += 1
-                }
-              }
-            }
-
-            if (fRules[i].type === 'comment') {
-              summary.stats.before.noComments += 1
-            }
-
-            if (fRules[i].type === 'rule') {
-              summary.stats.before.noRules += 1
-
-              summary.stats.before.noDeclarations += fRules[i].declarations.length
-            }
-
-            switch (fRules[i].type) {
-              case 'charset': summary.stats.before.noCharset += 1
-                break
-              case 'custom-media': summary.stats.before.noCustomMedia += 1
-                break
-              case 'document': summary.stats.before.noDocument += 1
-                break
-              case 'font-face': summary.stats.before.noFontFace += 1
-                break
-              case 'host': summary.stats.before.noHost += 1
-                break
-              case 'import': summary.stats.before.noImport += 1
-                break
-              case 'keyframes': summary.stats.before.noKeyframes += 1
-                break
-              case 'keyframe': summary.stats.before.noKeyframe += 1
-                break
-              case 'media': summary.stats.before.noMedia += 1
-                break
-              case 'namespace': summary.stats.before.noNamespace += 1
-                break
-              case 'page': summary.stats.before.noPage += 1
-                break
-              case 'supports': summary.stats.before.noSupports += 1
-                break
-            }
-          }
-        } // end of before count
+        rules
+          .filter(Boolean)
+          .forEach(getSummaryStatsFor(SUMMARY.stats.before))
 
         if (OPTIONS.verbose) { console.log(info('Process - Rules - Base')) }
 
-        processRules(fRules)
+        processRules(rules)
         processRulesReset()
 
-        for (let g = 0; g < fRulesCount; ++g) {
-          if (fRules[g] !== undefined) {
-            // console.log(g, fRulesCount)
+        let rulesLength = rules.length
+
+        for (let g = 0; g < rulesLength; ++g) {
+          if (rules[g] !== undefined) {
+            // console.log(g, rulesLength)
             // @media rules
-            if (fRules[g] !== undefined &&
-              fRules[g].type === 'media'
+            if (rules[g] !== undefined &&
+              rules[g].type === 'media'
               // && OPTIONS.bypass_media_rules === false
             ) {
-              if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + (fRules[g].media ? fRules[g].media : ''))) }
+              if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + (rules[g].media ? rules[g].media : ''))) }
 
-              processRules(fRules[g].rules)
+              processRules(rules[g].rules)
               processRulesReset()
-              processValues(fRules[g].rules)
+              processValues(rules[g].rules)
             }
 
             // @document rules
-            if (fRules[g] !== undefined &&
-              fRules[g].type === 'document' &&
+            if (rules[g] !== undefined &&
+              rules[g].type === 'document' &&
               OPTIONS.bypass_document_rules === false) {
-              if (OPTIONS.verbose) { console.log(info('Process - Rules - @document ' + (fRules[g].document ? fRules[g].document : ''))) }
+              if (OPTIONS.verbose) { console.log(info('Process - Rules - @document ' + (rules[g].document ? rules[g].document : ''))) }
 
-              processRules(fRules[g].rules)
+              processRules(rules[g].rules)
               processRulesReset()
-              processValues(fRules[g].rules)
+              processValues(rules[g].rules)
             }
 
             // @supports rules
-            if (fRules[g] !== undefined &&
-              fRules[g].type === 'supports' &&
+            if (rules[g] !== undefined &&
+              rules[g].type === 'supports' &&
               OPTIONS.bypass_supports_rules === false) {
-              if (OPTIONS.verbose) { console.log(info('Process - Rules - @supports ' + (fRules[g].supports ? fRules[g].supports : ''))) }
+              if (OPTIONS.verbose) { console.log(info('Process - Rules - @supports ' + (rules[g].supports ? rules[g].supports : ''))) }
 
-              processRules(fRules[g].rules)
+              processRules(rules[g].rules)
               processRulesReset()
-              processValues(fRules[g].rules)
+              processValues(rules[g].rules)
             }
 
             /// /charset
-            if (fRules[g] !== undefined &&
-              fRules[g].type === 'charset' &&
+            if (rules[g] !== undefined &&
+              rules[g].type === 'charset' &&
               OPTIONS.bypass_charset === false) {
               if (OPTIONS.verbose) { console.log(info('Process - Charset')) }
 
-              charset = fRules[g].charset
-              cCount = fRules.length
+              const charset1 = rules[g].charset
+              let x = rules.length
 
-              for (let h = g + 1; h < cCount; ++h) {
-                if (fRules[h] !== undefined) {
-                  charset2 = fRules[h].charset
+              for (let h = g + 1; h < x; ++h) {
+                const rule = rules[h]
 
-                  if (charset === charset2) {
+                if (rule) {
+                  const charset2 = rule.charset
+
+                  if (charset1 === charset2) {
                     // remove charset
-                    if (fRules[h] !== undefined && fRules[h].type === 'charset') {
-                      fRules.splice(h, 1)
+                    if (rule.type === 'charset') {
+                      rules.splice(h, 1)
                       g -= 1
                       h -= 1
-                      cCount -= 1
-                      fRulesCount -= 1
+                      x -= 1
+                      rulesLength -= 1
 
                       // remove side comment
-                      if (fRules[h + 1] !== undefined &&
-                        fRules[h + 1].type === 'comment' &&
-                        fRules[h + 1].comment.includes('_cssp_sc')) {
-                        // console.log('hi')
-                        // console.log(fRules[h+1])
-                        fRules.splice((h + 1), 1)
-                        g -= 1
-                        // h-=1;
-                        // cCount-=1;
-                        fRulesCount -= 1
+                      const i = h + 1
+                      const nextSiblingRule = rules[i]
+                      if (nextSiblingRule) {
+                        if (
+                          nextSiblingRule.type === 'comment' &&
+                          nextSiblingRule.comment.includes('_cssp_sc')
+                        ) {
+                          rules.splice(i, 1)
+                          g -= 1
+                          rulesLength -= 1
+                        }
                       }
                     }
                   }
                 }
               } // end of h
 
-              if (charset.substr(0, 1) != '"' ||
-                charset.substr(charset.length - 1, charset.length) != '"') {
-                // remove charset
-                if (fRules[g] !== undefined && fRules[g].type === 'charset') {
-                  fRules.splice(g, 1)
-                  g -= 1
-                  fRulesCount -= 1
-
-                  // remove side comment
-                  if (fRules[g + 1] !== undefined &&
-                    fRules[g + 1].type === 'comment' &&
-                    fRules[g + 1].comment.includes('_cssp_sc')) {
-                    fRules.splice((g + 1), 1)
+              if (!charset1.startsWith('"') || !charset1.endsWith('"')) {
+                const rule = rules[g]
+                if (rule) {
+                  // remove charset
+                  if (rule.type === 'charset') {
+                    rules.splice(g, 1)
                     g -= 1
-                    fRulesCount -= 1
+                    rulesLength -= 1
+
+                    // remove side comment
+                    const h = g + 1
+                    const nextSiblingRule = rules[h]
+                    if (nextSiblingRule) {
+                      if (
+                        nextSiblingRule.type === 'comment' &&
+                        nextSiblingRule.comment.includes('_cssp_sc')
+                      ) {
+                        rules.splice(h, 1)
+                        g -= 1
+                        rulesLength -= 1
+                      }
+                    }
                   }
                 }
               }
@@ -5149,15 +4912,15 @@ class CSSPurge {
         if (OPTIONS.special_convert_rem) {
           let hasHTML = false
           let htmlHasFontSize = false
-          const tmpRulesCount = fRules.length
-          for (let i = 0; i < tmpRulesCount; ++i) {
-            if (fRules[i] !== undefined &&
-              fRules[i].selectors !== undefined &&
-              fRules[i].selectors.toString().includes('html')) {
+          const rulesLength = rules.length
+          for (let i = 0; i < rulesLength; ++i) {
+            if (rules[i] !== undefined &&
+              rules[i].selectors !== undefined &&
+              rules[i].selectors.toString().includes('html')) {
               hasHTML = true
-              for (let j = 0; j < fRules[i].declarations.length; ++j) {
-                if (fRules[i].declarations !== undefined) {
-                  if (fRules[i].declarations[j].property === 'font-size') {
+              for (let j = 0; j < rules[i].declarations.length; ++j) {
+                if (rules[i].declarations !== undefined) {
+                  if (rules[i].declarations[j].property === 'font-size') {
                     htmlHasFontSize = true
                     break
                   }
@@ -5165,7 +4928,7 @@ class CSSPurge {
               }
 
               if (htmlHasFontSize === false) { // create font-size
-                fRules[i].declarations.unshift({
+                rules[i].declarations.unshift({
                   type: 'declaration',
                   property: 'font-size',
                   value: ((parseInt(OPTIONS.special_convert_rem_desired_html_px) / parseInt(OPTIONS.special_convert_rem_browser_default_px)) * 100) + '%'
@@ -5173,16 +4936,16 @@ class CSSPurge {
               }
 
               // move to top
-              const value = fRules[i]
-              fRules.splice(i, 1)
-              fRules.unshift(value)
+              const value = rules[i]
+              rules.splice(i, 1)
+              rules.unshift(value)
 
               break
             }
           } // end of for
 
           if (hasHTML === false) { // create html with font-size
-            fRules.unshift({
+            rules.unshift({
               type: 'rule',
               selectors: ['html'],
               declarations: [{
@@ -5194,105 +4957,55 @@ class CSSPurge {
           }
         } // end of rems - html check
 
-        processValues(fRules)
+        processValues(rules)
 
         /// /charset first check
-        if (fRules[0] !== undefined &&
-          fRules[1] !== undefined &&
-          fRules[0].type === 'comment' &&
-          fRules[1].type === 'charset' &&
-          OPTIONS.bypass_charset === false) {
-          fRules.splice(0, 1)
-        }
-        /// /end of charset first check
-        // after
-        stats.after.noNodes = fRules.length
-        for (let i = 0; i < fRulesCount; ++i) {
-          if (fRules[i] !== undefined) {
-            if (fRules[i].declarations !== undefined) {
-              DECLARATION_COUNT = fRules[i].declarations.length
+        if (!OPTIONS.bypass_charset) {
+          if (rules.length >= 2) {
+            const [
+              RULE_ONE,
+              RULE_TWO
+            ] = rules
 
-              for (let j = 0; j < DECLARATION_COUNT; ++j) {
-                if (fRules[i].declarations[j].type === 'comment') {
-                  summary.stats.after.noComments += 1
-                }
-              }
-            }
-
-            if (fRules[i].type === 'comment') {
-              summary.stats.after.noComments += 1
-            }
-
-            if (fRules[i].type === 'rule') {
-              summary.stats.after.noRules += 1
-
-              summary.stats.after.noDeclarations += fRules[i].declarations.length
-            }
-
-            switch (fRules[i].type) {
-              case 'charset':
-                summary.stats.after.noCharset += 1
-                break
-              case 'custom-media':
-                summary.stats.after.noCustomMedia += 1
-                break
-              case 'document':
-                summary.stats.after.noDocument += 1
-                break
-              case 'font-face':
-                summary.stats.after.noFontFace += 1
-                break
-              case 'host':
-                summary.stats.after.noHost += 1
-                break
-              case 'import':
-                summary.stats.after.noImport += 1
-                break
-              case 'keyframes':
-                summary.stats.after.noKeyframes += 1
-                break
-              case 'keyframe':
-                summary.stats.after.noKeyframe += 1
-                break
-              case 'media':
-                summary.stats.after.noMedia += 1
-                break
-              case 'namespace':
-                summary.stats.after.noNamespace += 1
-                break
-              case 'page':
-                summary.stats.after.noPage += 1
-                break
-              case 'supports':
-                summary.stats.after.noSupports += 1
-                break
+            if (
+              RULE_ONE.type === 'comment' &&
+              RULE_TWO.type === 'charset'
+            ) {
+              rules.splice(0, 1)
             }
           }
-        } // end of after count
+        }
+        /// /end of charset first check
 
-        // calc reductions
-        summary.stats.summary.noReductions.noNodes = summary.stats.before.noNodes - summary.stats.after.noNodes
-        summary.stats.summary.noReductions.noRules = summary.stats.before.noRules - summary.stats.after.noRules
-        summary.stats.summary.noReductions.noDeclarations = summary.stats.before.noDeclarations - summary.stats.after.noDeclarations
-        summary.stats.summary.noReductions.noComments = summary.stats.before.noComments - summary.stats.after.noComments
-        summary.stats.summary.noReductions.noCharset = summary.stats.before.noCharset - summary.stats.after.noCharset
-        summary.stats.summary.noReductions.noCustomMedia = summary.stats.before.noCustomMedia - summary.stats.after.noCustomMedia
-        summary.stats.summary.noReductions.noDocument = summary.stats.before.noDocument - summary.stats.after.noDocument
-        summary.stats.summary.noReductions.noFontFace = summary.stats.before.noFontFace - summary.stats.after.noFontFace
-        summary.stats.summary.noReductions.noHost = summary.stats.before.noHost - summary.stats.after.noHost
-        summary.stats.summary.noReductions.noImport = summary.stats.before.noImport - summary.stats.after.noImport
-        summary.stats.summary.noReductions.noKeyframes = summary.stats.before.noKeyframes - summary.stats.after.noKeyframes
-        summary.stats.summary.noReductions.noKeyframe = summary.stats.before.noKeyframe - summary.stats.after.noKeyframe
-        summary.stats.summary.noReductions.noMedia = summary.stats.before.noMedia - summary.stats.after.noMedia
-        summary.stats.summary.noReductions.noNamespace = summary.stats.before.noNamespace - summary.stats.after.noNamespace
-        summary.stats.summary.noReductions.noPage = summary.stats.before.noPage - summary.stats.after.noPage
-        summary.stats.summary.noReductions.noSupports = summary.stats.before.noSupports - summary.stats.after.noSupports
+        // after
+        STATS.after.noNodes = rules.length
+
+        rules
+          .filter(Boolean)
+          .forEach(getSummaryStatsFor(SUMMARY.stats.after))
+
+        SUMMARY.stats.summary.noReductions.noRules = SUMMARY.stats.before.noRules - SUMMARY.stats.after.noRules
+        SUMMARY.stats.summary.noReductions.noDeclarations = SUMMARY.stats.before.noDeclarations - SUMMARY.stats.after.noDeclarations
+        SUMMARY.stats.summary.noReductions.noComments = SUMMARY.stats.before.noComments - SUMMARY.stats.after.noComments
+        SUMMARY.stats.summary.noReductions.noCharset = SUMMARY.stats.before.noCharset - SUMMARY.stats.after.noCharset
+        SUMMARY.stats.summary.noReductions.noCustomMedia = SUMMARY.stats.before.noCustomMedia - SUMMARY.stats.after.noCustomMedia
+        SUMMARY.stats.summary.noReductions.noDocument = SUMMARY.stats.before.noDocument - SUMMARY.stats.after.noDocument
+        SUMMARY.stats.summary.noReductions.noFontFace = SUMMARY.stats.before.noFontFace - SUMMARY.stats.after.noFontFace
+        SUMMARY.stats.summary.noReductions.noHost = SUMMARY.stats.before.noHost - SUMMARY.stats.after.noHost
+        SUMMARY.stats.summary.noReductions.noImport = SUMMARY.stats.before.noImport - SUMMARY.stats.after.noImport
+        SUMMARY.stats.summary.noReductions.noKeyframes = SUMMARY.stats.before.noKeyframes - SUMMARY.stats.after.noKeyframes
+        SUMMARY.stats.summary.noReductions.noKeyframe = SUMMARY.stats.before.noKeyframe - SUMMARY.stats.after.noKeyframe
+        SUMMARY.stats.summary.noReductions.noMedia = SUMMARY.stats.before.noMedia - SUMMARY.stats.after.noMedia
+        SUMMARY.stats.summary.noReductions.noNamespace = SUMMARY.stats.before.noNamespace - SUMMARY.stats.after.noNamespace
+        SUMMARY.stats.summary.noReductions.noPage = SUMMARY.stats.before.noPage - SUMMARY.stats.after.noPage
+        SUMMARY.stats.summary.noReductions.noSupports = SUMMARY.stats.before.noSupports - SUMMARY.stats.after.noSupports
+        SUMMARY.stats.summary.noReductions.noNodes = SUMMARY.stats.before.noNodes - SUMMARY.stats.after.noNodes
 
         // prepare output
         const outputAST = {
           type: 'stylesheet',
           stylesheet: {
-            rules: fRules
+            rules
           }
         }
         let outputCSS = cssTools.stringify(outputAST)
@@ -5304,105 +5017,40 @@ class CSSPurge {
 
           const ast = cssTools.parse(outputCSS, { source: fileLocation })
 
-          const rulesIn = ast.stylesheet.rules
+          const rules = ast.stylesheet.rules
 
           let selectors = []
-          const rulesCount2 = 0
-          const rulesCount3 = 0
-          let ignoreFound = false
 
-          for (let i = 0, RULES_COUNT = rulesIn.length; i < RULES_COUNT; ++i) {
-            if (rulesIn[i] !== undefined) {
-              switch (rulesIn[i].type) {
-                case 'rule':
+          rules
+            .forEach((rule) => {
+              if (rule) {
+                switch (rule.type) {
+                  case 'rule':
+                    getSelectors(rule, selectors, OPTIONS.special_reduce_with_html_ignore_selectors)
+                    break
+                  case 'media':
+                  case 'document':
+                  case 'supports':
+                    rule.rules
+                      .forEach((rule) => {
+                        getSelectors(rule, selectors, OPTIONS.special_reduce_with_html_ignore_selectors)
+                      })
 
-                  ignoreFound = false
-
-                  for (let j = 0, rulesCount2 = OPTIONS.special_reduce_with_html_ignore_selectors.length; j < rulesCount2; ++j) {
-                    if (rulesIn[i].selectors && rulesIn[i].selectors.join(',').includes(OPTIONS.special_reduce_with_html_ignore_selectors[j])) {
-                      ignoreFound = true
-                      break
-                    }
-                  }
-
-                  if (ignoreFound === false) {
-                    for (let j = 0, rulesCount2 = rulesIn[i].selectors.length; j < rulesCount2; ++j) {
-                      selectors.push(rulesIn[i].selectors[j])
-                    }
-                  }
-
-                  break
-                case 'media':
-
-                  for (let j = 0, rulesCount2 = rulesIn[i].rules.length; j < rulesCount2; ++j) {
-                    ignoreFound = false
-
-                    for (let k = 0, rulesCount3 = OPTIONS.special_reduce_with_html_ignore_selectors.length; k < rulesCount3; ++k) {
-                      if (rulesIn[i].rules[j].selectors && rulesIn[i].rules[j].selectors.join(',').includes(OPTIONS.special_reduce_with_html_ignore_selectors[k])) {
-                        ignoreFound = true
-                        break
-                      }
-                    }
-
-                    if (ignoreFound === false) {
-                      for (let k = 0, rulesCount3 = rulesIn[i].rules[j].selectors.length; k < rulesCount3; ++k) {
-                        selectors.push(rulesIn[i].rules[j].selectors[k])
-                      }
-                    }
-                  }
-                  break
-                case 'document':
-
-                  for (let j = 0, rulesCount2 = rulesIn[i].rules.length; j < rulesCount2; ++j) {
-                    ignoreFound = false
-
-                    for (let k = 0, rulesCount3 = OPTIONS.special_reduce_with_html_ignore_selectors.length; k < rulesCount3; ++k) {
-                      if (rulesIn[i].rules[j].selectors && rulesIn[i].rules[j].selectors.join(',').includes(OPTIONS.special_reduce_with_html_ignore_selectors[k])) {
-                        ignoreFound = true
-                        break
-                      }
-                    }
-
-                    if (ignoreFound === false) {
-                      for (let k = 0, rulesCount3 = rulesIn[i].rules[j].selectors.length; k < rulesCount3; ++k) {
-                        selectors.push(rulesIn[i].rules[j].selectors[k])
-                      }
-                    }
-                  }
-                  break
-                case 'supports':
-
-                  for (let j = 0, rulesCount2 = rulesIn[i].rules.length; j < rulesCount2; ++j) {
-                    ignoreFound = false
-
-                    for (let k = 0, rulesCount3 = OPTIONS.special_reduce_with_html_ignore_selectors.length; k < rulesCount3; ++k) {
-                      if (rulesIn[i].rules[j].selectors && rulesIn[i].rules[j].selectors.join(',').includes(OPTIONS.special_reduce_with_html_ignore_selectors[k])) {
-                        ignoreFound = true
-                        break
-                      }
-                    }
-
-                    if (ignoreFound === false) {
-                      for (let k = 0, rulesCount3 = rulesIn[i].rules[j].selectors.length; k < rulesCount3; ++k) {
-                        selectors.push(rulesIn[i].rules[j].selectors[k])
-                      }
-                    }
-                  }
-                  break
-                case 'charset':
-                  break
+                    break
+                  case 'charset':
+                    break
+                }
               }
-            }
-          }
+            })
 
           // remove duplicates
           selectors = Array.from(new Set(selectors))
 
           // process selectors returned from processing HTML
           cssPurgeEventEmitter.on('HTML_RESULTS_END', (selectorsRemoved) => {
-            summary.selectors_removed = selectorsRemoved
+            SUMMARY.selectors_removed = selectorsRemoved
 
-            outputCSS = processHTMLResults(rulesIn, selectors)
+            outputCSS = processHTMLResults(rules, selectors)
 
             callback(null, completeOutput(outputCSS))
           })
@@ -5413,50 +5061,22 @@ class CSSPurge {
         } // end of special_reduce_with_html
       }
 
-      cssPurgeEventEmitter.on('CONFIG_READ_REDUCE_PROPS_END', continueCSSProcess) // end of event
+      cssPurgeEventEmitter.on('DEFAULT_OPTIONS_READ_REDUCE_PROPS_END', continueCSSProcess) // end of event
 
-      if (cssDataIn === null) {
-        cssPurgeEventEmitter.emit('CONFIG_READ_REDUCE_PROPS_END')
-      }
+      if (!cssDataIn) cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_REDUCE_PROPS_END')
 
       if (!hasReadReduceDeclarations && optionsIn !== null && !existsSync(OPTIONS.reduce_declarations_file_location)) {
-        if (optionsIn !== null && (optionsIn.reduceConfig === undefined || optionsIn.reduceConfig === null)) {
+        if (optionsIn !== null && (optionsIn.reduceDeclarations === undefined || optionsIn.reduceDeclarations === null)) {
           // default process settings
-          const default_reduce_declarations_config = {
+          const defaultReduceDeclarations = {
             declaration_names: [
-              'font',
-              'margin',
-              'padding',
-              'list-style',
-              'outline',
-              'border',
-              'border-top',
-              'border-right',
-              'border-bottom',
-              'border-left',
-              'border-radius',
-              'border-color',
-              'border-top-color',
-              'border-right-color',
-              'border-bottom-color',
-              'border-left-color',
-              'color',
-              'background-color',
-              'font-color',
-              'outline-color',
-              'box-shadow',
-              'text-shadow',
-              'float',
-              'font-family',
-              'font-size',
-              'font-weight',
-              'font-style',
-              'font-variant',
-              'font-stretch'
+              ...DEFAULT_DECLARATION_NAMES
             ]
           }
-          optionsIn.reduceConfig = default_reduce_declarations_config
-          readReduceDeclarations(optionsIn.reduceConfig)
+
+          optionsIn.reduceDeclarations = defaultReduceDeclarations
+
+          readReduceDeclarations(defaultReduceDeclarations)
         }
       } else if (!hasReadReduceDeclarations) {
         readReduceDeclarations()
