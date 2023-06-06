@@ -48,7 +48,7 @@
   <meta content="http://rbtech.github.io/css-purge/assets/images/CSS_Purge_FB.png" property="og:image" />
   <meta content="2017-11-09T19:20:17+0200" property="og:updated_time" />
 
-  
+
 	<!-- Global site tag (gtag.js) - Google Analytics -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-31023632-4"></script>
 	<script>
@@ -88,7 +88,7 @@
           <div class="mdl-card mdl-cell mdl-cell--12-col">
             <div class="mdl-card__supporting-text">
               <h1 id="jumboName" class="mdl-typography--display-4"><img width="100px" style="vertical-align: -10px" src="assets/images/CSS_Purge_Logo_300.png" alt="CSS-PURGE Logo">CSS-Purge</h1>
-              
+
               <h4 id="mainDescription">A CSS tool written in Node JS as a command line app or library for the purging, burning, reducing, shortening, compressing, cleaning, trimming and formatting of duplicate, extra, excess or bloated CSS, phew!</h4>
             </div>
           </div>
@@ -128,8 +128,8 @@
 
         <!-- <section class="section--center mdl-grid mdl-grid--no-spacing">
           <div class=" mdl-cell mdl-cell--12-col">
-            
-    	
+
+
           </div>
         </section> -->
 
@@ -147,14 +147,14 @@
         <section class="section--center mdl-grid mdl-grid--no-spacing">
           <div class="mdl-cell mdl-cell--12-col">
             <h3>Features</h3>
-						
+
 						<br>
 						<br>
             <img width="100%" src="assets/images/under_the_hood.png" alt="Under the hood of CSS-Purge">
 
 						<br>
 						<br>
-						
+
             <h4>Under the hood</h4>
 
 						<p>This is what the engine is doing in a nutshell. We have currently categorized everything that we do into a few core groups:</p>
@@ -193,7 +193,7 @@
             <p>
             	We shrink the size of the values where appropriate, this is what we do so far:
             </p>
-						
+
 						<ul>
 							<li>Shorten 0 value (e.g. 0px, 00px, 000em -> 0; )</li>
 							<li>Shorten named, hex, rgb, hsl color values</li>
@@ -217,7 +217,7 @@
 						<h5>5. Format</h5>
 
             <p>
-            	
+
             </p>
 						<ul>
 							<li>Format font-family (we make sure there are quotes around multi-worded fonts)</li>
@@ -228,7 +228,7 @@
 						<h5>6. Special Features</h5>
 
             <p>
-            	
+
             </p>
 						<ul>
 							<li>Remove unused CSS rules based on HTML</li>
@@ -241,9 +241,9 @@
         </section>
         <!-- <section class="section--center mdl-grid mdl-grid--no-spacing">
           <div class=" mdl-cell mdl-cell--12-col">
-            
-    	
-					  
+
+
+
           </div>
         </section> -->
       </div>
@@ -255,16 +255,16 @@
 			<div class="mdl-layout__tab-panel" id="getStarted">
         <!-- <section class="section--center mdl-grid mdl-grid--no-spacing">
           <div class=" mdl-cell mdl-cell--11-col">
-            
-    	
+
+
           </div>
         </section> -->
-				
+
         <section class="section--center mdl-grid mdl-grid--no-spacing">
 					  <div id="leftPanel" class="mdl-cell mdl-cell--11-col">
-					  	
+
 					  	<h3 id="headerOverview">Overview</h3>
-							
+
 
 							<h5>Purging CSS</h5>
 							<br>
@@ -285,7 +285,7 @@
 							<br>
 
 					  	<h3 id="headerUsage">Usage</h3>
-							
+
 							<h4>3 Ways to Use CSS-PURGE</h4>
 							<ol>
 								<li><a class="globalLink" href="#getStarted">CLI App</a></li>
@@ -298,7 +298,7 @@
 					    <br>
 
 							<h5 id="headerGlobal">1 - CLI APP</h5>
-							
+
 	            <img width="99%" src="assets/images/global_cli_ux.jpg" alt="Global Command Line Interface User Experience or Workflow">
 	            <p style="margin-top:5px;">A typical global workflow</p>
 	            <p>CLI App usage is nice for doing something quick everywhere.</p>
@@ -319,7 +319,7 @@
 								    <span class="mdl-chip__text">css-purge [CLI Options]</span>
 								</span>
 					    </span>
-							
+
 					    <br>
 
 					    <pre>
@@ -370,7 +370,7 @@ css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http://ww
 
 
 							<h5 id="headerLocal">2 - Project</h5>
-							
+
 	            <img width="99%" src="assets/images/local_cli_ux.jpg" alt="Local Command Line Interface User Experience or Workflow">
 	            <p style="margin-top:5px;">A typical local workflow</p>
 	            <p>Project usage is nice for &ldquo;setting up shop&rdquo; for a project.</p>
@@ -473,7 +473,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
 							<h6>Some example usage:</h6>
 							<pre><code class="hljs javascript">
   var cssPurge = require('css-purge');
-  
+
   //purging a CSS string with options
   var css = "p { color: blue; color: blue; } ";
 
@@ -491,32 +491,32 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
   //uses default settings that are set in the config file
   //make sure that css is set
   cssPurge.purgeCSSFiles();
-  
+
   //purging a CSS file
-  cssPurge.purgeCSSFiles({ 
-    css:'demo/test1.css' 
+  cssPurge.purgeCSSFiles({
+    css:'demo/test1.css'
   });
-  
+
   //purging a CSS file with HTML
   cssPurge.purgeCSSFiles({
-    css: 'demo/test1.css', 
+    css: 'demo/test1.css',
     html: 'demo/html/test1.html'
   });
-  
+
   //purging a CSS file with HTML and options
   cssPurge.purgeCSSFiles({
     css_output: 'test1.min.css',
-    css: 'demo/test1.css', 
+    css: 'demo/test1.css',
     html: 'demo/html/test1.html',
     trim : true,
     shorten : true,
     verbose : true
   });
-  
+
   //purging a CSS file with HTML, options and config
   cssPurge.purgeCSSFiles({
       css_output: 'test1.min.css',
-      css: 'demo/test1.css', 
+      css: 'demo/test1.css',
       html: 'demo/html/test1.html',
       trim : true,
       shorten : true,
@@ -527,7 +527,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
 
 							</code></pre>
 
-	
+
 
 
 
@@ -540,7 +540,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
 					    <br>
 					    <br>
 					  	<h3 id="headerReport">CSS-PURGE Report Viewer</h3>
-							
+
 							<br>
 	            <img  width="98%" src="assets/images/css_purge_report.jpg" alt="CSS Purge Report Example">
 							<br>
@@ -549,7 +549,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
 							<br>
 	            <img width="70%" src="assets/images/css_purge_report_viewer_ux.jpg" alt="CSS Purge Report Viewer User Experience or Workflow">
 							<p style="margin-top:5px;">CSS-PURGE Report Viewer is installed separately to nicely present the report data that CSS-PURGE generates.</p>
-							
+
 							<br>
 							<p>Open a separate terminal window, then:</p>
 
@@ -562,7 +562,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
 					    </span>
 
 							<h6>or download from: <a href="https://github.com/rbtech/css-purge-report-viewer" target="_blank">https://github.com/rbtech/css-purge-report-viewer</a></h6>
-							
+
 							<br>
 
 							<h6>Install reload:</h6>
@@ -603,7 +603,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
 					    <br>
 					  	<h3 id="headerConfig">Config Options</h3>
 
-							<h4>For an overview of some of the options/features, 
+							<h4>For an overview of some of the options/features,
 								<br>have a look <a class="underTheHoodLink" href="#features">Under the hood</a>
 							</h4>
 
@@ -615,11 +615,11 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
   "options": {
     "css_output": "purged.min.css",
     "css": "demo/html/static-jekyll/_siteassets/main.css",
-    
+
     "html": "demo/html/static-jekyll/_site",
-    
+
     "new_reduce_common_into_parent": false,
-    
+
     "trim": true,
     "trim_keep_non_standard_inline_comments": false,
     "trim_removed_rules_previous_comment": true,
@@ -627,12 +627,12 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
     "trim_whitespace": false,
     "trim_breaklines": false,
     "trim_last_semicolon": false,
-    
+
     "shorten": true,
     "shorten_zero": false,
     "shorten_hexcolor": false,
     "shorten_hexcolor_extended_names": false,
-    "shorten_hexcolor_UPPERCASE": false,
+    "shorten_hexcolor_uppercase": false,
     "shorten_font": false,
     "shorten_background": true,
     "shorten_background_min": 2,
@@ -646,16 +646,16 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
     "shorten_border_bottom": false,
     "shorten_border_left": false,
     "shorten_border_radius": false,
-    
+
     "format": true,
     "format_4095_rules_legacy_limit": false,
     "format_font_family": true,
-    
+
     "special_convert_rem": false,
     "special_convert_rem_browser_default_px": "16",
     "special_convert_rem_desired_html_px": "10",
     "special_convert_rem_font_size": true,
-    
+
     "special_reduce_with_html" : false,
     "special_reduce_with_html_ignore_selectors" : [
       "@-ms-",
@@ -666,21 +666,21 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       "+.",
       ":-"
     ],
-    
+
     "generate_report": true,
     "verbose": true,
-    
+
     "bypass_media_rules": true,
     "bypass_document_rules": false,
     "bypass_supports_rules": false,
     "bypass_page_rules": false,
     "bypass_charset": false,
-    
+
     "zero_units": "em, ex, %, px, cm, mm, in, pt, pc, ch, rem, vh, vw, vmin, vmax",
     "zero_ignore_declaration": [],
-    
+
     "report_file_location": "report/purged_css_report_data.json",
-    
+
     "reduce_declarations_file_location": "config_reduce_declarations.json"
   }
 }
@@ -711,7 +711,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       	css
       </td>
       <td>
-      	CSS file(s) to be processed. 
+      	CSS file(s) to be processed.
       	<br>- Can be a comma delimited string or an array of strings.
       	<br>- Each string represents a local file, folder or web URL.
       </td>
@@ -791,7 +791,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       <td>
       	A &ldquo;master switch&rdquo; to turn on all the shorten options.
       	<br>- Only when its off can you turn on or off the other shorten options.
-      	<br>- Exceptions: shorten_hexcolor_UPPERCASE, shorten_background_min
+      	<br>- Exceptions: shorten_hexcolor_uppercase, shorten_background_min
       </td>
     </tr>
     <tr>
@@ -824,7 +824,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
     </tr>
     <tr>
       <td>
-      	shorten_hexcolor_UPPERCASE
+      	shorten_hexcolor_uppercase
       </td>
       <td>
       	Converts all hex colors to uppercase e.g. #ae1122 to #AE1122
@@ -867,7 +867,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       	shorten_padding
       </td>
       <td>
-      	Groups as many padding properties into the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/padding" target="_blank">shortened versions</a>.      	
+      	Groups as many padding properties into the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/padding" target="_blank">shortened versions</a>.
       </td>
     </tr>
     <tr>
@@ -875,7 +875,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       	shorten_list_style
       </td>
       <td>
-      	
+
       	Groups as many list-style properties into the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/list-style" target="_blank">shortened version</a>.
       </td>
     </tr>
@@ -884,7 +884,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       	shorten_outline
       </td>
       <td>
-      	
+
       	Groups as many outline properties into the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/outline" target="_blank">shortened version</a>.
       </td>
     </tr>
@@ -893,9 +893,9 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       	shorten_border
       </td>
       <td>
-      	
+
       	Groups as many border properties into the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/border" target="_blank">shortened version</a>.
-      	
+
       </td>
     </tr>
     <tr>
@@ -903,9 +903,9 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       	shorten_border_top
       </td>
       <td>
-      	
+
       	Groups as many border-top properties into the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/border-top" target="_blank">shortened version</a>.
-      	
+
       </td>
     </tr>
     <tr>
@@ -913,9 +913,9 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       	shorten_border_right
       </td>
       <td>
-      	
+
       	Groups as many border-right properties into the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/border-right" target="_blank">shortened version</a>.
-      	
+
       </td>
     </tr>
     <tr>
@@ -923,9 +923,9 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       	shorten_border_bottom
       </td>
       <td>
-      	
+
       	Groups as many border-bottom properties into the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom" target="_blank">shortened version</a>.
-      	
+
       </td>
     </tr>
     <tr>
@@ -933,9 +933,9 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       	shorten_border_left
       </td>
       <td>
-      	
+
       	Groups as many border-left properties into the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/border-left" target="_blank">shortened version</a>.
-      	
+
       </td>
     </tr>
     <tr>
@@ -943,9 +943,9 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       	shorten_border_radius
       </td>
       <td>
-      	
+
       	Groups as many border-radius properties into the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius" target="_blank">shortened versions</a>.
-      	
+
       </td>
     </tr>
     <tr>
@@ -1010,7 +1010,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
     <tr>
       <td>
       	special_reduce_with_html
-      	
+
       </td>
       <td>
       	A &ldquo;master switch&rdquo; to turn on all the special reduce with HTML options.
@@ -1155,9 +1155,9 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
 				</section>
         <!-- <section class="section--center mdl-grid mdl-grid--no-spacing">
           <div class=" mdl-cell mdl-cell--11-col">
-            
-    	
-					  
+
+
+
           </div>
           <br>
           <br>
@@ -1173,7 +1173,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
 
 
 			<div class="mdl-layout__tab-panel" id="help">
-				
+
         <section class="section--center mdl-grid mdl-grid--no-spacing">
           <div class="mdl-cell mdl-cell--12-col">
             <h3>Help</h3>
@@ -1196,8 +1196,8 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
         </section>
         <!-- <section class="section--center mdl-grid mdl-grid--no-spacing">
           <div class=" mdl-cell mdl-cell--12-col">
-            
-					  
+
+
           </div>
           <br>
           <br>
@@ -1208,7 +1208,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
         </section> -->
 			</div>
 
-			
+
 
 
 
@@ -1252,20 +1252,20 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       </footer>
     </main>
   </div>
-	
+
 
 
 
 
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,thin,light&amp;lang=en">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-	<link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css" /> 
+	<link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css" />
 	<link rel="stylesheet" href="assets/css/main.css?v=4">
 
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 	<script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
 	<script src="assets/js/main.js"></script>
-	
+
 	<link rel="stylesheet" href="assets/css/monokai-sublime.min.css">
 	<script src="assets/js/highlight.min.js"></script>
 	<script>

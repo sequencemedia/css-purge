@@ -145,7 +145,7 @@ Some example usage:
 
 ```javascript
  var cssPurge = require('css-purge');
-  
+
   //purging a CSS string with options
   var css = "p { color: blue; color: blue; } ";
 
@@ -163,32 +163,32 @@ Some example usage:
   //uses default settings that are set in the config file
   //make sure that css is set
   cssPurge.purgeCSSFiles();
-  
+
   //purging a CSS file
-  cssPurge.purgeCSSFiles({ 
-    css:'demo/test1.css' 
+  cssPurge.purgeCSSFiles({
+    css:'demo/test1.css'
   });
-  
+
   //purging a CSS file with HTML
   cssPurge.purgeCSSFiles({
-    css: 'demo/test1.css', 
+    css: 'demo/test1.css',
     html: 'demo/html/test1.html'
   });
-  
+
   //purging a CSS file with HTML and options
   cssPurge.purgeCSSFiles({
     css_output: 'test1.min.css',
-    css: 'demo/test1.css', 
+    css: 'demo/test1.css',
     html: 'demo/html/test1.html',
     trim : true,
     shorten : true,
     verbose : true
   });
-  
+
   //purging a CSS file with HTML, options and config
   cssPurge.purgeCSSFiles({
       css_output: 'test1.min.css',
-      css: 'demo/test1.css', 
+      css: 'demo/test1.css',
       html: 'demo/html/test1.html',
       trim : true,
       shorten : true,
@@ -229,7 +229,7 @@ Report notes:
 
 Config Options
 ----
-For an overview of some of the options/features, 
+For an overview of some of the options/features,
 have a look [Under the hood](http://rbtech.github.io/css-purge/#features).
 
 Full description of each option can be found on the [website](http://rbtech.github.io/css-purge) (Getting Started > Config).
@@ -240,11 +240,11 @@ Example config.json:
   "options": {
     "css_output": "purged.min.css",
     "css": "demo/html/static-jekyll/_siteassets/main.css",
-    
+
     "html": "demo/html/static-jekyll/_site",
-    
+
     "new_reduce_common_into_parent": true,
-    
+
     "trim": true,
     "trim_keep_non_standard_inline_comments": false,
     "trim_removed_rules_previous_comment": true,
@@ -252,12 +252,12 @@ Example config.json:
     "trim_whitespace": false,
     "trim_breaklines": false,
     "trim_last_semicolon": false,
-    
+
     "shorten": true,
     "shorten_zero": false,
     "shorten_hexcolor": false,
     "shorten_hexcolor_extended_names": false,
-    "shorten_hexcolor_UPPERCASE": false,
+    "shorten_hexcolor_uppercase": false,
     "shorten_font": false,
     "shorten_background": true,
     "shorten_background_min": 2,
@@ -271,16 +271,16 @@ Example config.json:
     "shorten_border_bottom": false,
     "shorten_border_left": false,
     "shorten_border_radius": false,
-    
+
     "format": true,
     "format_4095_rules_legacy_limit": false,
     "format_font_family": true,
-    
+
     "special_convert_rem": false,
     "special_convert_rem_browser_default_px": "16",
     "special_convert_rem_desired_html_px": "10",
     "special_convert_rem_font_size": true,
-    
+
     "special_reduce_with_html" : false,
     "special_reduce_with_html_ignore_selectors" : [
       "@-ms-",
@@ -291,21 +291,21 @@ Example config.json:
       "+.",
       ":-"
     ],
-    
+
     "generate_report": true,
     "verbose": true,
-    
+
     "bypass_media_rules": true,
     "bypass_document_rules": false,
     "bypass_supports_rules": false,
     "bypass_page_rules": false,
     "bypass_charset": false,
-    
+
     "zero_units": "em, ex, %, px, cm, mm, in, pt, pc, ch, rem, vh, vw, vmin, vmax",
     "zero_ignore_declaration": [],
-    
+
     "report_file_location": "report/purged_css_report_data.json",
-    
+
     "reduce_declarations_file_location": "config_reduce_declarations.json"
   }
 }
@@ -333,10 +333,10 @@ Help
 ##### Source Code Issues
 - [Visit the issues section on github](https://github.com/rbtech/css-purge/issues)
 
-##### Community and Q&A 
+##### Community and Q&A
 
-Got a question on how to do something and when answered will help everyone? 
-Then place it on StackOverflow with the tag &ldquo;css-purge&rdquo; 
+Got a question on how to do something and when answered will help everyone?
+Then place it on StackOverflow with the tag &ldquo;css-purge&rdquo;
 - [View questions tagged with &ldquo;css-purge&rdquo;](https://stackoverflow.com/questions/tagged/css-purge)
 - Join us on gitter - [Visit the community](https://gitter.im/css-purge)
 

@@ -193,7 +193,7 @@ class CSSPurge {
       shorten_zero: false,
       shorten_hexcolor: false,
       shorten_hexcolor_extended_names: false,
-      shorten_hexcolor_UPPERCASE: false,
+      shorten_hexcolor_uppercase: false,
       shorten_font: false,
       shorten_background: false,
       shorten_background_min: 2,
@@ -271,7 +271,7 @@ class CSSPurge {
         shorten_zero: OPTIONS.shorten_zero,
         shorten_hexcolor: OPTIONS.shorten_hexcolor,
         shorten_hexcolor_extended_names: OPTIONS.shorten_hexcolor_extended_names,
-        shorten_hexcolor_UPPERCASE: OPTIONS.shorten_hexcolor_UPPERCASE,
+        shorten_hexcolor_uppercase: OPTIONS.shorten_hexcolor_uppercase,
         shorten_font: OPTIONS.shorten_font,
         shorten_background: OPTIONS.shorten_background,
         shorten_margin: OPTIONS.shorten_margin,
@@ -534,19 +534,20 @@ class CSSPurge {
         // check for file or files
         switch (typeof htmlFiles) {
           case 'object':
-          {
-            const collector = []
+            {
+              const collector = []
 
-            Object
-              .values(htmlFiles)
-              .forEach((htmlFile) => {
-                getFilePath(htmlFile, ['.html', '.htm'], collector)
-              })
+              Object
+                .values(htmlFiles)
+                .forEach((htmlFile) => {
+                  getFilePath(htmlFile, ['.html', '.htm'], collector)
+                })
 
-            if (collector.length) {
-              htmlFiles = collector
+              if (collector.length) {
+                htmlFiles = collector
+              }
             }
-          }
+            break
           case 'array':
             {
               const collector = []
@@ -561,8 +562,7 @@ class CSSPurge {
               }
             }
             break
-          case 'string':
-            // formats
+          case 'string': // formats
             {
               htmlFiles = htmlFiles.replace(/ /g, '')
 
@@ -593,8 +593,6 @@ class CSSPurge {
             }
             break
         } // end of switch
-
-        htmlFileLocation = (htmlFiles) ? htmlFiles.toString() : htmlFiles
 
         readHTMLFile(htmlFiles)
 
@@ -831,8 +829,8 @@ class CSSPurge {
       }
     } // end of readReduceDeclarations
 
-    function readConfig (configFilePath = '', optionsIn = null) {
-      let default_options = ''
+    function readConfig (configFilePath = '', optionsIn = {}) {
+      let defaultOptions = ''
       let readStream
 
       if (configFilePath === '') {
@@ -841,6 +839,7 @@ class CSSPurge {
         if (configFilePath === 'cmd_default') {
           DEFAULT_OPTIONS = {}
           DEFAULT_OPTIONS = optionsIn
+
           if (DEFAULT_OPTIONS.trim) {
             OPTIONS.trim_removed_rules_previous_comment = DEFAULT_OPTIONS.trim
             OPTIONS.trim_comments = DEFAULT_OPTIONS.trim
@@ -848,6 +847,7 @@ class CSSPurge {
             OPTIONS.trim_breaklines = DEFAULT_OPTIONS.trim
             OPTIONS.trim_last_semicolon = DEFAULT_OPTIONS.trim
           }
+
           if (DEFAULT_OPTIONS.shorten) {
             OPTIONS.shorten_zero = DEFAULT_OPTIONS.shorten
             OPTIONS.shorten_hexcolor = DEFAULT_OPTIONS.shorten
@@ -865,12 +865,15 @@ class CSSPurge {
             OPTIONS.shorten_border_left = DEFAULT_OPTIONS.shorten
             OPTIONS.shorten_border_radius = DEFAULT_OPTIONS.shorten
           }
+
           if (DEFAULT_OPTIONS.special_reduce_with_html) {
             OPTIONS.special_reduce_with_html = DEFAULT_OPTIONS.special_reduce_with_html
           }
+
           if (DEFAULT_OPTIONS.css_output) {
             OPTIONS.css_output = DEFAULT_OPTIONS.css_output
           }
+
           if (DEFAULT_OPTIONS.verbose) {
             OPTIONS.verbose = DEFAULT_OPTIONS.verbose
           }
@@ -890,12 +893,12 @@ class CSSPurge {
 
       readStream
         .on('data', function (chunk) {
-          default_options += chunk
+          defaultOptions += chunk
         })
         .on('end', () => {
-          if (default_options !== '') {
+          if (defaultOptions !== '') {
             try {
-              DEFAULT_OPTIONS = JSON.parse(default_options)
+              DEFAULT_OPTIONS = JSON.parse(defaultOptions)
             } catch (err) {
               console.log(error('Config File read error: ' + configFileLocation + ', check your syntax, especially commas, then please try again.'))
               console.log(err)
@@ -1206,33 +1209,33 @@ class CSSPurge {
         .filter(filterForDeclarations)
         .filter(filterForRule)
         .forEach((rule) => {
-          if (SHORTEN || SHORTEN_BACKGROUND) processBackground(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_BACKGROUND) processBackground(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_LIST_STYLE) processListStyle(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_LIST_STYLE) processListStyle(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_BORDER_TOP) processBorderTop(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_BORDER_TOP) processBorderTop(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_BORDER_RIGHT) processBorderRight(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_BORDER_RIGHT) processBorderRight(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_BORDER_BOTTOM) processBorderBottom(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_BORDER_BOTTOM) processBorderBottom(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_BORDER_LEFT) processBorderLeft(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_BORDER_LEFT) processBorderLeft(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_BORDER) processBorder(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_BORDER) processBorder(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_BORDER_RADIUS) processBorderRadius(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_BORDER_RADIUS) processBorderRadius(rule, OPTIONS, SUMMARY)
 
           if (SHORTEN || SHORTEN_HEXCOLOR) processHexColor(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_FONT) processFont(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_FONT) processFont(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_MARGIN) processMargin(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_MARGIN) processMargin(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_PADDING) processPadding(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_PADDING) processPadding(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_OUTLINE) processOutline(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_OUTLINE) processOutline(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_ZERO) processZero(rule, OPTIONS)
+          if (SHORTEN || SHORTEN_ZERO) processZero(rule, OPTIONS, SUMMARY)
         })
 
       const RULES_COUNT = rules.length
@@ -1245,11 +1248,11 @@ class CSSPurge {
           if (SHORTEN || SHORTEN_FONT) {
             const font = rules[i].declarations.filter(filterForFont)
 
-            const index = font.findIndex(({ property }) => property === 'font-weight')
+            const fontWeightIndex = font.findIndex(({ property }) => property === 'font-weight')
 
             // font-weight shortening
-            if (index !== -1) {
-              let value = font[index].value
+            if (fontWeightIndex !== -1) {
+              let value = font[fontWeightIndex].value
 
               switch (value.toLowerCase()) {
                 case 'thin':
@@ -1286,11 +1289,9 @@ class CSSPurge {
                   break
               }
 
-              font[index] = {
-                type: font[index].type,
-                property: font[index].property,
-                value,
-                position: font[index].position
+              font[fontWeightIndex] = {
+                ...font[fontWeightIndex],
+                value
               }
             }
 
@@ -1306,28 +1307,24 @@ class CSSPurge {
                   }
 
                   rules[i].declarations[j] = {
-                    type: rules[i].declarations[j].type,
-                    property: rules[i].declarations[j].property,
-                    value,
-                    position: rules[i].declarations[j].position
+                    ...rules[i].declarations[j],
+                    value
                   }
                 }
               }
 
-              const index = font.findIndex(({ property }) => property === 'font-size')
+              const fontSizeIndex = font.findIndex(({ property }) => property === 'font-size')
               // for combined declaration
-              if (index !== -1) {
-                let value = font[index].value.toLowerCase()
+              if (fontSizeIndex !== -1) {
+                let value = font[fontSizeIndex].value.toLowerCase()
 
                 if (value.includes('px')) {
                   value = value.substr(0, value.length - 2) / OPTIONS.special_convert_rem_desired_html_px + 'rem'
                 }
 
-                font[index] = {
-                  type: font[index].type,
-                  property: font[index].property,
-                  value,
-                  position: font[index].position
+                font[fontSizeIndex] = {
+                  ...font[fontSizeIndex],
+                  value
                 }
               }
             }
@@ -3636,9 +3633,10 @@ class CSSPurge {
                   rules[i].declarations[l].property === 'border-bottom' ||
                   rules[i].declarations[l].property === 'border-left'
                 )) {
-                let value = '' + rules[i].declarations[l].value
-                if (value !== 'undefined' && !value.includes('Microsoft')) {
-                  value = processColor(value, rules[i].selectors, OPTIONS, SUMMARY)
+                let value = rules[i].declarations[l].value
+
+                if (value && !value.includes('Microsoft')) {
+                  value = processColor(value, rules[i].declarations[l], rules[i], OPTIONS, SUMMARY)
                   rules[i].declarations[l].value = value
                 }
               } // end of options check
@@ -3655,8 +3653,9 @@ class CSSPurge {
         // reduce common declarations amongst children into parent
         if (OPTIONS.new_reduce_common_into_parent) {
           let directParents = []
-          let hierachy = []
+          let hierarchy = []
           let hierachyKeys = []
+          let hierachyLength = 0
           let commonParentsKeys = []
           let commonParents = []
           let commonParentsLen = 0
@@ -3692,7 +3691,7 @@ class CSSPurge {
                     }
                   }
 
-                  for (let k = 0; k < classLineage.length; k++) { // depth of hierachy
+                  for (let k = 0; k < classLineage.length; k++) { // depth of hierarchy
                     if (k > 0) {
                       lineageLabel = ''
 
@@ -3701,17 +3700,17 @@ class CSSPurge {
                       }
                       lineageLabel += classLineage[k]
 
-                      if (hierachy[lineageLabel] === undefined) {
-                        hierachy[lineageLabel] = 0
+                      if (hierarchy[lineageLabel] === undefined) {
+                        hierarchy[lineageLabel] = 0
                       }
 
-                      hierachy[lineageLabel] += 1
+                      hierarchy[lineageLabel] += 1
                     } else {
-                      if (hierachy[classLineage[k]] === undefined) {
-                        hierachy[classLineage[k]] = 0
+                      if (hierarchy[classLineage[k]] === undefined) {
+                        hierarchy[classLineage[k]] = 0
                       }
 
-                      hierachy[classLineage[k]] += 1
+                      hierarchy[classLineage[k]] += 1
                     }
                   } // end of for
                 } // end of if
@@ -3719,12 +3718,12 @@ class CSSPurge {
             }
           }
 
-          function sortHierachy (obj) {
+          function sortHierarchy (obj) {
             const keys = Object.keys(obj)
             keys.sort(function (a, b) { return b.length - a.length })
-            hierachy = []
+            hierarchy = []
             for (let i = 0; i < keys.length; i++) {
-              hierachy[keys[i]] = obj[keys[i]]
+              hierarchy[keys[i]] = obj[keys[i]]
 
               Object.keys(directParents).forEach(function (key, index, val) {
                 if (this[key].length > 1) {
@@ -3741,12 +3740,15 @@ class CSSPurge {
                 }
               }, directParents)
             }
-            return hierachy
+            return hierarchy
           }
-          sortHierachy(hierachy)
-          hierachyKeys = Object.keys(hierachy)
-          hierachyLen = hierachyKeys.length
-          selectedHierachyLevel = 0
+
+          sortHierarchy(hierarchy)
+
+          hierachyKeys = Object.keys(hierarchy)
+          hierachyLength = hierachyKeys.length
+
+          selectedHierarchyLevel = 0
           commonParentsLen = commonParentsKeys.length
 
           // get declarations
@@ -3841,7 +3843,7 @@ class CSSPurge {
 
           // some cleanup
           directParents = []
-          hierachy = []
+          hierarchy = []
           hierachyKeys = []
           commonParentsKeys = []
           commonParents = []

@@ -1,13 +1,13 @@
 import processColor from './process-color.mjs'
 
-export default function processHexColor (rule, OPTIONS, summary) {
+export default function processHexColor (rule, OPTIONS, SUMMARY) {
   const { verbose: VERBOSE } = OPTIONS
 
   if (VERBOSE) console.log('Process - Hex Color')
 
   rule.declarations
-    .forEach((declarations) => {
-      const property = declarations.property
+    .forEach((declaration) => {
+      const property = declaration.property
       if (
         property == 'color' ||
         property == 'font' ||
@@ -28,9 +28,9 @@ export default function processHexColor (rule, OPTIONS, summary) {
         property == 'border-bottom' ||
         property == 'border-left'
       ) {
-        const value = declarations.value
+        const value = declaration.value
         if (value && !value.includes('Microsoft')) {
-          declarations.value = processColor(value, rule.selectors, OPTIONS, summary)
+          declaration.value = processColor(value, declaration, rule, OPTIONS, SUMMARY)
         }
       }
     })
