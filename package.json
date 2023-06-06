@@ -2,28 +2,6 @@
   "name": "@sequencemedia/css-purge",
   "version": "1.0.0",
   "description": "A CSS tool written in Node JS as a command line app or library for the purging, burning, reducing, shortening, compressing, cleaning, trimming and formatting of duplicate, extra, excess or bloated CSS.",
-  "homepage": "https://github.com/sequencemedia",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sequencemedia/css-purge.git"
-  },
-  "bugs": {
-    "url": "https://github.com/sequencemedia/css-purge/issues"
-  },
-  "main": "./src/css-purge.mjs",
-  "type": "module",
-  "scripts": {
-    "start": "node .",
-    "lint": "eslint . --ext .mjs --ext .cjs",
-    "lint:fix": "npm run lint -- --fix"
-  },
-  "bin": {
-    "css-purge": "./bin/css-purge.mjs"
-  },
-  "contributors": [
-    "Andrew Quan <andrewq@redblueprint.com> (http://redblueprint.com)"
-  ],
-  "license": "MIT",
   "keywords": [
     "css",
     "css minifier",
@@ -49,6 +27,28 @@
     "unused css",
     "not used css"
   ],
+  "main": "./src/css-purge.mjs",
+  "type": "module",
+  "contributors": [
+    "Andrew Quan <andrewq@redblueprint.com> (http://redblueprint.com)"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sequencemedia/css-purge.git"
+  },
+  "homepage": "https://github.com/sequencemedia",
+  "bugs": {
+    "url": "https://github.com/sequencemedia/css-purge/issues"
+  },
+  "scripts": {
+    "start": "node .",
+    "lint": "eslint . --ext .mjs --ext .cjs",
+    "lint:fix": "npm run lint -- --fix"
+  },
+  "bin": {
+    "css-purge": "./bin/css-purge.mjs"
+  },
   "dependencies": {
     "@adobe/css-tools": "^4.3.0-beta.2",
     "cli-color": "^1.4.0",

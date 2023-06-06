@@ -53,7 +53,7 @@ export default function getValueOfTriProp (valueIn, prop) {
 
       // check extended colors
       for (const color in extendedColors) {
-        const regExp = new RegExp(`(^|[^\"\'.a-z0-9_-])${color}([^\"\'.a-z0-9_-]|$)`)
+        const regExp = new RegExp(`(^|[^\"\'\.a-z0-9_-])${color}([^\"\'.a-z0-9_-]|$)`)
         if (valueIn.match(regExp)) {
           return color
         }
@@ -61,7 +61,7 @@ export default function getValueOfTriProp (valueIn, prop) {
 
       // check normal colors
       for (const color in colors) {
-        const regExp = new RegExp(`(^|[^\"\'.a-z0-9_-])${color}([^\"\'.a-z0-9_-]|$)`)
+        const regExp = new RegExp(`(^|[^\"\'\.a-z0-9_-])${color}([^\"\'.a-z0-9_-]|$)`)
         if (valueIn.match(regExp)) {
           return color
         }
@@ -71,7 +71,7 @@ export default function getValueOfTriProp (valueIn, prop) {
     }
     case 'width':
     {
-      const value = valueIn.match(/\bmedium\b|\bthin\b|\bthick\b|\b0\b|(([0-9][.]?)+(pt|pc|px|in|cm|mm|q|cap|em|ex|rem|ic|lh|rlh|vh|vw|vi|vb|vmin|vmax))/g)
+      const value = valueIn.match(/\bmedium\b|\bthin\b|\bthick\b|\b0\b|(([0-9][.]?|[.][0-9]?)+(pt|pc|px|in|cm|mm|q|cap|em|ex|rem|ic|lh|rlh|vh|vw|vi|vb|vmin|vmax))/g)
       if (Array.isArray(value)) {
         return value.shift()
       }

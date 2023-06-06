@@ -8,13 +8,17 @@ import componentFromString from './utils/component-from-string.mjs'
 
 const success = cliColor.greenBright
 
-export default function processColor (valueIn, selectors = [], options, summary) {
+export default function processColor (valueIn, selectors = [], OPTIONS, summary) {
+  const { verbose: VERBOSE } = OPTIONS
+
+  if (VERBOSE) console.log('Process - Color')
+
   if (valueIn) {
     let hasChanged = false
     let colorIndex = 0
 
     // named
-    if (options.shorten_hexcolor_extended_names || options.shorten) {
+    if (OPTIONS.shorten_hexcolor_extended_names || OPTIONS.shorten) {
       for (const key in extendedColors) {
         colorIndex = valueIn.toLowerCase().indexOf(key, colorIndex)
 
@@ -26,7 +30,7 @@ export default function processColor (valueIn, selectors = [], options, summary)
             capture = capture.trim()
             return (
               (capture.charAt(0) === '(' ? '(' : '') +
-              ((options.shorten_hexcolor_UPPERCASE) ? extendedColors[key].toUpperCase() : extendedColors[key]) +
+              ((OPTIONS.shorten_hexcolor_UPPERCASE) ? extendedColors[key].toUpperCase() : extendedColors[key]) +
               (capture.substring(capture.length - 1, capture.length) === ',' ? ',' : '') +
               (capture.substring(capture.length - 1, capture.length) === ')' ? ')' : '')
             )
@@ -39,7 +43,7 @@ export default function processColor (valueIn, selectors = [], options, summary)
 
             summary.stats.summary.noNamedColorsShortened += 1
 
-            if (options.verbose) { console.log(success('Process - Values - Named Color : ' + (selectors ? selectors.join(', ') : ''))) }
+            if (OPTIONS.verbose) { console.log(success('Process - Values - Named Color : ' + (selectors ? selectors.join(', ') : ''))) }
           }
         }
 
@@ -58,7 +62,7 @@ export default function processColor (valueIn, selectors = [], options, summary)
           capture = capture.trim()
           return (
             (capture.charAt(0) === '(' ? '(' : '') +
-            ((options.shorten_hexcolor_UPPERCASE) ? colors[key].toUpperCase() : colors[key]) +
+            ((OPTIONS.shorten_hexcolor_UPPERCASE) ? colors[key].toUpperCase() : colors[key]) +
             (capture.substring(capture.length - 1, capture.length) === ',' ? ',' : '') +
             (capture.substring(capture.length - 1, capture.length) === ')' ? ')' : '')
           )
@@ -71,7 +75,7 @@ export default function processColor (valueIn, selectors = [], options, summary)
 
           summary.stats.summary.noNamedColorsShortened += 1
 
-          if (options.verbose) { console.log(success('Process - Values - Named Color : ' + (selectors ? selectors.join(', ') : ''))) }
+          if (OPTIONS.verbose) { console.log(success('Process - Values - Named Color : ' + (selectors ? selectors.join(', ') : ''))) }
         }
       }
 
@@ -89,10 +93,10 @@ export default function processColor (valueIn, selectors = [], options, summary)
         valueIn = '#' + ((1 << 24) + (cr << 16) + (cg << 8) + cb).toString(16).slice(1)
         summary.stats.summary.noRGBColorsShortened += 1
 
-        if (options.shorten_hexcolor_UPPERCASE) {
+        if (OPTIONS.shorten_hexcolor_UPPERCASE) {
           valueIn = valueIn.toUpperCase()
         }
-        if (options.verbose) { console.log(success('Process - Values - RGB Color : ' + (selectors ? selectors.join(', ') : ''))) }
+        if (OPTIONS.verbose) { console.log(success('Process - Values - RGB Color : ' + (selectors ? selectors.join(', ') : ''))) }
       }
 
       // hsl to hex
@@ -111,11 +115,11 @@ export default function processColor (valueIn, selectors = [], options, summary)
         valueIn = '#' + ((1 << 24) + (cr << 16) + (cg << 8) + cb).toString(16).slice(1)
         summary.stats.summary.noHSLColorsShortened += 1
 
-        if (options.shorten_hexcolor_UPPERCASE) {
+        if (OPTIONS.shorten_hexcolor_UPPERCASE) {
           valueIn = valueIn.toUpperCase()
         }
 
-        if (options.verbose) { console.log(success('Process - Values - HSL Color : ' + (selectors ? selectors.join(', ') : ''))) }
+        if (OPTIONS.verbose) { console.log(success('Process - Values - HSL Color : ' + (selectors ? selectors.join(', ') : ''))) }
       }
 
       // hex
@@ -124,11 +128,11 @@ export default function processColor (valueIn, selectors = [], options, summary)
         valueIn = valueIn.replace(hex[0], hex[0].substring(0, 4)) // #aaa
         summary.stats.summary.noHexColorsShortened += 1
 
-        if (options.shorten_hexcolor_UPPERCASE) {
+        if (OPTIONS.shorten_hexcolor_UPPERCASE) {
           valueIn = valueIn.toUpperCase()
         }
 
-        if (options.verbose) { console.log(success('Process - Values - Hex Color : ' + (selectors ? selectors.join(', ') : ''))) }
+        if (OPTIONS.verbose) { console.log(success('Process - Values - Hex Color : ' + (selectors ? selectors.join(', ') : ''))) }
       }
 
       // hex pairs
@@ -142,11 +146,11 @@ export default function processColor (valueIn, selectors = [], options, summary)
           valueIn = valueIn.replace(hexPairs[0], '#' + hexPairs[2][0] + hexPairs[3][0] + hexPairs[4][0]) // #aaa
           summary.stats.summary.noHexColorsShortened += 1
 
-          if (options.shorten_hexcolor_UPPERCASE) {
+          if (OPTIONS.shorten_hexcolor_UPPERCASE) {
             valueIn = valueIn.toUpperCase()
           }
 
-          if (options.verbose) { console.log(success('Process - Values - Hex Color : ' + (selectors ? selectors.join(', ') : ''))) }
+          if (OPTIONS.verbose) { console.log(success('Process - Values - Hex Color : ' + (selectors ? selectors.join(', ') : ''))) }
         }
       }
     }

@@ -56,6 +56,8 @@ import filterForMargin from './utils/filter-for-margin.mjs'
 import filterForOutline from './utils/filter-for-outline.mjs'
 import filterForPadding from './utils/filter-for-padding.mjs'
 
+import formatFontFamily from './utils/format-font-family.mjs'
+
 import getValueOfFontProp from './utils/get-value-of-font-prop.mjs'
 import getValueOfTriProp from './utils/get-value-of-tri-prop.mjs'
 import getValueOfSquareProp from './utils/get-value-of-square-prop.mjs'
@@ -240,6 +242,7 @@ class CSSPurge {
 
     let REPORT_DUPLICATE_CSS = CONFIG.options.report_file_location
 
+    // summary
     const summary = {
       files: {
         input: [],
@@ -439,47 +442,47 @@ class CSSPurge {
 
     let duplicateIds
 
-    let fontValuesOutput = []
+    const fontValuesOutput = []
 
-    let fontVal = null
+    const fontVal = null
 
     let background = null
-    let backgroundValuesOutput = []
+    const backgroundValuesOutput = []
 
-    let hasMultipleBackgrounds = false
-    let hasGradient = false
+    const hasMultipleBackgrounds = false
+    const hasGradient = false
 
-    let margin = null
-    let marginValuesOutput = []
+    const margin = null
+    const marginValuesOutput = []
 
-    let padding = null
-    let paddingValuesOutput = []
+    const padding = null
+    const paddingValuesOutput = []
 
-    let listStyle = null
-    let listStyleValuesOutput = []
+    const listStyle = null
+    const listStyleValuesOutput = []
 
-    let outline = null
-    let outlineValuesOutput = []
+    const outline = null
+    const outlineValuesOutput = []
 
-    let border = null
-    let borderValuesOutput = []
+    const border = null
+    const borderValuesOutput = []
 
-    let borderTop = null
-    let borderTopValuesOutput = []
+    const borderTop = null
+    const borderTopValuesOutput = []
 
-    let borderRight = null
-    let borderRightValuesOutput = []
+    const borderRight = null
+    const borderRightValuesOutput = []
 
-    let borderBottom = null
-    let borderBottomValuesOutput = []
+    const borderBottom = null
+    const borderBottomValuesOutput = []
 
-    let borderLeft = null
-    let borderLeftValuesOutput = []
+    const borderLeft = null
+    const borderLeftValuesOutput = []
 
-    let borderTopRightBottomLeftValuesOutput = []
+    const borderTopRightBottomLeftValuesOutput = []
 
-    let borderRadius = null
-    let borderRadiusValuesOutput = []
+    const borderRadius = null
+    const borderRadiusValuesOutput = []
 
     const tokensComments = []
     const _3tokenValues = []
@@ -505,7 +508,7 @@ class CSSPurge {
       // imports - move imports to top of page
       let imports = ''
       outputCSSIn = outputCSSIn.replace(/@import.*(([\n\r\t]*)(\s*)\/\*(_cssp_sc).\*\/)?([\n\r\t])+/gm, (match) => {
-        imports += match.substr(0, match.length - 1) + ''
+        imports += match.substring(0, match.length - 1)
         return ''
       })
       outputCSSIn = imports + outputCSSIn
@@ -513,7 +516,7 @@ class CSSPurge {
       // charset - move charset to top of page
       let charset = ''
       outputCSSIn = outputCSSIn.replace(/@charset.*(([\n\r\t]*)(\s*)\/\*(_cssp_sc).\*\/)?([\n\r\t])+/gm, (match) => {
-        charset += match + ''
+        charset += match
         return ''
       })
       outputCSSIn = charset + outputCSSIn
@@ -541,9 +544,8 @@ class CSSPurge {
       if (OPTIONS.trim_last_semicolon || OPTIONS.trim) {
         outputCSSIn = outputCSSIn.replace(/{([^}]*)}/gm, function (match, capture) {
           summary.stats.summary.noLastSemiColonsTrimmed += 1
-          // console.log(capture)
           // return "{" + capture + "}";
-          return '{' + capture.replace(/\;(?=[^;]*$)/, '') + '}'
+          return `{${capture.replace(/\;(?=[^;]*$)/, '')}}`
         })
       }
 
@@ -562,7 +564,7 @@ class CSSPurge {
       // (specialchar)property
       outputCSSIn = outputCSSIn.replace(/(_3token_hck_([0-9]*): ;)/g, (match) => {
         const value = _3tokenValues[match.substring(12, match.length - 3) - 1]
-        return value.substring(0, value.length) + ';'
+        return value + ';'
       })
 
       // (;
@@ -580,20 +582,22 @@ class CSSPurge {
       // tokens - data:image
       outputCSSIn = outputCSSIn.replace(/(_6token_dataimage_)[0-9]*[:][\s]*/g, (match) => {
         const value = _6tokenValues[match.substring(18, match.length - 1) - 1]
-        return value.substring(0, value.length) + ';'
+        return value + ';'
       })
 
       // tokens - allow multi-keyframe selectors
       outputCSSIn = outputCSSIn.replace(/(@keyframes _7token_)[0-9]*[\s]*/g, (match) => {
         const value = _7tokenValues[match.substring(19, match.length) - 1]
-        return trimCSS(value).substring(0, value.length) + ''
+        return trimCSS(value)
       })
 
       // tokens - replace side comments
-      for (const key in tokensComments) {
-        const regExp = new RegExp(`([\\n\\r\\t]*)(\\s*)\\/\\*(${key})\\*\\/`, 'gm')
-        outputCSSIn = outputCSSIn.replace(regExp, tokensComments[key])
-      }
+      Object
+        .entries(tokensComments)
+        .forEach(([key, value]) => {
+          const regExp = new RegExp(`([\\n\\r\\t]*)(\\s*)\\/\\*(${key})\\*\\/`, 'gm')
+          outputCSSIn = outputCSSIn.replace(regExp, value)
+        })
 
       // tokens - end of replace side comments
       return outputCSSIn
@@ -606,6 +610,7 @@ class CSSPurge {
       if (htmlDataIn !== null && htmlDataIn !== undefined) {
         htmlData = htmlDataIn
       }
+
       if (htmlOptionsIn !== null && htmlOptionsIn !== undefined) {
         for (const key in htmlOptionsIn) {
           OPTIONS.html[key] = htmlOptionsIn[key]
@@ -667,7 +672,7 @@ class CSSPurge {
 
       for (let i = 0, resultsCount = cssSelectors.length; i < resultsCount; ++i) {
         for (let j = 0, jlen = results.length; j < jlen; ++j) {
-          if (cssSelectors[i] == results[j]) {
+          if (cssSelectors[i] === results[j]) {
             cssSelectors.splice(i, 1)
             resultsCount -= 1
             i -= 1
@@ -696,7 +701,8 @@ class CSSPurge {
           {
             const collector = []
 
-            Object.values(htmlFiles)
+            Object
+              .values(htmlFiles)
               .forEach((htmlFile) => {
                 getFilePath(htmlFile, ['.html', '.htm'], collector)
               })
@@ -727,7 +733,6 @@ class CSSPurge {
               // comma delimited list - filename1.html, filename2.html
               if (htmlFiles.indexOf(',') > -1) {
                 htmlFiles = htmlFiles.replace(/^\s+|\s+$/g, '').split(',')
-                tmpStr = ''
 
                 const collector = []
 
@@ -990,7 +995,7 @@ class CSSPurge {
       if (configFilePath === '') {
         readStream = createReadStream(configFileLocation, 'utf8')
       } else {
-        if (configFilePath == 'cmd_default') {
+        if (configFilePath === 'cmd_default') {
           CONFIG = {}
           CONFIG.options = optionsIn
           if (CONFIG.options.trim) {
@@ -1202,7 +1207,7 @@ class CSSPurge {
 
         if (configFilePath != 'cmd_default') {
           readConfig(configFilePath)
-        } else if (configFilePath == 'cmd_default') {
+        } else if (configFilePath === 'cmd_default') {
           readConfig(configFilePath, optionsIn)
         }
       }
@@ -1388,14 +1393,14 @@ class CSSPurge {
       const RULES_COUNT = rules.length
 
       for (let i = 0; i < RULES_COUNT; ++i) {
-        if (rules[i] !== undefined && rules[i].declarations !== undefined && rules[i].type == 'rule') {
+        if (rules[i] !== undefined && rules[i].declarations !== undefined && rules[i].type === 'rule') {
           DECLARATION_COUNT = rules[i].declarations.length
 
           // font
           if (SHORTEN || SHORTEN_FONT) {
             const font = rules[i].declarations.filter(filterForFont)
 
-            const index = font.map(toProperty).indexOf('font-weight')
+            const index = font.findIndex(({ property }) => property === 'font-weight')
 
             // font-weight shortening
             if (index !== -1) {
@@ -1448,7 +1453,7 @@ class CSSPurge {
             if (OPTIONS.special_convert_rem && OPTIONS.special_convert_rem_font_size) {
               // for singular declaration
               for (let j = 0; j < DECLARATION_COUNT; ++j) {
-                if (rules[i].declarations !== undefined && rules[i].declarations[j].property == 'font-size') {
+                if (rules[i].declarations !== undefined && rules[i].declarations[j].property === 'font-size') {
                   let value = rules[i].declarations[j].value.toLowerCase()
 
                   if (value.includes('px')) {
@@ -1464,7 +1469,7 @@ class CSSPurge {
                 }
               }
 
-              const index = font.map(toProperty).indexOf('font-size')
+              const index = font.findIndex(({ property }) => property === 'font-size')
               // for combined declaration
               if (index !== -1) {
                 let value = font[index].value.toLowerCase()
@@ -1487,31 +1492,19 @@ class CSSPurge {
             if (OPTIONS.format_font_family || OPTIONS.format) {
               // make sure multi-worded families have quotes
               if (fontProps.includes('font-family')) {
-                for (let j = 0, jlen = rules[i].declarations.length; j < jlen; ++j) {
-                  if (rules[i].declarations[j].property == 'font-family') {
-                    fontVal = rules[i].declarations[j].value.split(',')
-                    let value = ''
-                    for (let k = 0, klen = fontVal.length; k < klen; ++k) {
-                      fontVal[k] = fontVal[k].trim()
-                      if (fontVal[k].includes(' ') &&
-                        (
-                          fontVal[k].indexOf('"') == -1 && fontVal[k].indexOf('\'') == -1
-                        )) {
-                        value += '"' + fontVal[k].trim() + '",'
-                      } else {
-                        value += fontVal[k].trim() + ','
-                      }
-                    }
-                    value = value.substring(0, value.length - 1)
-
-                    rules[i].declarations[j] = {
+                const declarations = rules[i].declarations
+                rules[i].declarations = declarations.map((declaration) => {
+                  if (declaration.property === 'font-family') {
+                    return {
                       type: 'declaration',
                       property: 'font-family',
-                      value,
-                      position: rules[i].declarations[j].position
+                      value: formatFontFamily(declaration.value),
+                      position: declaration.position
                     }
                   }
-                }
+
+                  return declaration
+                })
               }
             }
 
@@ -1528,14 +1521,30 @@ class CSSPurge {
               if (!fontHasInherit) {
                 let fontValues = font.map(toValue)
                 const fontPositions = font.map(toPosition)
-                fontValuesOutput = [
-                  (fontValues[fontProps.indexOf('font-style')] ? fontValues[fontProps.indexOf('font-style')] : ''),
-                  (fontValues[fontProps.indexOf('font-variant')] ? fontValues[fontProps.indexOf('font-variant')] : ''),
-                  (fontValues[fontProps.indexOf('font-weight')] ? fontValues[fontProps.indexOf('font-weight')] : ''),
-                  (fontValues[fontProps.indexOf('font-stretch')] ? fontValues[fontProps.indexOf('font-stretch')] : ''),
-                  (fontValues[fontProps.indexOf('font-size')] ? fontValues[fontProps.indexOf('font-size')] : ''),
-                  (fontValues[fontProps.indexOf('line-height')] ? fontValues[fontProps.indexOf('line-height')] : ''),
-                  (fontValues[fontProps.indexOf('font-family')] ? fontValues[fontProps.indexOf('font-family')] : '')
+
+                const fontStyleIndex = fontProps.indexOf('font-style')
+                const fontVariantIndex = fontProps.indexOf('font-variant')
+                const fontWeightIndex = fontProps.indexOf('font-weight')
+                const fontStretchIndex = fontProps.indexOf('font-stretch')
+                const fontSizeIndex = fontProps.indexOf('font-size')
+                const lineHeightIndex = fontProps.indexOf('line-height')
+                const fontFamilyIndex = fontProps.indexOf('font-family')
+                const fontStyleValue = fontValues[fontStyleIndex] ?? ''
+                const fontVariantValue = fontValues[fontVariantIndex] ?? ''
+                const fontWeightValue = fontValues[fontWeightIndex] ?? ''
+                const fontStretchValue = fontValues[fontStretchIndex] ?? ''
+                const fontSizeValue = fontValues[fontSizeIndex] ?? ''
+                const lineHeightValue = fontValues[lineHeightIndex] ?? ''
+                const fontFamilyValue = fontValues[fontFamilyIndex] ?? ''
+
+                const FONT_VALUES = [
+                  fontStyleValue,
+                  fontVariantValue,
+                  fontWeightValue,
+                  fontStretchValue,
+                  fontSizeValue,
+                  lineHeightValue,
+                  fontFamilyValue
                 ]
 
                 // existing font check
@@ -1543,186 +1552,177 @@ class CSSPurge {
                 if (fontPropValueIndex !== -1) {
                   let fontPropValue = fontValues[fontPropValueIndex]
 
-                  // fill missing attribute with existing font
-                  if (fontProps.indexOf('font-size') > fontPropValueIndex) {
-                    fontValuesOutput[4] = fontValues[fontProps.indexOf('font-size')]
+                  if (fontSizeIndex > fontPropValueIndex) {
+                    FONT_VALUES[4] = fontSizeValue
                   } else {
-                    fontValuesOutput[4] = getValueOfFontProp(fontPropValue, 'size', fontPositions[fontProps.indexOf('font')])
-
-                    if (fontValuesOutput[4] == 'check family') {
-                      // check required font-family property exists
-                      if (fontValues[fontProps.indexOf('font-family')] !== '' &&
-                        fontValues[fontProps.indexOf('font-family')] !== undefined) {
-                        fontValuesOutput[4] = fontPropValue
-                        fontPropValue = fontPropValue + ' ' + fontValues[fontProps.indexOf('font-family')]
+                    const propPosition = fontPositions[fontPropValueIndex]
+                    const propValue = getValueOfFontProp(fontPropValue, 'size', propPosition)
+                    if (propValue === 'check family') {
+                      if (fontFamilyValue) {
+                        FONT_VALUES[4] = fontPropValue
+                        fontPropValue = fontPropValue + ' ' + fontFamilyValue
                       } else {
                         // report error and exit
-                        console.log(error('Error Parsing Font Declaration'))
-                        console.log(errorLine('Source: ' + fontPositions[fontProps.indexOf('font')].source))
-                        console.log(errorLine('Line: ' + fontPositions[fontProps.indexOf('font')].start.line + ', column: ' + fontPositions[fontProps.indexOf('font')].start.column))
-                        console.log('Required: font-family')
-                        process.exit(1)
-                      }
-                    } else if (fontValuesOutput[4] == 'check size') {
-                      // check required font-size property exists
-                      if (fontValues[fontProps.indexOf('font-size')] !== '' &&
-                        fontValues[fontProps.indexOf('font-size')] !== undefined) {
-                        fontValuesOutput[4] = fontPropValue
-                        fontPropValue = fontValues[fontProps.indexOf('font-size')] + ' ' + fontPropValue
-                      } else {
-                        if (fontPropValue == 'inherit') {
-                          fontValuesOutput[4] = fontPropValue
-                        } else {
-                          // report error and exit
-                          console.log(error('Error Parsing Font Declaration'))
-                          console.log(errorLine('Source: ' + fontPositions[fontProps.indexOf('font')].source))
-                          console.log(errorLine('Line: ' + fontPositions[fontProps.indexOf('font')].start.line + ', column: ' + fontPositions[fontProps.indexOf('font')].start.column))
-                          console.log('Required: font-size')
-                          process.exit(1)
-                        }
-                      }
-                    }
-                  }
-
-                  if (fontProps.indexOf('font-family') > fontPropValueIndex) {
-                    fontValuesOutput[6] = fontValues[fontProps.indexOf('font-family')]
-                  } else {
-                    fontValuesOutput[6] = getValueOfFontProp(fontPropValue, 'family', fontPositions[fontProps.indexOf('font')])
-
-                    if (fontValuesOutput[6] == 'check size') {
-                      // check required font-size property exists
-                      if (fontValues[fontProps.indexOf('font-size')] !== '' &&
-                        fontValues[fontProps.indexOf('font-size')] !== undefined) {
-                        fontValuesOutput[6] = fontPropValue
-                        fontPropValue = fontValues[fontProps.indexOf('font-size')] + ' ' + fontPropValue
-                      } else {
-                        if (fontPropValue == 'inherit') {
-                          if (fontValuesOutput[4] == 'inherit') {
-                            fontValuesOutput[6] = ''
-                          }
-                        } else {
-                          // report error and exit
-                          console.log(error('Error Parsing Font Declaration'))
-                          console.log(errorLine('Source: ' + fontPositions[fontProps.indexOf('font')].source))
-                          console.log(errorLine('Line: ' + fontPositions[fontProps.indexOf('font')].start.line + ', column: ' + fontPositions[fontProps.indexOf('font')].start.column))
-                          console.log('Required: font-size')
-                          process.exit(1)
-                        }
-                      }
-                    } else if (fontValuesOutput[6] == 'check family') {
-                      // check required font-family property exists
-                      if (
-                        fontValues[fontProps.indexOf('font-family')] !== '' &&
-                        fontValues[fontProps.indexOf('font-family')] !== undefined) {
-                        fontValuesOutput[6] = fontPropValue
-                        fontPropValue = fontPropValue + ' ' + fontValues[fontProps.indexOf('font-family')]
-                      } else {
-                        // report error and exit
-                        console.log(error('Error Parsing Font Declaration'))
-                        console.log(errorLine('Source: ' + fontPositions[fontProps.indexOf('font')].source))
-                        console.log(errorLine('Line: ' + fontPositions[fontProps.indexOf('font')].start.line + ', column: ' + fontPositions[fontProps.indexOf('font')].start.column))
+                        console.log(error('Error parsing font declaration'))
+                        console.log(errorLine('Source: ' + propPosition.source))
+                        console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
                         console.log('Required: font-family')
                         process.exit(1)
                       }
                     } else {
-                      // make sure multi-worded families have quotes
-                      if (OPTIONS.format_font_family || OPTIONS.format) {
-                        fontVal = fontValuesOutput[6]
-
-                        let value = ''
-                        for (let k = 0, klen = fontVal.length; k < klen; ++k) {
-                          fontVal[k] = fontVal[k].trim()
-                          if (fontVal[k].includes(' ') &&
-                            (
-                              fontVal[k].indexOf('"') == -1
-                            )) {
-                            value += '"' + fontVal[k].trim() + '",'
+                      if (propValue === 'check size') {
+                        if (fontSizeValue) {
+                          FONT_VALUES[4] = fontPropValue
+                          fontPropValue = fontSizeValue + ' ' + fontPropValue
+                        } else {
+                          if (fontPropValue === 'inherit') {
+                            FONT_VALUES[4] = fontPropValue
                           } else {
-                            value += fontVal[k].trim() + ','
+                            // report error and exit
+                            console.log(error('Error parsing font declaration'))
+                            console.log(errorLine('Source: ' + propPosition.source))
+                            console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
+                            console.log('Required: font-size')
+                            process.exit(1)
                           }
                         }
-                        value = value.substring(0, value.length - 1)
+                      }
+                    }
+                  }
 
-                        fontValuesOutput[6] = value
-                      } // end of format
-                    } // end of font-family checks
+                  if (fontFamilyIndex > fontPropValueIndex) {
+                    FONT_VALUES[6] = fontFamilyValue
+                  } else {
+                    const propPosition = fontPositions[fontPropValueIndex]
+                    const propValue = getValueOfFontProp(fontPropValue, 'family', propPosition)
+                    if (propValue === 'check size') {
+                      if (fontSizeValue) {
+                        FONT_VALUES[6] = fontPropValue
+                        fontPropValue = fontSizeValue + ' ' + fontPropValue
+                      } else {
+                        if (fontPropValue === 'inherit') {
+                          if (FONT_VALUES[4] === 'inherit') {
+                            FONT_VALUES[6] = ''
+                          }
+                        } else {
+                          // report error and exit
+                          console.log(error('Error parsing font declaration'))
+                          console.log(errorLine('Source: ' + propPosition.source))
+                          console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
+                          console.log('Required: font-size')
+                          process.exit(1)
+                        }
+                      }
+                    } else {
+                      if (propValue === 'check family') {
+                        if (fontFamilyValue) {
+                          FONT_VALUES[6] = fontPropValue
+                          fontPropValue = fontPropValue + ' ' + fontFamilyValue
+                        } else {
+                          // report error and exit
+                          console.log(error('Error parsing font declaration'))
+                          console.log(errorLine('Source: ' + propPosition.source))
+                          console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
+                          console.log('Required: font-family')
+                          process.exit(1)
+                        }
+                      } else {
+                        // make sure multi-worded families have quotes
+                        if (OPTIONS.format_font_family || OPTIONS.format) {
+                          FONT_VALUES[6] = formatFontFamily(FONT_VALUES[6])
+                        } // end of format
+                      } // end of font-family checks
+                    }
                   } // end of font-family
 
-                  if (fontProps.indexOf('font-style') > fontPropValueIndex) {
-                    fontValuesOutput[0] = fontValues[fontProps.indexOf('font-style')]
+                  if (fontStyleIndex > fontPropValueIndex) {
+                    FONT_VALUES[0] = fontStyleValue
                   } else {
-                    fontValuesOutput[0] = getValueOfFontProp(fontPropValue, 'style', fontPositions[fontProps.indexOf('font')])
-                    if (fontValuesOutput[0] == 'check size' ||
-                      fontValuesOutput[0] == 'check family') {
-                      fontValuesOutput[0] = ''
-                    }
+                    const propPosition = fontPositions[fontPropValueIndex]
+                    const propValue = getValueOfFontProp(fontPropValue, 'style', propPosition)
+                    FONT_VALUES[0] = (
+                      propValue === 'check size' ||
+                      propValue === 'check family'
+                        ? ''
+                        : propValue
+                    )
                   }
 
-                  if (fontProps.indexOf('font-variant') > fontPropValueIndex) {
-                    fontValuesOutput[1] = fontValues[fontProps.indexOf('font-variant')]
+                  if (fontVariantIndex > fontPropValueIndex) {
+                    FONT_VALUES[1] = fontVariantValue
                   } else {
-                    fontValuesOutput[1] = getValueOfFontProp(fontPropValue, 'variant', fontPositions[fontProps.indexOf('font')])
-                    if (fontValuesOutput[1] == 'check size' ||
-                      fontValuesOutput[1] == 'check family') {
-                      fontValuesOutput[1] = ''
-                    }
+                    const propPosition = fontPositions[fontPropValueIndex]
+                    const propValue = getValueOfFontProp(fontPropValue, 'variant', propPosition)
+                    FONT_VALUES[1] = (
+                      propValue === 'check size' ||
+                      propValue === 'check family'
+                        ? ''
+                        : propValue
+                    )
                   }
 
-                  if (fontProps.indexOf('font-weight') > fontPropValueIndex) {
-                    fontValuesOutput[2] = fontValues[fontProps.indexOf('font-weight')]
+                  if (fontWeightIndex > fontPropValueIndex) {
+                    FONT_VALUES[2] = fontWeightValue
                   } else {
-                    fontValuesOutput[2] = getValueOfFontProp(fontPropValue, 'weight', fontPositions[fontProps.indexOf('font')])
-                    if (fontValuesOutput[2] == 'check size' ||
-                      fontValuesOutput[2] == 'check family') {
-                      fontValuesOutput[2] = ''
-                    }
+                    const propPosition = fontPositions[fontPropValueIndex]
+                    const propValue = getValueOfFontProp(fontPropValue, 'weight', propPosition)
+                    FONT_VALUES[2] = (
+                      propValue === 'check size' ||
+                      propValue === 'check family'
+                        ? ''
+                        : propValue
+                    )
                   }
 
-                  if (fontProps.indexOf('font-stretch') > fontPropValueIndex) {
-                    fontValuesOutput[3] = fontValues[fontProps.indexOf('font-stretch')]
+                  if (fontStretchIndex > fontPropValueIndex) {
+                    FONT_VALUES[3] = fontStretchValue
                   } else {
-                    fontValuesOutput[3] = getValueOfFontProp(fontPropValue, 'stretch', fontPositions[fontProps.indexOf('font')])
-                    if (fontValuesOutput[3] == 'check size' ||
-                      fontValuesOutput[3] == 'check family') {
-                      fontValuesOutput[3] = ''
-                    }
+                    const propPosition = fontPositions[fontPropValueIndex]
+                    const propValue = getValueOfFontProp(fontPropValue, 'stretch', propPosition)
+                    FONT_VALUES[3] = (
+                      propValue === 'check size' ||
+                      propValue === 'check family'
+                        ? ''
+                        : propValue
+                    )
                   }
 
-                  if (fontProps.indexOf('line-height') > fontPropValueIndex) {
-                    fontValuesOutput[5] = fontValues[fontProps.indexOf('line-height')]
+                  if (lineHeightIndex > fontPropValueIndex) {
+                    FONT_VALUES[5] = lineHeightValue
                   } else {
-                    fontValuesOutput[5] = getValueOfFontProp(fontPropValue, 'lineHeight', fontPositions[fontProps.indexOf('font')])
-                    if (fontValuesOutput[5] == 'check size' ||
-                      fontValuesOutput[5] == 'check family') {
-                      fontValuesOutput[5] = ''
-                    }
+                    const propPosition = fontPositions[fontPropValueIndex]
+                    const propValue = getValueOfFontProp(fontPropValue, 'lineHeight', propPosition)
+                    FONT_VALUES[5] = (
+                      propValue === 'check size' ||
+                      propValue === 'check family'
+                        ? ''
+                        : propValue
+                    )
                   }
                 }
 
                 if (
-                  fontValuesOutput[0] === '' &&
-                  fontValuesOutput[1] === '' &&
-                  fontValuesOutput[2] === '' &&
-                  fontValuesOutput[3] === '' &&
-                  fontValuesOutput[4] === '' &&
-                  fontValuesOutput[5] === ''
+                  FONT_VALUES[0] === '' &&
+                  FONT_VALUES[1] === '' &&
+                  FONT_VALUES[2] === '' &&
+                  FONT_VALUES[3] === '' &&
+                  FONT_VALUES[4] === '' &&
+                  FONT_VALUES[5] === ''
                 ) {
                   // !!!
                 } else {
                   fontProps = [...DEFAULT_FONT_PROPS]
-                  fontValues = fontValuesOutput
+                  fontValues = FONT_VALUES
                 }
+
+                const declarations = rules[i].declarations
 
                 // check for !important
-                let fontHasImportant = false
-                for (let n = 0, j = fontValues.length; n < j; ++n) {
-                  fontValues[n] = fontValues[n].toString().replace(/(!important)/g, () => {
-                    fontHasImportant = true
-                    return ''
-                  })
-                }
+                const hasImportant = fontValues.some((font) => /(!important)/g.test(font))
 
-                if (fontHasImportant) {
+                fontValues = fontValues.map((font) => font.replace(/(!important)/g, ''))
+
+                if (hasImportant) {
                   fontValues[fontValues.length - 1] += ' !important'
                 }
 
@@ -1732,27 +1732,11 @@ class CSSPurge {
                   fontValues.splice(fontProps.indexOf('line-height'), 1)
                 }
 
-                const declarations = rules[i].declarations
-
                 // remove any spaces from empty values
                 fontValues = fontValues.filter(Boolean)
 
                 // add declaration
-                let fontRuleIndex = declarations.length
-                for (let j = 0; j < fontRuleIndex; ++j) {
-                  switch (declarations[j].property) {
-                    case 'font-style':
-                    case 'font-variant':
-                    case 'font-weight':
-                    case 'font-stretch':
-                    case 'font-size':
-                    case 'font-family':
-                    case 'line-height':
-                    case 'font':
-                      if (j < fontRuleIndex) { fontRuleIndex = j }
-                      break
-                  }
-                }
+                const fontRuleIndex = declarations.findIndex(filterForFont)
 
                 declarations.splice(fontRuleIndex, 0, {
                   type: 'declaration',
@@ -1766,43 +1750,43 @@ class CSSPurge {
                 let fontIndex
 
                 // remove existing originals
-                fontIndex = declarations.map(toProperty).indexOf('font-style')
+                fontIndex = declarations.findIndex(({ property }) => property === 'font-style')
                 if (fontIndex !== -1) {
                   declarations.splice(fontIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                fontIndex = declarations.map(toProperty).indexOf('font-variant')
+                fontIndex = declarations.findIndex(({ property }) => property === 'font-variant')
                 if (fontIndex !== -1) {
                   declarations.splice(fontIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                fontIndex = declarations.map(toProperty).indexOf('font-weight')
+                fontIndex = declarations.findIndex(({ property }) => property === 'font-weight')
                 if (fontIndex !== -1) {
                   declarations.splice(fontIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                fontIndex = declarations.map(toProperty).indexOf('font-stretch')
+                fontIndex = declarations.findIndex(({ property }) => property === 'font-stretch')
                 if (fontIndex !== -1) {
                   declarations.splice(fontIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                fontIndex = declarations.map(toProperty).indexOf('font-size')
+                fontIndex = declarations.findIndex(({ property }) => property === 'font-size')
                 if (fontIndex !== -1) {
                   declarations.splice(fontIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                fontIndex = declarations.map(toProperty).indexOf('line-height')
+                fontIndex = declarations.findIndex(({ property }) => property === 'line-height')
                 if (fontIndex !== -1) {
                   declarations.splice(fontIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                fontIndex = declarations.map(toProperty).indexOf('font-family')
+                fontIndex = declarations.findIndex(({ property }) => property === 'font-family')
                 if (fontIndex !== -1) {
                   declarations.splice(fontIndex, 1)
                   DECLARATION_COUNT -= 1
@@ -1810,7 +1794,7 @@ class CSSPurge {
 
                 // remove existing fonts
                 const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((value) => value === 'font').length
+                const j = properties.filter((property) => property === 'font').length
                 if (j > 1) {
                   for (let i = 1; i < j; ++i) {
                     const was = properties.indexOf('font')
@@ -1834,124 +1818,118 @@ class CSSPurge {
               const backgroundHasInherit = background.some(hasInherit)
               if (!backgroundHasInherit) {
                 let backgroundValues = background.map(toValue)
-                backgroundValuesOutput = [
-                  (backgroundValues[backgroundProps.indexOf('background-color')] ? backgroundValues[backgroundProps.indexOf('background-color')] : ''),
-                  (backgroundValues[backgroundProps.indexOf('background-image')] ? backgroundValues[backgroundProps.indexOf('background-image')] : ''),
-                  (backgroundValues[backgroundProps.indexOf('background-repeat')] ? backgroundValues[backgroundProps.indexOf('background-repeat')] : ''),
-                  (backgroundValues[backgroundProps.indexOf('background-attachment')] ? backgroundValues[backgroundProps.indexOf('background-attachment')] : ''),
-                  (backgroundValues[backgroundProps.indexOf('background-position')] ? backgroundValues[backgroundProps.indexOf('background-position')] : '')
-                ]
-                hasMultipleBackgrounds = false
-                hasGradient = false
 
-                if (backgroundValues[0].match(/([^0-9]),([^0-9])/g) !== null) {
-                  hasMultipleBackgrounds = true
-                }
+                const backgroundColorIndex = backgroundProps.indexOf('background-color')
+                const backgroundImageIndex = backgroundProps.indexOf('background-image')
+                const backgroundRepeatIndex = backgroundProps.indexOf('background-repeat')
+                const backgroundAttachmentIndex = backgroundProps.indexOf('background-attachment')
+                const backgoundPositionIndex = backgroundProps.indexOf('background-position')
+                const backgroundColorValue = backgroundValues[backgroundColorIndex] ?? ''
+                const backgroundImageValue = backgroundValues[backgroundImageIndex] ?? ''
+                const backgroundRepeatValue = backgroundValues[backgroundRepeatIndex] ?? ''
+                const backgroundAttachmentValue = backgroundValues[backgroundAttachmentIndex] ?? ''
+                const backgoundPositionValue = backgroundValues[backgoundPositionIndex] ?? ''
+
+                const BACKGROUND_VALUES = [
+                  backgroundColorValue,
+                  backgroundImageValue,
+                  backgroundRepeatValue,
+                  backgroundAttachmentValue,
+                  backgoundPositionValue
+                ]
+
+                const hasMultipleBackgrounds = backgroundValues.some((background) => background.match(/([^0-9]),([^0-9])/g))
+
+                const hasGradient = backgroundValues.some((background) => background.includes('gradient'))
 
                 // existing background check
-                for (let j = 0; j < backgroundProps.length; ++j) {
-                  if (backgroundValues[j].includes('gradient')) {
-                    hasGradient = true
-                  }
+                backgroundProps
+                  .forEach((backgroundProp, i) => {
+                    if (backgroundProp === 'background') {
+                      const backgroundPropValue = backgroundValues[i]
 
-                  if (backgroundProps[j] == 'background') {
-                    const backgroundPropValueIndex = j
-                    let backgroundPropValue = backgroundValues[backgroundPropValueIndex]
+                      if (backgroundPropValue.includes('gradient')) {
+                        if (backgroundColorIndex > i) {
+                          BACKGROUND_VALUES[0] = backgroundColorValue
+                        } else {
+                          const propValue = getBackgroundProp(backgroundPropValue, 'color')
+                          if (propValue) BACKGROUND_VALUES[0] = propValue
+                        }
 
-                    if (backgroundPropValue.indexOf('gradient') == -1) {
-                      // fill missing attribute with existing background props
-                      if (backgroundProps.indexOf('background-color') > backgroundPropValueIndex) {
-                        backgroundValuesOutput[0] = backgroundValues[backgroundProps.indexOf('background-color')]
-                      } else {
-                        backgroundValuesOutput[0] = (backgroundPropValue = getBackgroundProp(backgroundPropValue, 'color')) ? backgroundPropValue : backgroundValuesOutput[0]
-                      }
+                        if (backgroundImageIndex > i) {
+                          BACKGROUND_VALUES[1] = backgroundImageValue
+                        } else {
+                          const propValue = getBackgroundProp(backgroundPropValue, 'image')
+                          if (propValue) BACKGROUND_VALUES[1] = propValue
+                        }
 
-                      if (backgroundProps.indexOf('background-image') > backgroundPropValueIndex) {
-                        backgroundValuesOutput[1] = backgroundValues[backgroundProps.indexOf('background-image')]
-                      } else {
-                        backgroundValuesOutput[1] = (backgroundPropValue = getBackgroundProp(backgroundPropValue, 'image')) ? backgroundPropValue : backgroundValuesOutput[1]
-                      }
+                        if (backgroundRepeatIndex > i) {
+                          BACKGROUND_VALUES[2] = backgroundRepeatValue
+                        } else {
+                          const propValue = getBackgroundProp(backgroundPropValue, 'repeat')
+                          if (propValue) BACKGROUND_VALUES[2] = propValue
+                        }
 
-                      if (backgroundProps.indexOf('background-repeat') > backgroundPropValueIndex) {
-                        backgroundValuesOutput[2] = backgroundValues[backgroundProps.indexOf('background-repeat')]
-                      } else {
-                        backgroundValuesOutput[2] = (backgroundPropValue = getBackgroundProp(backgroundPropValue, 'repeat')) ? backgroundPropValue : backgroundValuesOutput[2]
-                      }
+                        if (backgroundAttachmentIndex > i) {
+                          BACKGROUND_VALUES[3] = backgroundAttachmentValue
+                        } else {
+                          const propValue = getBackgroundProp(backgroundPropValue, 'attachment')
+                          if (propValue) BACKGROUND_VALUES[3] = propValue
+                        }
 
-                      if (backgroundProps.indexOf('background-attachment') > backgroundPropValueIndex) {
-                        backgroundValuesOutput[3] = backgroundValues[backgroundProps.indexOf('background-attachment')]
-                      } else {
-                        backgroundValuesOutput[3] = (backgroundPropValue = getBackgroundProp(backgroundPropValue, 'attachment')) ? backgroundPropValue : backgroundValuesOutput[3]
-                      }
-
-                      if (backgroundProps.indexOf('background-position') > backgroundPropValueIndex) {
-                        backgroundValuesOutput[4] = backgroundValues[backgroundProps.indexOf('background-position')]
-                      } else {
-                        backgroundValuesOutput[4] = (backgroundPropValue = getBackgroundProp(backgroundPropValue, 'position')) ? backgroundPropValue : backgroundValuesOutput[4]
+                        if (backgoundPositionIndex > i) {
+                          BACKGROUND_VALUES[4] = backgoundPositionValue
+                        } else {
+                          const propValue = getBackgroundProp(backgroundPropValue, 'position')
+                          if (propValue) BACKGROUND_VALUES[4] = propValue
+                        }
                       }
                     }
-                  }
-                }
+                  })
 
-                if (hasMultipleBackgrounds && hasGradient == false) {
+                if (hasMultipleBackgrounds && !hasGradient) {
                   let backgroundPropValue = ''
-                  for (let j = 0; j < backgroundValuesOutput.length; ++j) {
-                    const backgroundPropValues = backgroundValuesOutput[j].split(',')
+                  for (let j = 0; j < BACKGROUND_VALUES.length; ++j) {
+                    const backgroundPropValues = BACKGROUND_VALUES[j].split(',')
                     backgroundPropValue += (backgroundPropValues[0]) ? backgroundPropValues[0].trim() + ' ' : ''
                     backgroundPropValue += (backgroundPropValues[1]) ? backgroundPropValues[1].trim() + ' ' : ''
-                    backgroundValuesOutput[j] = ''
+                    BACKGROUND_VALUES[j] = ''
                   }
                   backgroundPropValue = backgroundPropValue.trim()
                   backgroundPropValue += ', ' + backgroundPropValue.trim()
-                  backgroundValuesOutput[0] = backgroundPropValue
+                  BACKGROUND_VALUES[0] = backgroundPropValue
                 }
 
-                if (hasGradient == false) {
+                if (!hasGradient) {
                   if (
-                    backgroundValuesOutput[0] === '' &&
-                    backgroundValuesOutput[1] === '' &&
-                    backgroundValuesOutput[2] === '' &&
-                    backgroundValuesOutput[3] === '' &&
-                    backgroundValuesOutput[4] === ''
+                    BACKGROUND_VALUES[0] === '' &&
+                    BACKGROUND_VALUES[1] === '' &&
+                    BACKGROUND_VALUES[2] === '' &&
+                    BACKGROUND_VALUES[3] === '' &&
+                    BACKGROUND_VALUES[4] === ''
                   ) {
                     // !!!
                   } else {
                     backgroundProps = [...DEFAULT_BACKGROUND_PROPS]
-                    backgroundValues = backgroundValuesOutput
-                  }
-
-                  // check for !important
-                  let backgroundHasImportant = false
-                  for (let n = 0, j = backgroundValues.length; n < j; ++n) {
-                    backgroundValues[n] = backgroundValues[n].toString().replace(/(!important)/g, () => {
-                      backgroundHasImportant = true
-                      return ''
-                    })
-                  }
-
-                  if (backgroundHasImportant) {
-                    backgroundValues[backgroundValues.length - 1] += ' !important'
+                    backgroundValues = BACKGROUND_VALUES
                   }
 
                   const declarations = rules[i].declarations
+
+                  // check for !important
+                  const hasImportant = backgroundValues.some((background) => /(!important)/g.test(background))
+
+                  backgroundValues = backgroundValues.map((background) => background.replace(/(!important)/g, ''))
+
+                  if (hasImportant) {
+                    backgroundValues[backgroundValues.length - 1] += ' !important'
+                  }
 
                   // remove any spaces from empty values
                   backgroundValues = backgroundValues.filter(Boolean)
 
                   // add declaration
-                  let backgroundRuleIndex = declarations.length
-                  for (let j = 0; j < backgroundRuleIndex; ++j) {
-                    switch (declarations[j].property) {
-                      case 'background-color':
-                      case 'background-image':
-                      case 'background-position':
-                      case 'background-repeat':
-                      case 'background-attachment':
-                      case 'background':
-                        if (j < backgroundRuleIndex) { backgroundRuleIndex = j }
-                        break
-                    }
-                  }
+                  const backgroundRuleIndex = declarations.findIndex(filterForBackground)
 
                   declarations.splice(backgroundRuleIndex, 0, {
                     type: 'declaration',
@@ -1965,31 +1943,31 @@ class CSSPurge {
                   let backgroundIndex
 
                   // remove originals
-                  backgroundIndex = declarations.map(toProperty).indexOf('background-color')
+                  backgroundIndex = declarations.findIndex(({ property }) => property === 'background-color')
                   if (backgroundIndex !== -1) {
                     declarations.splice(backgroundIndex, 1)
                     DECLARATION_COUNT -= 1
                   }
 
-                  backgroundIndex = declarations.map(toProperty).indexOf('background-image')
+                  backgroundIndex = declarations.findIndex(({ property }) => property === 'background-image')
                   if (backgroundIndex !== -1) {
                     declarations.splice(backgroundIndex, 1)
                     DECLARATION_COUNT -= 1
                   }
 
-                  backgroundIndex = declarations.map(toProperty).indexOf('background-position')
+                  backgroundIndex = declarations.findIndex(({ property }) => property === 'background-position')
                   if (backgroundIndex !== -1) {
                     declarations.splice(backgroundIndex, 1)
                     DECLARATION_COUNT -= 1
                   }
 
-                  backgroundIndex = declarations.map(toProperty).indexOf('background-repeat')
+                  backgroundIndex = declarations.findIndex(({ property }) => property === 'background-repeat')
                   if (backgroundIndex !== -1) {
                     declarations.splice(backgroundIndex, 1)
                     DECLARATION_COUNT -= 1
                   }
 
-                  backgroundIndex = declarations.map(toProperty).indexOf('background-attachment')
+                  backgroundIndex = declarations.findIndex(({ property }) => property === 'background-attachment')
                   if (backgroundIndex !== -1) {
                     declarations.splice(backgroundIndex, 1)
                     DECLARATION_COUNT -= 1
@@ -1997,7 +1975,7 @@ class CSSPurge {
 
                   // remove existing backgrounds
                   const properties = declarations.filter(toProperty).map(toProperty)
-                  const j = properties.filter((value) => value === 'background')
+                  const j = properties.filter((property) => property === 'background').length
                   if (j > 1) {
                     for (let i = 1; i < j; ++i) {
                       const was = properties.indexOf('background')
@@ -2013,12 +1991,14 @@ class CSSPurge {
 
           // listStyle
           if (SHORTEN || SHORTEN_LIST_STYLE) {
-            listStyle = rules[i].declarations.filter(filterForListStyle)
+            const listStyle = rules[i].declarations.filter(filterForListStyle)
             let listStyleProps = listStyle.map(toProperty)
             if (
-              listStyleProps.includes('list-style-type') ||
-              listStyleProps.includes('list-style-position') ||
-              listStyleProps.includes('list-style-image') ||
+              (
+                listStyleProps.includes('list-style-type') ||
+                listStyleProps.includes('list-style-position') ||
+                listStyleProps.includes('list-style-image')
+              ) ||
               listStyleProps.includes('list-style')
             ) {
               if (OPTIONS.verbose) { console.log(success('Process - Values - List-style : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
@@ -2026,82 +2006,80 @@ class CSSPurge {
               const listStyleHasInherit = listStyle.some(hasInherit)
               if (!listStyleHasInherit) {
                 let listStyleValues = listStyle.map(toValue)
-                listStyleValuesOutput = [
-                  (listStyleValues[listStyleProps.indexOf('list-style-type')] ? listStyleValues[listStyleProps.indexOf('list-style-type')] : ''),
-                  (listStyleValues[listStyleProps.indexOf('list-style-position')] ? listStyleValues[listStyleProps.indexOf('list-style-position')] : ''),
-                  (listStyleValues[listStyleProps.indexOf('list-style-image')] ? listStyleValues[listStyleProps.indexOf('list-style-image')] : '')
+
+                const listStyleTypeIndex = listStyleProps.indexOf('list-style-type')
+                const listStylePositionIndex = listStyleProps.indexOf('list-style-position')
+                const listStyleImageIndex = listStyleProps.indexOf('list-style-image')
+                const listStyleTypeValue = listStyleValues[listStyleTypeIndex] ?? ''
+                const listStylePositionValue = listStyleValues[listStylePositionIndex] ?? ''
+                const listStyleImageValue = listStyleValues[listStyleImageIndex] ?? ''
+
+                const LIST_STYLE_VALUES = [
+                  listStyleTypeValue,
+                  listStylePositionValue,
+                  listStyleImageValue
                 ]
 
                 // existing listStyle check
                 const listStylePropValueIndex = listStyleProps.indexOf('list-style')
                 if (listStylePropValueIndex !== -1) {
-                  let listStylePropValue = listStyleValues[listStylePropValueIndex]
+                  const listStylePropValue = listStyleValues[listStylePropValueIndex]
 
                   if (listStylePropValue !== 'none') {
-                    // fill missing attribute with existing listStyle
-                    if (listStyleProps.indexOf('list-style-type') > listStylePropValueIndex) {
-                      listStyleValuesOutput[0] = listStyleValues[listStyleProps.indexOf('list-style-type')]
+                    if (listStyleTypeIndex > listStylePropValueIndex) {
+                      LIST_STYLE_VALUES[0] = listStyleTypeValue
                     } else {
-                      listStyleValuesOutput[0] = (listStylePropValue = getValueOfTriProp(listStylePropValue, 'type')) ? listStylePropValue : listStyleValuesOutput[0]
+                      const propValue = getValueOfTriProp(listStylePropValue, 'type')
+                      if (propValue) LIST_STYLE_VALUES[0] = propValue
                     }
-                    if (listStyleProps.indexOf('list-style-position') > listStylePropValueIndex) {
-                      listStyleValuesOutput[1] = listStyleValues[listStyleProps.indexOf('list-style-position')]
+
+                    if (listStylePositionIndex > listStylePropValueIndex) {
+                      LIST_STYLE_VALUES[1] = listStylePositionValue
                     } else {
-                      listStyleValuesOutput[1] = (listStylePropValue = getValueOfTriProp(listStylePropValue, 'position')) ? listStylePropValue : listStyleValuesOutput[1]
+                      const propValue = getValueOfTriProp(listStylePropValue, 'position')
+                      if (propValue) LIST_STYLE_VALUES[1] = propValue
                     }
-                    if (listStyleProps.indexOf('list-style-image') > listStylePropValueIndex) {
-                      listStyleValuesOutput[2] = listStyleValues[listStyleProps.indexOf('list-style-image')]
+
+                    if (listStyleImageIndex > listStylePropValueIndex) {
+                      LIST_STYLE_VALUES[2] = listStyleImageValue
                     } else {
-                      listStyleValuesOutput[2] = (listStylePropValue = getValueOfTriProp(listStylePropValue, 'image')) ? listStylePropValue : listStyleValuesOutput[2]
+                      const propValue = getValueOfTriProp(listStylePropValue, 'image')
+                      if (propValue) LIST_STYLE_VALUES[2] = propValue
                     }
                   } else {
-                    listStyleValuesOutput[0] = listStylePropValue
-                    listStyleValuesOutput[1] = ''
-                    listStyleValuesOutput[2] = ''
+                    LIST_STYLE_VALUES[0] = listStylePropValue
+                    LIST_STYLE_VALUES[1] = ''
+                    LIST_STYLE_VALUES[2] = ''
                   }
                 }
 
                 if (
-                  listStyleValuesOutput[0] === '' &&
-                  listStyleValuesOutput[1] === '' &&
-                  listStyleValuesOutput[2] === ''
+                  LIST_STYLE_VALUES[0] === '' &&
+                  LIST_STYLE_VALUES[1] === '' &&
+                  LIST_STYLE_VALUES[2] === ''
                 ) {
                   // !!!
                 } else {
                   listStyleProps = [...DEFAULT_LIST_STYLE_PROPS]
-                  listStyleValues = listStyleValuesOutput
-                }
-
-                // check for !important
-                let listStyleHasImportant = false
-                for (let n = 0, j = listStyleValues.length; n < j; ++n) {
-                  listStyleValues[n] = listStyleValues[n].toString().replace(/(!important)/g, () => {
-                    listStyleHasImportant = true
-                    return ''
-                  })
-                }
-
-                if (listStyleHasImportant) {
-                  listStyleValues[listStyleValues.length - 1] += ' !important'
+                  listStyleValues = LIST_STYLE_VALUES
                 }
 
                 const declarations = rules[i].declarations
+
+                // check for !important
+                const hasImportant = listStyleValues.some((listStyle) => /(!important)/g.test(listStyle))
+
+                listStyleValues = listStyleValues.map((listStyle) => listStyle.replace(/(!important)/g, ''))
+
+                if (hasImportant) {
+                  listStyleValues[listStyleValues.length - 1] += ' !important'
+                }
 
                 // remove any spaces from empty values
                 listStyleValues = listStyleValues.filter(Boolean)
 
                 // add declaration
-                let listStyleRuleIndex = declarations.length
-                for (let j = 0; j < listStyleRuleIndex; ++j) {
-                  switch (declarations[j].property) {
-                    case 'list-style-type':
-                    case 'list-style-position':
-                    case 'list-style-image':
-                    case 'list-style':
-                      if (j < listStyleRuleIndex) { listStyleRuleIndex = j }
-                      break
-                  }
-                }
+                const listStyleRuleIndex = declarations.findIndex(filterForListStyle)
 
                 declarations.splice(listStyleRuleIndex, 0, {
                   type: 'declaration',
@@ -2114,19 +2092,19 @@ class CSSPurge {
 
                 let listStyleIndex
 
-                listStyleIndex = declarations.map(toProperty).indexOf('list-style-type')
+                listStyleIndex = declarations.findIndex(({ property }) => property === 'list-style-type')
                 if (listStyleIndex !== -1) {
                   declarations.splice(listStyleIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                listStyleIndex = declarations.map(toProperty).indexOf('list-style-position')
+                listStyleIndex = declarations.findIndex(({ property }) => property === 'list-style-position')
                 if (listStyleIndex !== -1) {
                   declarations.splice(listStyleIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                listStyleIndex = declarations.map(toProperty).indexOf('list-style-image')
+                listStyleIndex = declarations.findIndex(({ property }) => property === 'list-style-image')
                 if (listStyleIndex !== -1) {
                   declarations.splice(listStyleIndex, 1)
                   DECLARATION_COUNT -= 1
@@ -2134,7 +2112,7 @@ class CSSPurge {
 
                 // remove existing listStyles
                 const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((value) => value === 'list-style').length
+                const j = properties.filter((property) => property === 'list-style').length
                 if (j > 1) {
                   for (let i = 1; i < j; ++i) {
                     const was = properties.indexOf('list-style')
@@ -2149,10 +2127,14 @@ class CSSPurge {
 
           // outline
           if (SHORTEN || SHORTEN_OUTLINE) {
-            outline = rules[i].declarations.filter(filterForOutline)
+            const outline = rules[i].declarations.filter(filterForOutline)
             let outlineProps = outline.map(toProperty)
             if (
-              outlineProps.includes('outline-style') ||
+              (
+                outlineProps.includes('outline-width') ||
+                outlineProps.includes('outline-style') ||
+                outlineProps.includes('outline-color')
+              ) ||
               outlineProps.includes('outline')
             ) {
               if (OPTIONS.verbose) { console.log(success('Process - Values - Outline : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
@@ -2160,81 +2142,79 @@ class CSSPurge {
               const outlineHasInherit = outline.some(hasInherit)
               if (!outlineHasInherit) {
                 let outlineValues = outline.map(toValue)
-                outlineValuesOutput = [
-                  (outlineValues[outlineProps.indexOf('outline-width')] ? outlineValues[outlineProps.indexOf('outline-width')] : ''),
-                  (outlineValues[outlineProps.indexOf('outline-style')] ? outlineValues[outlineProps.indexOf('outline-style')] : ''),
-                  (outlineValues[outlineProps.indexOf('outline-color')] ? outlineValues[outlineProps.indexOf('outline-color')] : '')
+
+                const outlineWidthIndex = outlineProps.indexOf('outline-width')
+                const outlineStyleIndex = outlineProps.indexOf('outline-style')
+                const outlineColorIndex = outlineProps.indexOf('outline-color')
+                const outlineWidthValue = outlineValues[outlineWidthIndex] ?? ''
+                const outlineStyleValue = outlineValues[outlineStyleIndex] ?? ''
+                const outlineColorValue = outlineValues[outlineColorIndex] ?? ''
+
+                const OUTLINE_VALUES = [
+                  outlineWidthValue,
+                  outlineStyleValue,
+                  outlineColorValue
                 ]
 
                 // existing outline check
                 const outlinePropValueIndex = outlineProps.indexOf('outline')
                 if (outlinePropValueIndex !== -1) {
-                  let outlinePropValue = outlineValues[outlinePropValueIndex]
+                  const outlinePropValue = outlineValues[outlinePropValueIndex]
                   if (outlinePropValue !== 'none') {
-                    // fill missing attribute with existing outline
-                    if (outlineProps.indexOf('outline-width') > outlinePropValueIndex) {
-                      outlineValuesOutput[0] = outlineValues[outlineProps.indexOf('outline-width')]
+                    if (outlineWidthIndex > outlinePropValueIndex) {
+                      OUTLINE_VALUES[0] = outlineWidthValue
                     } else {
-                      outlineValuesOutput[0] = (outlinePropValue = getValueOfTriProp(outlinePropValue, 'width')) ? outlinePropValue : outlineValuesOutput[0]
+                      const propValue = getValueOfTriProp(outlinePropValue, 'width')
+                      if (propValue) OUTLINE_VALUES[0] = propValue
                     }
-                    if (outlineProps.indexOf('outline-style') > outlinePropValueIndex) {
-                      outlineValuesOutput[1] = outlineValues[outlineProps.indexOf('outline-style')]
+
+                    if (outlineStyleIndex > outlinePropValueIndex) {
+                      OUTLINE_VALUES[1] = outlineStyleValue
                     } else {
-                      outlineValuesOutput[1] = (outlinePropValue = getValueOfTriProp(outlinePropValue, 'style')) ? outlinePropValue : outlineValuesOutput[1]
+                      const propValue = getValueOfTriProp(outlinePropValue, 'style')
+                      if (propValue) OUTLINE_VALUES[1] = propValue
                     }
-                    if (outlineProps.indexOf('outline-color') > outlinePropValueIndex) {
-                      outlineValuesOutput[2] = outlineValues[outlineProps.indexOf('outline-color')]
+
+                    if (outlineColorIndex > outlinePropValueIndex) {
+                      OUTLINE_VALUES[2] = outlineColorValue
                     } else {
-                      outlineValuesOutput[2] = (outlinePropValue = getValueOfTriProp(outlinePropValue, 'color')) ? outlinePropValue : outlineValuesOutput[2]
+                      const propValue = getValueOfTriProp(outlinePropValue, 'color')
+                      if (propValue) OUTLINE_VALUES[2] = propValue
                     }
                   } else {
-                    outlineValuesOutput[0] = '0'
-                    outlineValuesOutput[1] = ''
-                    outlineValuesOutput[2] = ''
+                    OUTLINE_VALUES[0] = '0'
+                    OUTLINE_VALUES[1] = ''
+                    OUTLINE_VALUES[2] = ''
                   }
                 }
 
                 if (
-                  outlineValuesOutput[0] === '' &&
-                  outlineValuesOutput[1] === '' &&
-                  outlineValuesOutput[2] === ''
+                  OUTLINE_VALUES[0] === '' &&
+                  OUTLINE_VALUES[1] === '' &&
+                  OUTLINE_VALUES[2] === ''
                 ) {
                   // !!!
                 } else {
                   outlineProps = [...DEFAULT_OUTLINE_PROPS]
-                  outlineValues = outlineValuesOutput
-                }
-
-                // check for !important
-                let outlineHasImportant = false
-                for (let n = 0, j = outlineValues.length; n < j; ++n) {
-                  outlineValues[n] = outlineValues[n].toString().replace(/(!important)/g, () => {
-                    outlineHasImportant = true
-                    return ''
-                  })
-                }
-
-                if (outlineHasImportant) {
-                  outlineValues[outlineValues.length - 1] += ' !important'
+                  outlineValues = OUTLINE_VALUES
                 }
 
                 const declarations = rules[i].declarations
+
+                // check for !important
+                const hasImportant = outlineValues.some((outline) => /(!important)/g.test(outline))
+
+                outlineValues = outlineValues.map((outline) => outline.replace(/(!important)/g, ''))
+
+                if (hasImportant) {
+                  outlineValues[outlineValues.length - 1] += ' !important'
+                }
 
                 // remove any spaces from empty values
                 outlineValues = outlineValues.filter(Boolean)
 
                 // add declaration
-                let outlineRuleIndex = declarations.length
-                for (let j = 0; j < outlineRuleIndex; ++j) {
-                  switch (declarations[j].property) {
-                    case 'outline-width':
-                    case 'outline-style':
-                    case 'outline-color':
-                    case 'outline':
-                      if (j < outlineRuleIndex) { outlineRuleIndex = j }
-                      break
-                  }
-                }
+                const outlineRuleIndex = declarations.findIndex(filterForOutline)
 
                 declarations.splice(outlineRuleIndex, 0, {
                   type: 'declaration',
@@ -2247,19 +2227,19 @@ class CSSPurge {
 
                 let outlineIndex
 
-                outlineIndex = declarations.map(toProperty).indexOf('outline-width')
+                outlineIndex = declarations.findIndex(({ property }) => property === 'outline-width')
                 if (outlineIndex !== -1) {
                   declarations.splice(outlineIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                outlineIndex = declarations.map(toProperty).indexOf('outline-style')
+                outlineIndex = declarations.findIndex(({ property }) => property === 'outline-style')
                 if (outlineIndex !== -1) {
                   declarations.splice(outlineIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                outlineIndex = declarations.map(toProperty).indexOf('outline-color')
+                outlineIndex = declarations.findIndex(({ property }) => property === 'outline-color')
                 if (outlineIndex !== -1) {
                   declarations.splice(outlineIndex, 1)
                   DECLARATION_COUNT -= 1
@@ -2267,11 +2247,11 @@ class CSSPurge {
 
                 // remove existing outlines
                 const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((value) => value === 'outline')
+                const j = properties.filter((property) => property === 'outline').length
                 if (j > 1) {
                   for (let i = 1; i < j; ++i) {
-                    const was = outlineProps.indexOf('outline')
-                    const now = outlineProps.indexOf('outline', (was + 1))
+                    const was = properties.indexOf('outline')
+                    const now = properties.indexOf('outline', (was + 1))
                     declarations.splice(now, 1)
                     DECLARATION_COUNT -= 1
                   }
@@ -2282,10 +2262,14 @@ class CSSPurge {
 
           // borderTop
           if (SHORTEN || SHORTEN_BORDER_TOP) {
-            borderTop = rules[i].declarations.filter(filterForBorderTop)
+            const borderTop = rules[i].declarations.filter(filterForBorderTop)
             let borderTopProps = borderTop.map(toProperty)
             if (
-              borderTopProps.includes('border-top-style') ||
+              (
+                borderTopProps.includes('border-top-width') ||
+                borderTopProps.includes('border-top-style') ||
+                borderTopProps.includes('border-top-color')
+              ) ||
               borderTopProps.includes('border-top')
             ) {
               if (OPTIONS.verbose) { console.log(success('Process - Values - Border Top : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
@@ -2293,82 +2277,80 @@ class CSSPurge {
               const borderTopHasInherit = borderTop.some(hasInherit)
               if (!borderTopHasInherit) {
                 let borderTopValues = borderTop.map(toValue)
-                borderTopValuesOutput = [
-                  (borderTopValues[borderTopProps.indexOf('border-top-width')] ? borderTopValues[borderTopProps.indexOf('border-top-width')] : ''),
-                  (borderTopValues[borderTopProps.indexOf('border-top-style')] ? borderTopValues[borderTopProps.indexOf('border-top-style')] : ''),
-                  (borderTopValues[borderTopProps.indexOf('border-top-color')] ? borderTopValues[borderTopProps.indexOf('border-top-color')] : '')
+
+                const borderTopWidthIndex = borderTopProps.indexOf('border-top-width')
+                const borderTopStyleIndex = borderTopProps.indexOf('border-top-style')
+                const borderTopColorIndex = borderTopProps.indexOf('border-top-color')
+                const borderTopWidthValue = borderTopValues[borderTopWidthIndex] ?? ''
+                const borderTopStyleValue = borderTopValues[borderTopStyleIndex] ?? ''
+                const borderTopColorValue = borderTopValues[borderTopColorIndex] ?? ''
+
+                const BORDER_TOP_VALUES = [
+                  borderTopWidthValue,
+                  borderTopStyleValue,
+                  borderTopColorValue
                 ]
 
                 // existing borderTop check
                 const borderTopPropValueIndex = borderTopProps.indexOf('border-top')
                 if (borderTopPropValueIndex !== -1) {
-                  let borderTopPropValue = borderTopValues[borderTopPropValueIndex]
+                  const borderTopPropValue = borderTopValues[borderTopPropValueIndex]
 
                   if (borderTopPropValue !== 'none') {
-                    // fill missing attribute with existing borderTop
-                    if (borderTopProps.indexOf('border-top-width') > borderTopPropValueIndex) {
-                      borderTopValuesOutput[0] = borderTopValues[borderTopProps.indexOf('border-top-width')]
+                    if (borderTopWidthIndex > borderTopPropValueIndex) {
+                      BORDER_TOP_VALUES[0] = borderTopWidthValue
                     } else {
-                      borderTopValuesOutput[0] = (borderTopPropValue = getValueOfTriProp(borderTopPropValue, 'width')) ? borderTopPropValue : borderTopValuesOutput[0]
+                      const propValue = getValueOfTriProp(borderTopPropValue, 'width')
+                      if (propValue) BORDER_TOP_VALUES[0] = propValue
                     }
-                    if (borderTopProps.indexOf('border-top-style') > borderTopPropValueIndex) {
-                      borderTopValuesOutput[1] = borderTopValues[borderTopProps.indexOf('border-top-style')]
+
+                    if (borderTopStyleIndex > borderTopPropValueIndex) {
+                      BORDER_TOP_VALUES[1] = borderTopStyleValue
                     } else {
-                      borderTopValuesOutput[1] = (borderTopPropValue = getValueOfTriProp(borderTopPropValue, 'style')) ? borderTopPropValue : borderTopValuesOutput[1]
+                      const propValue = getValueOfTriProp(borderTopPropValue, 'style')
+                      if (propValue) BORDER_TOP_VALUES[1] = propValue
                     }
-                    if (borderTopProps.indexOf('border-top-color') > borderTopPropValueIndex) {
-                      borderTopValuesOutput[2] = borderTopValues[borderTopProps.indexOf('border-top-color')]
+
+                    if (borderTopColorIndex > borderTopPropValueIndex) {
+                      BORDER_TOP_VALUES[2] = borderTopColorValue
                     } else {
-                      borderTopValuesOutput[2] = (borderTopPropValue = getValueOfTriProp(borderTopPropValue, 'color')) ? borderTopPropValue : borderTopValuesOutput[2]
+                      const propValue = getValueOfTriProp(borderTopPropValue, 'color')
+                      if (propValue) BORDER_TOP_VALUES[2] = propValue
                     }
                   } else {
-                    borderTopValuesOutput[0] = '0'
-                    borderTopValuesOutput[1] = ''
-                    borderTopValuesOutput[2] = ''
+                    BORDER_TOP_VALUES[0] = '0'
+                    BORDER_TOP_VALUES[1] = ''
+                    BORDER_TOP_VALUES[2] = ''
                   }
                 }
 
                 if (
-                  borderTopValuesOutput[0] === '' &&
-                  borderTopValuesOutput[1] === '' &&
-                  borderTopValuesOutput[2] === ''
+                  BORDER_TOP_VALUES[0] === '' &&
+                  BORDER_TOP_VALUES[1] === '' &&
+                  BORDER_TOP_VALUES[2] === ''
                 ) {
                   // !!!
                 } else {
                   borderTopProps = [...DEFAULT_BORDER_TOP_PROPS]
-                  borderTopValues = borderTopValuesOutput
-                }
-
-                // check for !important
-                let borderTopHasImportant = false
-                for (let n = 0, j = borderTopValues.length; n < j; ++n) {
-                  borderTopValues[n] = borderTopValues[n].toString().replace(/(!important)/g, () => {
-                    borderTopHasImportant = true
-                    return ''
-                  })
-                }
-
-                if (borderTopHasImportant) {
-                  borderTopValues[borderTopValues.length - 1] += ' !important'
+                  borderTopValues = BORDER_TOP_VALUES
                 }
 
                 const declarations = rules[i].declarations
+
+                // check for !important
+                const hasImportant = borderTopValues.some((borderTop) => /(!important)/g.test(borderTop))
+
+                borderTopValues = borderTopValues.map((borderTop) => borderTop.replace(/(!important)/g, ''))
+
+                if (hasImportant) {
+                  borderTopValues[borderTopValues.length - 1] += ' !important'
+                }
 
                 // remove any spaces from empty values
                 borderTopValues = borderTopValues.filter(Boolean)
 
                 // add declaration
-                let borderTopRuleIndex = declarations.length
-                for (let j = 0; j < borderTopRuleIndex; ++j) {
-                  switch (declarations[j].property) {
-                    case 'border-top-width':
-                    case 'border-top-style':
-                    case 'border-top-color':
-                    case 'border-top':
-                      if (j < borderTopRuleIndex) { borderTopRuleIndex = j }
-                      break
-                  }
-                }
+                const borderTopRuleIndex = declarations.findIndex(filterForBorderTop)
 
                 declarations.splice(borderTopRuleIndex, 0, {
                   type: 'declaration',
@@ -2381,19 +2363,19 @@ class CSSPurge {
 
                 let borderTopIndex
 
-                borderTopIndex = declarations.map(toProperty).indexOf('border-top-width')
+                borderTopIndex = declarations.findIndex(({ property }) => property === 'border-top-width')
                 if (borderTopIndex !== -1) {
                   declarations.splice(borderTopIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                borderTopIndex = declarations.map(toProperty).indexOf('border-top-style')
+                borderTopIndex = declarations.findIndex(({ property }) => property === 'border-top-style')
                 if (borderTopIndex !== -1) {
                   declarations.splice(borderTopIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                borderTopIndex = declarations.map(toProperty).indexOf('border-top-color')
+                borderTopIndex = declarations.findIndex(({ property }) => property === 'border-top-color')
                 if (borderTopIndex !== -1) {
                   declarations.splice(borderTopIndex, 1)
                   DECLARATION_COUNT -= 1
@@ -2401,11 +2383,11 @@ class CSSPurge {
 
                 // remove existing borderTops
                 const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((value) => value === 'border-top')
+                const j = properties.filter((property) => property === 'border-top').length
                 if (j > 1) {
                   for (let i = 1; i < j; ++i) {
-                    const was = borderTopProps.indexOf('border-top')
-                    const now = borderTopProps.indexOf('border-top', (was + 1))
+                    const was = properties.indexOf('border-top')
+                    const now = properties.indexOf('border-top', (was + 1))
                     declarations.splice(now, 1)
                     DECLARATION_COUNT -= 1
                   }
@@ -2416,10 +2398,14 @@ class CSSPurge {
 
           // borderRight
           if (SHORTEN || SHORTEN_BORDER_RIGHT) {
-            borderRight = rules[i].declarations.filter(filterForBorderRight)
+            const borderRight = rules[i].declarations.filter(filterForBorderRight)
             let borderRightProps = borderRight.map(toProperty)
             if (
-              borderRightProps.includes('border-right-style') ||
+              (
+                borderRightProps.includes('border-right-width') ||
+                borderRightProps.includes('border-right-style') ||
+                borderRightProps.includes('border-right-color')
+              ) ||
               borderRightProps.includes('border-right')
             ) {
               if (OPTIONS.verbose) { console.log(success('Process - Values - Border Right : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
@@ -2427,10 +2413,18 @@ class CSSPurge {
               const borderRightHasInherit = borderRight.some(hasInherit)
               if (!borderRightHasInherit) {
                 let borderRightValues = borderRight.map(toValue)
-                borderRightValuesOutput = [
-                  (borderRightValues[borderRightProps.indexOf('border-right-width')] ? borderRightValues[borderRightProps.indexOf('border-right-width')] : ''),
-                  (borderRightValues[borderRightProps.indexOf('border-right-style')] ? borderRightValues[borderRightProps.indexOf('border-right-style')] : ''),
-                  (borderRightValues[borderRightProps.indexOf('border-right-color')] ? borderRightValues[borderRightProps.indexOf('border-right-color')] : '')
+
+                const borderRightWidthIndex = borderRightProps.indexOf('border-right-width')
+                const borderRightStyleIndex = borderRightProps.indexOf('border-right-style')
+                const borderRightColorIndex = borderRightProps.indexOf('border-right-color')
+                const borderRightWidthValue = borderRightValues[borderRightWidthIndex] ?? ''
+                const borderRightStyleValue = borderRightValues[borderRightStyleIndex] ?? ''
+                const borderRightColorValue = borderRightValues[borderRightColorIndex] ?? ''
+
+                const BORDER_RIGHT_VALUES = [
+                  borderRightWidthValue,
+                  borderRightStyleValue,
+                  borderRightColorValue
                 ]
 
                 // existing borderRight check
@@ -2439,70 +2433,58 @@ class CSSPurge {
                   const borderRightPropValue = borderRightValues[borderRightPropValueIndex]
 
                   if (borderRightPropValue !== 'none') {
-                    // fill missing attribute with existing borderRight
-                    if (borderRightProps.indexOf('border-right-width') > borderRightPropValueIndex) {
-                      borderRightValuesOutput[0] = borderRightValues[borderRightProps.indexOf('border-right-width')]
+                    if (borderRightWidthIndex > borderRightPropValueIndex) {
+                      BORDER_RIGHT_VALUES[0] = borderRightWidthValue
                     } else {
-                      borderRightValuesOutput[0] = getValueOfTriProp(borderRightPropValue, 'width')
+                      const propValue = getValueOfTriProp(borderRightPropValue, 'width')
+                      if (propValue) BORDER_RIGHT_VALUES[0] = propValue
                     }
-                    if (borderRightProps.indexOf('border-right-style') > borderRightPropValueIndex) {
-                      borderRightValuesOutput[1] = borderRightValues[borderRightProps.indexOf('border-right-style')]
+                    if (borderRightStyleIndex > borderRightPropValueIndex) {
+                      BORDER_RIGHT_VALUES[1] = borderRightStyleValue
                     } else {
-                      borderRightValuesOutput[1] = getValueOfTriProp(borderRightPropValue, 'style')
+                      const propValue = getValueOfTriProp(borderRightPropValue, 'style')
+                      if (propValue) BORDER_RIGHT_VALUES[1] = propValue
                     }
-                    if (borderRightProps.indexOf('border-right-color') > borderRightPropValueIndex) {
-                      borderRightValuesOutput[2] = borderRightValues[borderRightProps.indexOf('border-right-color')]
+                    if (borderRightColorIndex > borderRightPropValueIndex) {
+                      BORDER_RIGHT_VALUES[2] = borderRightColorValue
                     } else {
-                      borderRightValuesOutput[2] = getValueOfTriProp(borderRightPropValue, 'color')
+                      const propValue = getValueOfTriProp(borderRightPropValue, 'color')
+                      if (propValue) BORDER_RIGHT_VALUES[2] = propValue
                     }
                   } else {
-                    borderRightValuesOutput[0] = '0'
-                    borderRightValuesOutput[1] = ''
-                    borderRightValuesOutput[2] = ''
+                    BORDER_RIGHT_VALUES[0] = '0'
+                    BORDER_RIGHT_VALUES[1] = ''
+                    BORDER_RIGHT_VALUES[2] = ''
                   }
                 }
 
                 if (
-                  borderRightValuesOutput[0] === '' &&
-                  borderRightValuesOutput[1] === '' &&
-                  borderRightValuesOutput[2] === ''
+                  BORDER_RIGHT_VALUES[0] === '' &&
+                  BORDER_RIGHT_VALUES[1] === '' &&
+                  BORDER_RIGHT_VALUES[2] === ''
                 ) {
                   // !!!
                 } else {
                   borderRightProps = [...DEFAULT_BORDER_RIGHT_PROPS]
-                  borderRightValues = borderRightValuesOutput
-                }
-
-                // check for !important
-                let borderRightHasImportant = false
-                for (let n = 0, j = borderRightValues.length; n < j; ++n) {
-                  borderRightValues[n] = borderRightValues[n].toString().replace(/(!important)/g, () => {
-                    borderRightHasImportant = true
-                    return ''
-                  })
-                }
-
-                if (borderRightHasImportant) {
-                  borderRightValues[borderRightValues.length - 1] += ' !important'
+                  borderRightValues = BORDER_RIGHT_VALUES
                 }
 
                 const declarations = rules[i].declarations
+
+                // check for !important
+                const hasImportant = borderRightValues.some((borderRight) => /(!important)/g.test(borderRight))
+
+                borderRightValues = borderRightValues.map((borderRight) => borderRight.replace(/(!important)/g, ''))
+
+                if (hasImportant) {
+                  borderRightValues[borderRightValues.length - 1] += ' !important'
+                }
 
                 // remove any spaces from empty values
                 borderRightValues = borderRightValues.filter(Boolean)
 
                 // add declaration
-                let borderRightRuleIndex = declarations.length
-                for (let j = 0; j < borderRightRuleIndex; ++j) {
-                  switch (declarations[j].property) {
-                    case 'border-right-width':
-                    case 'border-right-style':
-                    case 'border-right-color':
-                    case 'border-right':
-                      if (j < borderRightRuleIndex) { borderRightRuleIndex = j }
-                      break
-                  }
-                }
+                const borderRightRuleIndex = declarations.findIndex(filterForBorderRight)
 
                 declarations.splice(borderRightRuleIndex, 0, {
                   type: 'declaration',
@@ -2515,19 +2497,19 @@ class CSSPurge {
 
                 let borderRightIndex
 
-                borderRightIndex = declarations.map(toProperty).indexOf('border-right-width')
+                borderRightIndex = declarations.findIndex(({ property }) => property === 'border-right-width')
                 if (borderRightIndex !== -1) {
                   declarations.splice(borderRightIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                borderRightIndex = declarations.map(toProperty).indexOf('border-right-style')
+                borderRightIndex = declarations.findIndex(({ property }) => property === 'border-right-style')
                 if (borderRightIndex !== -1) {
                   declarations.splice(borderRightIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                borderRightIndex = declarations.map(toProperty).indexOf('border-right-color')
+                borderRightIndex = declarations.findIndex(({ property }) => property === 'border-right-color')
                 if (borderRightIndex !== -1) {
                   declarations.splice(borderRightIndex, 1)
                   DECLARATION_COUNT -= 1
@@ -2535,11 +2517,11 @@ class CSSPurge {
 
                 // remove existing borderRights
                 const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((value) => value === 'border-right').length
+                const j = properties.filter((property) => property === 'border-right').length
                 if (j > 1) {
                   for (let i = 1; i < j; ++i) {
-                    const was = borderRightProps.indexOf('border-right')
-                    const now = borderRightProps.indexOf('border-right', (was + 1))
+                    const was = properties.indexOf('border-right')
+                    const now = properties.indexOf('border-right', (was + 1))
                     declarations.splice(now, 1)
                     DECLARATION_COUNT -= 1
                   }
@@ -2550,10 +2532,14 @@ class CSSPurge {
 
           // borderBottom
           if (SHORTEN || SHORTEN_BORDER_BOTTOM) {
-            borderBottom = rules[i].declarations.filter(filterForBorderBottom)
+            const borderBottom = rules[i].declarations.filter(filterForBorderBottom)
             let borderBottomProps = borderBottom.map(toProperty)
             if (
-              borderBottomProps.includes('border-bottom-style') ||
+              (
+                borderBottomProps.includes('border-bottom-width') ||
+                borderBottomProps.includes('border-bottom-style') ||
+                borderBottomProps.includes('border-bottom-color')
+              ) ||
               borderBottomProps.includes('border-bottom')
             ) {
               if (OPTIONS.verbose) { console.log(success('Process - Values - Border Bottom : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
@@ -2561,82 +2547,79 @@ class CSSPurge {
               const borderBottomHasInherit = borderBottom.some(hasInherit)
               if (!borderBottomHasInherit) {
                 let borderBottomValues = borderBottom.map(toValue)
-                borderBottomValuesOutput = [
-                  (borderBottomValues[borderBottomProps.indexOf('border-bottom-width')] ? borderBottomValues[borderBottomProps.indexOf('border-bottom-width')] : ''),
-                  (borderBottomValues[borderBottomProps.indexOf('border-bottom-style')] ? borderBottomValues[borderBottomProps.indexOf('border-bottom-style')] : ''),
-                  (borderBottomValues[borderBottomProps.indexOf('border-bottom-color')] ? borderBottomValues[borderBottomProps.indexOf('border-bottom-color')] : '')
+
+                const borderBottomWidthIndex = borderBottomProps.indexOf('border-bottom-width')
+                const borderBottomStyleIndex = borderBottomProps.indexOf('border-bottom-style')
+                const borderBottomColorIndex = borderBottomProps.indexOf('border-bottom-color')
+                const borderBottomWidthValue = borderBottomValues[borderBottomWidthIndex] ?? ''
+                const borderBottomStyleValue = borderBottomValues[borderBottomStyleIndex] ?? ''
+                const borderBottomColorValue = borderBottomValues[borderBottomColorIndex] ?? ''
+
+                const BORDER_BOTTOM_VALUES = [
+                  borderBottomWidthValue,
+                  borderBottomStyleValue,
+                  borderBottomColorValue
                 ]
 
                 // existing borderBottom check
                 const borderBottomPropValueIndex = borderBottomProps.indexOf('border-bottom')
                 if (borderBottomPropValueIndex !== -1) {
-                  let borderBottomPropValue = borderBottomValues[borderBottomPropValueIndex]
-
+                  const borderBottomPropValue = borderBottomValues[borderBottomPropValueIndex]
                   if (borderBottomPropValue !== 'none') {
-                    // fill missing attribute with existing borderBottom
-                    if (borderBottomProps.indexOf('border-bottom-width') > borderBottomPropValueIndex) {
-                      borderBottomValuesOutput[0] = borderBottomValues[borderBottomProps.indexOf('border-bottom-width')]
+                    if (borderBottomWidthIndex > borderBottomPropValueIndex) {
+                      BORDER_BOTTOM_VALUES[0] = borderBottomWidthValue
                     } else {
-                      borderBottomValuesOutput[0] = (borderBottomPropValue = getValueOfTriProp(borderBottomPropValue, 'width')) ? borderBottomPropValue : borderBottomValuesOutput[0]
+                      const propValue = getValueOfTriProp(borderBottomPropValue, 'width')
+                      if (propValue) BORDER_BOTTOM_VALUES[0] = propValue
                     }
-                    if (borderBottomProps.indexOf('border-bottom-style') > borderBottomPropValueIndex) {
-                      borderBottomValuesOutput[1] = borderBottomValues[borderBottomProps.indexOf('border-bottom-style')]
+
+                    if (borderBottomStyleIndex > borderBottomPropValueIndex) {
+                      BORDER_BOTTOM_VALUES[1] = borderBottomStyleValue
                     } else {
-                      borderBottomValuesOutput[1] = (borderBottomPropValue = getValueOfTriProp(borderBottomPropValue, 'style')) ? borderBottomPropValue : borderBottomValuesOutput[1]
+                      const propValue = getValueOfTriProp(borderBottomPropValue, 'style')
+                      if (propValue) BORDER_BOTTOM_VALUES[1] = propValue
                     }
-                    if (borderBottomProps.indexOf('border-bottom-color') > borderBottomPropValueIndex) {
-                      borderBottomValuesOutput[2] = borderBottomValues[borderBottomProps.indexOf('border-bottom-color')]
+
+                    if (borderBottomColorIndex > borderBottomPropValueIndex) {
+                      BORDER_BOTTOM_VALUES[2] = borderBottomColorValue
                     } else {
-                      borderBottomValuesOutput[2] = (borderBottomPropValue = getValueOfTriProp(borderBottomPropValue, 'color')) ? borderBottomPropValue : borderBottomValuesOutput[2]
+                      const propValue = getValueOfTriProp(borderBottomPropValue, 'color')
+                      if (propValue) BORDER_BOTTOM_VALUES[2] = propValue
                     }
                   } else {
-                    borderBottomValuesOutput[0] = '0'
-                    borderBottomValuesOutput[1] = ''
-                    borderBottomValuesOutput[2] = ''
+                    BORDER_BOTTOM_VALUES[0] = '0'
+                    BORDER_BOTTOM_VALUES[1] = ''
+                    BORDER_BOTTOM_VALUES[2] = ''
                   }
                 }
 
                 if (
-                  borderBottomValuesOutput[0] === '' &&
-                  borderBottomValuesOutput[1] === '' &&
-                  borderBottomValuesOutput[2] === ''
+                  BORDER_BOTTOM_VALUES[0] === '' &&
+                  BORDER_BOTTOM_VALUES[1] === '' &&
+                  BORDER_BOTTOM_VALUES[2] === ''
                 ) {
                   // !!!
                 } else {
                   borderBottomProps = [...DEFAULT_BORDER_BOTTOM_PROPS]
-                  borderBottomValues = borderBottomValuesOutput
-                }
-
-                // check for !important
-                let borderBottomHasImportant = false
-                for (let n = 0, j = borderBottomValues.length; n < j; ++n) {
-                  borderBottomValues[n] = borderBottomValues[n].toString().replace(/(!important)/g, () => {
-                    borderBottomHasImportant = true
-                    return ''
-                  })
-                }
-
-                if (borderBottomHasImportant) {
-                  borderBottomValues[borderBottomValues.length - 1] += ' !important'
+                  borderBottomValues = BORDER_BOTTOM_VALUES
                 }
 
                 const declarations = rules[i].declarations
+
+                // check for !important
+                const hasImportant = borderBottomValues.some((borderBottom) => /(!important)/g.test(borderBottom))
+
+                borderBottomValues = borderBottomValues.map((borderBottom) => borderBottom.replace(/(!important)/g, ''))
+
+                if (hasImportant) {
+                  borderBottomValues[borderBottomValues.length - 1] += ' !important'
+                }
 
                 // remove any spaces from empty values
                 borderBottomValues = borderBottomValues.filter(Boolean)
 
                 // add declaration
-                let borderBottomRuleIndex = declarations.length
-                for (let j = 0; j < borderBottomRuleIndex; ++j) {
-                  switch (declarations[j].property) {
-                    case 'border-bottom-width':
-                    case 'border-bottom-style':
-                    case 'border-bottom-color':
-                    case 'border-bottom':
-                      if (j < borderBottomRuleIndex) { borderBottomRuleIndex = j }
-                      break
-                  }
-                }
+                const borderBottomRuleIndex = declarations.findIndex(filterForBorderBottom)
 
                 declarations.splice(borderBottomRuleIndex, 0, {
                   type: 'declaration',
@@ -2649,19 +2632,19 @@ class CSSPurge {
 
                 let borderBottomIndex
 
-                borderBottomIndex = declarations.map(toProperty).indexOf('border-bottom-width')
+                borderBottomIndex = declarations.findIndex(({ property }) => property === 'border-bottom-width')
                 if (borderBottomIndex !== -1) {
                   declarations.splice(borderBottomIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                borderBottomIndex = declarations.map(toProperty).indexOf('border-bottom-style')
+                borderBottomIndex = declarations.findIndex(({ property }) => property === 'border-bottom-style')
                 if (borderBottomIndex !== -1) {
                   declarations.splice(borderBottomIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                borderBottomIndex = declarations.map(toProperty).indexOf('border-bottom-color')
+                borderBottomIndex = declarations.findIndex(({ property }) => property === 'border-bottom-color')
                 if (borderBottomIndex !== -1) {
                   declarations.splice(borderBottomIndex, 1)
                   DECLARATION_COUNT -= 1
@@ -2669,11 +2652,11 @@ class CSSPurge {
 
                 // remove existing borderBottoms
                 const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((value) => value === 'border-bottom').length
+                const j = properties.filter((property) => property === 'border-bottom').length
                 if (j > 1) {
-                  for (let i = 0; i < j; ++i) {
-                    const was = borderBottomProps.indexOf('border-bottom')
-                    const now = borderBottomProps.indexOf('border-bottom', (was + 1))
+                  for (let i = 1; i < j; ++i) {
+                    const was = properties.indexOf('border-bottom')
+                    const now = properties.indexOf('border-bottom', (was + 1))
                     declarations.splice(now, 1)
                     DECLARATION_COUNT -= 1
                   }
@@ -2684,10 +2667,14 @@ class CSSPurge {
 
           // borderLeft
           if (SHORTEN || SHORTEN_BORDER_LEFT) {
-            borderLeft = rules[i].declarations.filter(filterForBorderLeft)
+            const borderLeft = rules[i].declarations.filter(filterForBorderLeft)
             let borderLeftProps = borderLeft.map(toProperty)
             if (
-              borderLeftProps.includes('border-left-style') ||
+              (
+                borderLeftProps.includes('border-left-width') ||
+                borderLeftProps.includes('border-left-style') ||
+                borderLeftProps.includes('border-left-color')
+              ) ||
               borderLeftProps.includes('border-left')
             ) {
               if (OPTIONS.verbose) { console.log(success('Process - Values - Border Left : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
@@ -2695,82 +2682,80 @@ class CSSPurge {
               const borderLeftHasInherit = borderLeft.some(hasInherit)
               if (!borderLeftHasInherit) {
                 let borderLeftValues = borderLeft.map(toValue)
-                borderLeftValuesOutput = [
-                  (borderLeftValues[borderLeftProps.indexOf('border-left-width')] ? borderLeftValues[borderLeftProps.indexOf('border-left-width')] : ''),
-                  (borderLeftValues[borderLeftProps.indexOf('border-left-style')] ? borderLeftValues[borderLeftProps.indexOf('border-left-style')] : ''),
-                  (borderLeftValues[borderLeftProps.indexOf('border-left-color')] ? borderLeftValues[borderLeftProps.indexOf('border-left-color')] : '')
+
+                const borderLeftWidthIndex = borderLeftProps.indexOf('border-left-width')
+                const borderLeftStyleIndex = borderLeftProps.indexOf('border-left-style')
+                const borderLeftColorIndex = borderLeftProps.indexOf('border-left-color')
+                const borderLeftWidthValue = borderLeftValues[borderLeftWidthIndex] ?? ''
+                const borderLeftStyleValue = borderLeftValues[borderLeftStyleIndex] ?? ''
+                const borderLeftColorValue = borderLeftValues[borderLeftColorIndex] ?? ''
+
+                const BORDER_LEFT_VALUES = [
+                  borderLeftWidthValue,
+                  borderLeftStyleValue,
+                  borderLeftColorValue
                 ]
 
                 // existing borderLeft check
                 const borderLeftPropValueIndex = borderLeftProps.indexOf('border-left')
                 if (borderLeftPropValueIndex !== -1) {
-                  let borderLeftPropValue = borderLeftValues[borderLeftPropValueIndex]
+                  const borderLeftPropValue = borderLeftValues[borderLeftPropValueIndex]
 
                   if (borderLeftPropValue !== 'none') {
-                    // fill missing attribute with existing borderLeft
-                    if (borderLeftProps.indexOf('border-left-width') > borderLeftPropValueIndex) {
-                      borderLeftValuesOutput[0] = borderLeftValues[borderLeftProps.indexOf('border-left-width')]
+                    if (borderLeftWidthIndex > borderLeftPropValueIndex) {
+                      BORDER_LEFT_VALUES[0] = borderLeftWidthValue
                     } else {
-                      borderLeftValuesOutput[0] = (borderLeftPropValue = getValueOfTriProp(borderLeftPropValue, 'width')) ? borderLeftPropValue : borderLeftValuesOutput[0]
+                      const propValue = getValueOfTriProp(borderLeftPropValue, 'width')
+                      if (propValue) BORDER_LEFT_VALUES[0] = propValue
                     }
-                    if (borderLeftProps.indexOf('border-left-style') > borderLeftPropValueIndex) {
-                      borderLeftValuesOutput[1] = borderLeftValues[borderLeftProps.indexOf('border-left-style')]
+
+                    if (borderLeftStyleIndex > borderLeftPropValueIndex) {
+                      BORDER_LEFT_VALUES[1] = borderLeftStyleValue
                     } else {
-                      borderLeftValuesOutput[1] = (borderLeftPropValue = getValueOfTriProp(borderLeftPropValue, 'style')) ? borderLeftPropValue : borderLeftValuesOutput[1]
+                      const propValue = getValueOfTriProp(borderLeftPropValue, 'style')
+                      if (propValue) BORDER_LEFT_VALUES[1] = propValue
                     }
-                    if (borderLeftProps.indexOf('border-left-color') > borderLeftPropValueIndex) {
-                      borderLeftValuesOutput[2] = borderLeftValues[borderLeftProps.indexOf('border-left-color')]
+
+                    if (borderLeftColorIndex > borderLeftPropValueIndex) {
+                      BORDER_LEFT_VALUES[2] = borderLeftColorValue
                     } else {
-                      borderLeftValuesOutput[2] = (borderLeftPropValue = getValueOfTriProp(borderLeftPropValue, 'color')) ? borderLeftPropValue : borderLeftValuesOutput[2]
+                      const propValue = getValueOfTriProp(borderLeftPropValue, 'color')
+                      if (propValue) BORDER_LEFT_VALUES[2] = propValue
                     }
                   } else {
-                    borderLeftValuesOutput[0] = '0'
-                    borderLeftValuesOutput[1] = ''
-                    borderLeftValuesOutput[2] = ''
+                    BORDER_LEFT_VALUES[0] = '0'
+                    BORDER_LEFT_VALUES[1] = ''
+                    BORDER_LEFT_VALUES[2] = ''
                   }
                 }
 
                 if (
-                  borderLeftValuesOutput[0] === '' &&
-                  borderLeftValuesOutput[1] === '' &&
-                  borderLeftValuesOutput[2] === ''
+                  BORDER_LEFT_VALUES[0] === '' &&
+                  BORDER_LEFT_VALUES[1] === '' &&
+                  BORDER_LEFT_VALUES[2] === ''
                 ) {
                   // !!!
                 } else {
                   borderLeftProps = [...DEFAULT_BORDER_LEFT_PROPS]
-                  borderLeftValues = borderLeftValuesOutput
-                }
-
-                // check for !important
-                let borderLeftHasImportant = false
-                for (let n = 0, j = borderLeftValues.length; n < j; ++n) {
-                  borderLeftValues[n] = borderLeftValues[n].toString().replace(/(!important)/g, () => {
-                    borderLeftHasImportant = true
-                    return ''
-                  })
-                }
-
-                if (borderLeftHasImportant) {
-                  borderLeftValues[borderLeftValues.length - 1] += ' !important'
+                  borderLeftValues = BORDER_LEFT_VALUES
                 }
 
                 const declarations = rules[i].declarations
+
+                // check for !important
+                const hasImportant = borderLeftValues.some((borderLeft) => /(!important)/g.test(borderLeft))
+
+                borderLeftValues = borderLeftValues.map((borderLeft) => borderLeft.replace(/(!important)/g, ''))
+
+                if (hasImportant) {
+                  borderLeftValues[borderLeftValues.length - 1] += ' !important'
+                }
 
                 // remove any spaces from empty values
                 borderLeftValues = borderLeftValues.filter(Boolean)
 
                 // add declaration
-                let borderLeftRuleIndex = declarations.length
-                for (let j = 0; j < borderLeftRuleIndex; ++j) {
-                  switch (declarations[j].property) {
-                    case 'border-left-width':
-                    case 'border-left-style':
-                    case 'border-left-color':
-                    case 'border-left':
-                      if (j < borderLeftRuleIndex) { borderLeftRuleIndex = j }
-                      break
-                  }
-                }
+                const borderLeftRuleIndex = declarations.findIndex(filterForBorderLeft)
 
                 declarations.splice(borderLeftRuleIndex, 0, {
                   type: 'declaration',
@@ -2783,19 +2768,19 @@ class CSSPurge {
 
                 let borderLeftIndex
 
-                borderLeftIndex = declarations.map(toProperty).indexOf('border-left-width')
+                borderLeftIndex = declarations.findIndex(({ property }) => property === 'border-left-width')
                 if (borderLeftIndex !== -1) {
                   declarations.splice(borderLeftIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                borderLeftIndex = declarations.map(toProperty).indexOf('border-left-style')
+                borderLeftIndex = declarations.findIndex(({ property }) => property === 'border-left-style')
                 if (borderLeftIndex !== -1) {
                   declarations.splice(borderLeftIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                borderLeftIndex = declarations.map(toProperty).indexOf('border-left-color')
+                borderLeftIndex = declarations.findIndex(({ property }) => property === 'border-left-color')
                 if (borderLeftIndex !== -1) {
                   declarations.splice(borderLeftIndex, 1)
                   DECLARATION_COUNT -= 1
@@ -2803,11 +2788,11 @@ class CSSPurge {
 
                 // remove existing borderLefts
                 const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((value) => value === 'border-left')
+                const j = properties.filter((property) => property === 'border-left').length
                 if (j > 1) {
                   for (let i = 1; i < j; ++i) {
-                    const was = borderLeftProps.indexOf('border-left')
-                    const now = borderLeftProps.indexOf('border-left', (was + 1))
+                    const was = properties.indexOf('border-left')
+                    const now = properties.indexOf('border-left', (was + 1))
                     declarations.splice(now, 1)
                     DECLARATION_COUNT -= 1
                   }
@@ -2818,273 +2803,271 @@ class CSSPurge {
 
           // border
           if (SHORTEN || SHORTEN_BORDER) {
-            border = rules[i].declarations.filter(filterForBorderTopRightBottomLeft)
-            let borderTopRightBottomLeftProps = border.map(toProperty)
-            if (
-              borderTopRightBottomLeftProps.includes('border-top') &&
-              borderTopRightBottomLeftProps.includes('border-right') &&
-              borderTopRightBottomLeftProps.includes('border-bottom') &&
-              borderTopRightBottomLeftProps.includes('border-left')
-            ) {
-              if (OPTIONS.verbose) { console.log(success('Process - Values - Border : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
+            {
+              const border = rules[i].declarations.filter(filterForBorderTopRightBottomLeft)
+              let borderTopRightBottomLeftProps = border.map(toProperty)
+              if (
+                borderTopRightBottomLeftProps.includes('border-top') &&
+                borderTopRightBottomLeftProps.includes('border-right') &&
+                borderTopRightBottomLeftProps.includes('border-bottom') &&
+                borderTopRightBottomLeftProps.includes('border-left')
+              ) {
+                if (OPTIONS.verbose) { console.log(success('Process - Values - Border : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
 
-              const borderHasInherit = border.some(hasInherit)
-              if (!borderHasInherit) {
-                let borderTopRightBottomLeftValues = border.map(toValue)
-                borderTopRightBottomLeftValuesOutput = [
-                  (borderTopRightBottomLeftValues[borderTopRightBottomLeftProps.indexOf('border-width')] ? borderTopRightBottomLeftValues[borderTopRightBottomLeftProps.indexOf('border-width')] : ''),
-                  (borderTopRightBottomLeftValues[borderTopRightBottomLeftProps.indexOf('border-style')] ? borderTopRightBottomLeftValues[borderTopRightBottomLeftProps.indexOf('border-style')] : ''),
-                  (borderTopRightBottomLeftValues[borderTopRightBottomLeftProps.indexOf('border-color')] ? borderTopRightBottomLeftValues[borderTopRightBottomLeftProps.indexOf('border-color')] : '')
-                ]
+                const borderHasInherit = border.some(hasInherit)
+                if (!borderHasInherit) {
+                  let borderTopRightBottomLeftValues = border.map(toValue)
 
-                if (
-                  borderTopRightBottomLeftValues[0] == borderTopRightBottomLeftValues[1] &&
-                  borderTopRightBottomLeftValues[0] == borderTopRightBottomLeftValues[2] &&
-                  borderTopRightBottomLeftValues[0] == borderTopRightBottomLeftValues[3]
-                ) {
-                  const borderPropValue = borderTopRightBottomLeftValues[0]
+                  const borderTopRightBottomLeftWidthIndex = borderTopRightBottomLeftProps.indexOf('border-width')
+                  const borderTopRightBottomLeftStyleIndex = borderTopRightBottomLeftProps.indexOf('border-style')
+                  const borderTopRightBottomLeftColorIndex = borderTopRightBottomLeftProps.indexOf('border-color')
+                  const borderTopRightBottomLeftWidthValue = borderTopRightBottomLeftValues[borderTopRightBottomLeftWidthIndex] ?? ''
+                  const borderTopRightBottomLeftStyleValue = borderTopRightBottomLeftValues[borderTopRightBottomLeftStyleIndex] ?? ''
+                  const borderTopRightBottomLeftColorValue = borderTopRightBottomLeftValues[borderTopRightBottomLeftColorIndex] ?? ''
 
-                  if (borderTopRightBottomLeftProps.indexOf('border-width') == -1) {
-                    borderTopRightBottomLeftValuesOutput[0] = getValueOfTriProp(borderPropValue, 'width')
-                  } else {
-                    borderTopRightBottomLeftValuesOutput[0] = borderTopRightBottomLeftValues[borderTopRightBottomLeftProps.indexOf('border-width')]
-                  }
-                  if (borderTopRightBottomLeftProps.indexOf('border-style') == -1) {
-                    borderTopRightBottomLeftValuesOutput[1] = getValueOfTriProp(borderPropValue, 'style')
-                  } else {
-                    borderTopRightBottomLeftValuesOutput[1] = borderTopRightBottomLeftValues[borderTopRightBottomLeftProps.indexOf('border-style')]
-                  }
-                  if (borderTopRightBottomLeftProps.indexOf('border-color') == -1) {
-                    borderTopRightBottomLeftValuesOutput[2] = getValueOfTriProp(borderPropValue, 'color')
-                  } else {
-                    borderTopRightBottomLeftValuesOutput[2] = borderTopRightBottomLeftValues[borderTopRightBottomLeftProps.indexOf('border-color')]
-                  }
+                  const BORDER_TOP_RIGHT_BOTTOM_LEFT_VALUES = [
+                    borderTopRightBottomLeftWidthValue,
+                    borderTopRightBottomLeftStyleValue,
+                    borderTopRightBottomLeftColorValue
+                  ]
 
                   if (
-                    borderTopRightBottomLeftValuesOutput[0] === '' &&
-                    borderTopRightBottomLeftValuesOutput[1] === '' &&
-                    borderTopRightBottomLeftValuesOutput[2] === ''
+                    borderTopRightBottomLeftValues[0] === borderTopRightBottomLeftValues[1] &&
+                    borderTopRightBottomLeftValues[0] === borderTopRightBottomLeftValues[2] &&
+                    borderTopRightBottomLeftValues[0] === borderTopRightBottomLeftValues[3]
                   ) {
-                    // !!!
-                  } else {
-                    borderTopRightBottomLeftProps = [...DEFAULT_BORDER_PROPS]
-                    borderTopRightBottomLeftValues = borderTopRightBottomLeftValuesOutput
-                  }
+                    const borderPropValue = borderTopRightBottomLeftValues[0]
 
-                  // check for !important
-                  let borderHasImportant = false
-                  for (let n = 0, j = borderTopRightBottomLeftValues.length; n < j; ++n) {
-                    borderTopRightBottomLeftValues[n] = borderTopRightBottomLeftValues[n].toString().replace(/(!important)/g, () => {
-                      borderHasImportant = true
-                      return ''
+                    if (borderTopRightBottomLeftWidthIndex === -1) {
+                      BORDER_TOP_RIGHT_BOTTOM_LEFT_VALUES[0] = getValueOfTriProp(borderPropValue, 'width')
+                    } else {
+                      BORDER_TOP_RIGHT_BOTTOM_LEFT_VALUES[0] = borderTopRightBottomLeftWidthValue
+                    }
+
+                    if (borderTopRightBottomLeftStyleIndex === -1) {
+                      BORDER_TOP_RIGHT_BOTTOM_LEFT_VALUES[1] = getValueOfTriProp(borderPropValue, 'style')
+                    } else {
+                      BORDER_TOP_RIGHT_BOTTOM_LEFT_VALUES[1] = borderTopRightBottomLeftStyleValue
+                    }
+
+                    if (borderTopRightBottomLeftColorIndex === -1) {
+                      BORDER_TOP_RIGHT_BOTTOM_LEFT_VALUES[2] = getValueOfTriProp(borderPropValue, 'color')
+                    } else {
+                      BORDER_TOP_RIGHT_BOTTOM_LEFT_VALUES[2] = borderTopRightBottomLeftColorValue
+                    }
+
+                    if (
+                      BORDER_TOP_RIGHT_BOTTOM_LEFT_VALUES[0] === '' &&
+                      BORDER_TOP_RIGHT_BOTTOM_LEFT_VALUES[1] === '' &&
+                      BORDER_TOP_RIGHT_BOTTOM_LEFT_VALUES[2] === ''
+                    ) {
+                      // !!!
+                    } else {
+                      borderTopRightBottomLeftProps = [...DEFAULT_BORDER_PROPS]
+                      borderTopRightBottomLeftValues = BORDER_TOP_RIGHT_BOTTOM_LEFT_VALUES
+                    }
+
+                    const declarations = rules[i].declarations
+
+                    // check for !important
+                    const hasImportant = borderTopRightBottomLeftValues.some((borderTopRightBottomLeft) => /(!important)/g.test(borderTopRightBottomLeft))
+
+                    borderTopRightBottomLeftValues = borderTopRightBottomLeftValues.map((borderTopRightBottomLeft) => borderTopRightBottomLeft.replace(/(!important)/g, ''))
+
+                    if (hasImportant) {
+                      borderTopRightBottomLeftValues[borderTopRightBottomLeftValues.length - 1] += ' !important'
+                    }
+
+                    // remove any spaces from empty values
+                    borderTopRightBottomLeftValues = borderTopRightBottomLeftValues.filter(Boolean)
+
+                    // add declaration
+                    const borderTopRightBottomLeftRuleValueIndex = declarations.findIndex(filterForBorderTopRightBottomLeft)
+
+                    declarations.splice(borderTopRightBottomLeftRuleValueIndex, 0, {
+                      type: 'declaration',
+                      property: 'border',
+                      value: borderTopRightBottomLeftValues.join(' ')
                     })
-                  }
 
-                  if (borderHasImportant) {
-                    borderTopRightBottomLeftValues[borderTopRightBottomLeftValues.length - 1] += ' !important'
-                  }
+                    DECLARATION_COUNT += 1
+                    summary.stats.summary.noBorderTopRightBottomLeftsShortened += 1
 
-                  const declarations = rules[i].declarations
+                    let borderTopRightBottomLeftIndex
 
-                  // remove any spaces from empty values
-                  borderTopRightBottomLeftValues = borderTopRightBottomLeftValues.filter(Boolean)
+                    borderTopRightBottomLeftIndex = declarations.findIndex(({ property }) => property === 'border-top')
+                    if (borderTopRightBottomLeftIndex !== -1) {
+                      declarations.splice(borderTopRightBottomLeftIndex, 1)
+                      DECLARATION_COUNT -= 1
+                    }
 
-                  // add declaration
-                  let borderTopRightBottomLeftRuleValueIndex = declarations.length
-                  for (let j = 0; j < borderTopRightBottomLeftRuleValueIndex; ++j) {
-                    switch (declarations[j].property) {
-                      case 'border-top':
-                      case 'border-right':
-                      case 'border-bottom':
-                      case 'border-left':
-                        if (j < borderTopRightBottomLeftRuleValueIndex) { borderTopRightBottomLeftRuleValueIndex = j }
-                        break
+                    borderTopRightBottomLeftIndex = declarations.findIndex(({ property }) => property === 'border-right')
+                    if (borderTopRightBottomLeftIndex !== -1) {
+                      declarations.splice(borderTopRightBottomLeftIndex, 1)
+                      DECLARATION_COUNT -= 1
+                    }
+
+                    borderTopRightBottomLeftIndex = declarations.findIndex(({ property }) => property === 'border-bottom')
+                    if (borderTopRightBottomLeftIndex !== -1) {
+                      declarations.splice(borderTopRightBottomLeftIndex, 1)
+                      DECLARATION_COUNT -= 1
+                    }
+
+                    borderTopRightBottomLeftIndex = declarations.findIndex(({ property }) => property === 'border-left')
+                    if (borderTopRightBottomLeftIndex !== -1) {
+                      declarations.splice(borderTopRightBottomLeftIndex, 1)
+                      DECLARATION_COUNT -= 1
                     }
                   }
+                } // end of inherit check
+              } // end of combining
+            }
 
-                  declarations.splice(borderTopRightBottomLeftRuleValueIndex, 0, {
-                    type: 'declaration',
-                    property: 'border',
-                    value: borderTopRightBottomLeftValues.join(' ')
-                  })
-
-                  DECLARATION_COUNT += 1
-                  summary.stats.summary.noBorderTopRightBottomLeftsShortened += 1
-
-                  let borderTopRightBottomLeftIndex
-
-                  borderTopRightBottomLeftIndex = declarations.map(toProperty).indexOf('border-top')
-                  if (borderTopRightBottomLeftIndex !== -1) {
-                    declarations.splice(borderTopRightBottomLeftIndex, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-
-                  borderTopRightBottomLeftIndex = declarations.map(toProperty).indexOf('border-right')
-                  if (borderTopRightBottomLeftIndex !== -1) {
-                    declarations.splice(borderTopRightBottomLeftIndex, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-
-                  borderTopRightBottomLeftIndex = declarations.map(toProperty).indexOf('border-bottom')
-                  if (borderTopRightBottomLeftIndex !== -1) {
-                    declarations.splice(borderTopRightBottomLeftIndex, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-
-                  borderTopRightBottomLeftIndex = declarations.map(toProperty).indexOf('border-left')
-                  if (borderTopRightBottomLeftIndex !== -1) {
-                    declarations.splice(borderTopRightBottomLeftIndex, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-                }
-              } // end of inherit check
-            } // end of combining
-
-            border = rules[i].declarations.filter(filterForBorder)
-            let borderProps = border.map(toProperty)
-            if (
-              (
-                borderProps.includes('border-width') &&
-                borderProps.includes('border-style') &&
-                borderProps.includes('border-color')
-              ) ||
-              borderProps.includes('border')
-            ) {
-              const borderHasInherit = border.some(hasInherit)
-              let borderValues = border.map(toValue)
-              if (!borderHasInherit &&
+            {
+              const border = rules[i].declarations.filter(filterForBorder)
+              let borderProps = border.map(toProperty)
+              if (
                 (
                   borderProps.includes('border-width') &&
                   borderProps.includes('border-style') &&
                   borderProps.includes('border-color')
-                ) &&
-                borderValues[borderProps.indexOf('border-color')].split(' ').length == 1 && // multi-color (border around squares, etc.) check - only do if single
-                borderValues[borderProps.indexOf('border-width')].split(' ').length == 1 // multi-width values not allowed
+                ) ||
+                borderProps.includes('border')
               ) {
-                borderValuesOutput = [
-                  (borderValues[borderProps.indexOf('border-width')] ? borderValues[borderProps.indexOf('border-width')] : ''),
-                  (borderValues[borderProps.indexOf('border-style')] ? borderValues[borderProps.indexOf('border-style')] : ''),
-                  (borderValues[borderProps.indexOf('border-color')] ? borderValues[borderProps.indexOf('border-color')] : '')
-                ]
-
-                // existing border check
-                const borderPropValueIndex = borderProps.indexOf('border')
-                if (borderPropValueIndex !== -1) {
-                  let borderPropValue = borderValues[borderPropValueIndex]
-
-                  if (borderPropValue !== 'none') {
-                    // fill missing attribute with existing border
-                    if (borderProps.indexOf('border-width') > borderPropValueIndex) {
-                      borderValuesOutput[0] = borderValues[borderProps.indexOf('border-width')]
-                    } else {
-                      borderValuesOutput[0] = (borderPropValue = getValueOfTriProp(borderPropValue, 'width')) ? borderPropValue : borderValuesOutput[0]
-                    }
-                    if (borderProps.indexOf('border-style') > borderPropValueIndex) {
-                      borderValuesOutput[1] = borderValues[borderProps.indexOf('border-style')]
-                    } else {
-                      borderValuesOutput[1] = (borderPropValue = getValueOfTriProp(borderPropValue, 'style')) ? borderPropValue : borderValuesOutput[1]
-                    }
-                    if (borderProps.indexOf('border-color') > borderPropValueIndex) {
-                      borderValuesOutput[2] = borderValues[borderProps.indexOf('border-color')]
-                    } else {
-                      borderValuesOutput[2] = (borderPropValue = getValueOfTriProp(borderPropValue, 'color')) ? borderPropValue : borderValuesOutput[2]
-                    }
-                  } else {
-                    borderValuesOutput[0] = '0'
-                    borderValuesOutput[1] = ''
-                    borderValuesOutput[2] = ''
-                  }
-                }
-
-                if (
-                  borderValuesOutput[0] === '' &&
-                  borderValuesOutput[1] === '' &&
-                  borderValuesOutput[2] === ''
+                const borderHasInherit = border.some(hasInherit)
+                let borderValues = border.map(toValue)
+                if (!borderHasInherit &&
+                  (
+                    borderProps.includes('border-width') &&
+                    borderProps.includes('border-style') &&
+                    borderProps.includes('border-color')
+                  ) &&
+                  borderValues[borderProps.indexOf('border-color')].split(' ').length === 1 && // multi-color (border around squares, etc.) check - only do if single
+                  borderValues[borderProps.indexOf('border-width')].split(' ').length === 1 // multi-width values not allowed
                 ) {
-                  // !!!
-                } else {
-                  borderProps = [...DEFAULT_BORDER_PROPS]
-                  borderValues = borderValuesOutput
-                }
+                  const borderWidthIndex = borderProps.indexOf('border-width')
+                  const borderStyleIndex = borderProps.indexOf('border-style')
+                  const borderColorIndex = borderProps.indexOf('border-color')
+                  const borderWidthValue = borderValues[borderWidthIndex] ?? ''
+                  const borderStyleValue = borderValues[borderStyleIndex] ?? ''
+                  const borderColorValue = borderValues[borderColorIndex] ?? ''
 
-                // check for !important
-                let borderHasImportant = false
-                for (let n = 0, j = borderValues.length; n < j; ++n) {
-                  borderValues[n] = borderValues[n].toString().replace(/(!important)/g, () => {
-                    borderHasImportant = true
-                    return ''
-                  })
-                }
+                  const BORDER_VALUES = [
+                    borderWidthValue,
+                    borderStyleValue,
+                    borderColorValue
+                  ]
 
-                if (borderHasImportant) {
-                  borderValues[borderValues.length - 1] += ' !important'
-                }
+                  // existing border check
+                  const borderPropValueIndex = borderProps.indexOf('border')
+                  if (borderPropValueIndex !== -1) {
+                    const borderPropValue = borderValues[borderPropValueIndex]
 
-                const declarations = rules[i].declarations
+                    if (borderPropValue !== 'none') {
+                      // fill missing attribute with existing border
+                      if (borderWidthIndex > borderPropValueIndex) {
+                        BORDER_VALUES[0] = borderWidthValue
+                      } else {
+                        const propValue = getValueOfTriProp(borderPropValue, 'width')
+                        if (propValue) BORDER_VALUES[0] = propValue
+                      }
 
-                // remove any spaces from empty values
-                borderValues = borderValues.filter(Boolean)
+                      if (borderProps.indexOf('border-style') > borderPropValueIndex) {
+                        BORDER_VALUES[1] = borderStyleValue
+                      } else {
+                        const propValue = getValueOfTriProp(borderPropValue, 'style')
+                        if (propValue) BORDER_VALUES[1] = propValue
+                      }
 
-                // add declaration
-                let borderRuleValueIndex = declarations.length
-                for (let j = 0; j < borderRuleValueIndex; ++j) {
-                  switch (declarations[j].property) {
-                    case 'border-width':
-                    case 'border-style':
-                    case 'border-color':
-                    case 'border':
-                      if (j < borderRuleValueIndex) { borderRuleValueIndex = j }
-                      break
+                      if (borderColorIndex > borderPropValueIndex) {
+                        BORDER_VALUES[2] = borderColorValue
+                      } else {
+                        const propValue = getValueOfTriProp(borderPropValue, 'color')
+                        if (propValue) BORDER_VALUES[2] = propValue
+                      }
+                    } else {
+                      BORDER_VALUES[0] = '0'
+                      BORDER_VALUES[1] = ''
+                      BORDER_VALUES[2] = ''
+                    }
                   }
-                }
 
-                declarations.splice(borderRuleValueIndex, 0, {
-                  type: 'declaration',
-                  property: 'border',
-                  value: borderValues.join(' ')
-                })
+                  if (
+                    BORDER_VALUES[0] === '' &&
+                    BORDER_VALUES[1] === '' &&
+                    BORDER_VALUES[2] === ''
+                  ) {
+                    // !!!
+                  } else {
+                    borderProps = [...DEFAULT_BORDER_PROPS]
+                    borderValues = BORDER_VALUES
+                  }
 
-                DECLARATION_COUNT += 1
-                summary.stats.summary.noBordersShortened += 1
+                  const declarations = rules[i].declarations
 
-                let borderIndex
+                  // check for !important
+                  const hasImportant = borderValues.some((border) => /(!important)/g.test(border))
 
-                borderIndex = declarations.map(toProperty).indexOf('border-width')
-                if (borderIndex !== -1) {
-                  declarations.splice(borderIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
+                  borderValues = borderValues.map((border) => border.replace(/(!important)/g, ''))
 
-                borderIndex = declarations.map(toProperty).indexOf('border-style')
-                if (borderIndex !== -1) {
-                  declarations.splice(borderIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
+                  if (hasImportant) {
+                    borderValues[borderValues.length - 1] += ' !important'
+                  }
 
-                borderIndex = declarations.map(toProperty).indexOf('border-color')
-                if (borderIndex !== -1) {
-                  declarations.splice(borderIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
+                  // remove any spaces from empty values
+                  borderValues = borderValues.filter(Boolean)
 
-                // remove existing borders
-                const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((value) => value === 'border').length
-                if (j > 1) {
-                  for (let i = 0; i < j; ++i) {
-                    const was = properties.indexOf('border')
-                    const now = properties.indexOf('border', (was + 1))
-                    declarations.splice(now, 1)
+                  // add declaration
+                  const borderRuleValueIndex = declarations.findIndex(filterForBorder)
+
+                  declarations.splice(borderRuleValueIndex, 0, {
+                    type: 'declaration',
+                    property: 'border',
+                    value: borderValues.join(' ')
+                  })
+
+                  DECLARATION_COUNT += 1
+                  summary.stats.summary.noBordersShortened += 1
+
+                  let borderIndex
+
+                  borderIndex = declarations.findIndex(({ property }) => property === 'border-width')
+                  if (borderIndex !== -1) {
+                    declarations.splice(borderIndex, 1)
                     DECLARATION_COUNT -= 1
                   }
-                }
-              } // end of inherit check
+
+                  borderIndex = declarations.findIndex(({ property }) => property === 'border-style')
+                  if (borderIndex !== -1) {
+                    declarations.splice(borderIndex, 1)
+                    DECLARATION_COUNT -= 1
+                  }
+
+                  borderIndex = declarations.findIndex(({ property }) => property === 'border-color')
+                  if (borderIndex !== -1) {
+                    declarations.splice(borderIndex, 1)
+                    DECLARATION_COUNT -= 1
+                  }
+
+                  // remove existing borders
+                  const properties = declarations.filter(toProperty).map(toProperty)
+                  const j = properties.filter((property) => property === 'border').length
+                  if (j > 1) {
+                    for (let i = 1; i < j; ++i) {
+                      const was = properties.indexOf('border')
+                      const now = properties.indexOf('border', (was + 1))
+                      declarations.splice(now, 1)
+                      DECLARATION_COUNT -= 1
+                    }
+                  }
+                } // end of inherit check
+              }
             }
           } // end of border
 
           // borderRadius
           if (SHORTEN || SHORTEN_BORDER_RADIUS) {
-            borderRadius = rules[i].declarations.filter(filterForBorderRadius)
+            const borderRadius = rules[i].declarations.filter(filterForBorderRadius)
             let borderRadiusProps = borderRadius.map(toProperty)
             if (
               (
@@ -3100,143 +3083,151 @@ class CSSPurge {
               const borderRadiusHasInherit = borderRadius.some(hasInherit)
               if (!borderRadiusHasInherit) {
                 let borderRadiusValues = borderRadius.map(toValue)
-                borderRadiusValuesOutput = [
-                  (borderRadiusValues[borderRadiusProps.indexOf('border-top-left-radius')] ? borderRadiusValues[borderRadiusProps.indexOf('border-top-left-radius')] : ''),
-                  (borderRadiusValues[borderRadiusProps.indexOf('border-top-right-radius')] ? borderRadiusValues[borderRadiusProps.indexOf('border-top-right-radius')] : ''),
-                  (borderRadiusValues[borderRadiusProps.indexOf('border-bottom-left-radius')] ? borderRadiusValues[borderRadiusProps.indexOf('border-bottom-left-radius')] : ''),
-                  (borderRadiusValues[borderRadiusProps.indexOf('border-bottom-right-radius')] ? borderRadiusValues[borderRadiusProps.indexOf('border-bottom-right-radius')] : '')
+
+                let borderTopLeftRadiusIndex = borderRadiusProps.indexOf('border-top-left-radius')
+                let borderTopRightRadiusIndex = borderRadiusProps.indexOf('border-top-right-radius')
+                let borderBottomLeftRadiusIndex = borderRadiusProps.indexOf('border-bottom-left-radius')
+                let borderBottomRightRadiusIndex = borderRadiusProps.indexOf('border-bottom-right-radius')
+                const borderTopLeftRadiusValue = borderRadiusValues[borderTopLeftRadiusIndex] ?? ''
+                const borderTopRightRadiusValue = borderRadiusValues[borderTopRightRadiusIndex] ?? ''
+                const borderBottomLeftRadiusValue = borderRadiusValues[borderBottomLeftRadiusIndex] ?? ''
+                const borderBottomRightRadiusValue = borderRadiusValues[borderBottomRightRadiusIndex] ?? ''
+
+                const BORDER_RADIUS_VALUES = [
+                  borderTopLeftRadiusValue,
+                  borderTopRightRadiusValue,
+                  borderBottomLeftRadiusValue,
+                  borderBottomRightRadiusValue
                 ]
 
                 // existing borderRadius check
                 const borderRadiusPropValueIndex = borderRadiusProps.indexOf('border-radius')
                 if (borderRadiusPropValueIndex !== -1) {
-                  let borderRadiusPropValue = borderRadiusValues[borderRadiusPropValueIndex]
+                  const borderRadiusPropValue = borderRadiusValues[borderRadiusPropValueIndex]
 
-                  // fill missing attribute with existing borderRadius
-                  if (borderRadiusProps.indexOf('border-top-left-radius') > borderRadiusPropValueIndex) {
-                    borderRadiusValuesOutput[0] = borderRadiusValues[borderRadiusProps.indexOf('border-top-left-radius')]
+                  if (borderTopLeftRadiusIndex > borderRadiusPropValueIndex) {
+                    BORDER_RADIUS_VALUES[0] = borderTopLeftRadiusValue
                   } else {
-                    borderRadiusValuesOutput[0] = (borderRadiusPropValue = getValueOfSquareProp(borderRadiusPropValue, 'top')) ? borderRadiusPropValue : borderRadiusValuesOutput[0]
+                    const propValue = getValueOfSquareProp(borderRadiusPropValue, 'top')
+                    if (propValue) BORDER_RADIUS_VALUES[0] = propValue
                   }
+
                   if (borderRadiusProps.indexOf('border-top-right-radius') > borderRadiusPropValueIndex) {
-                    borderRadiusValuesOutput[1] = borderRadiusValues[borderRadiusProps.indexOf('border-top-right-radius')]
+                    BORDER_RADIUS_VALUES[1] = borderTopRightRadiusValue
                   } else {
-                    borderRadiusValuesOutput[1] = (borderRadiusPropValue = getValueOfSquareProp(borderRadiusPropValue, 'right')) ? borderRadiusPropValue : borderRadiusValuesOutput[1]
+                    const propValue = getValueOfSquareProp(borderRadiusPropValue, 'right')
+                    if (propValue) BORDER_RADIUS_VALUES[1] = propValue
                   }
-                  if (borderRadiusProps.indexOf('border-bottom-left-radius') > borderRadiusPropValueIndex) {
-                    borderRadiusValuesOutput[2] = borderRadiusValues[borderRadiusProps.indexOf('border-bottom-left-radius')]
+
+                  if (borderBottomLeftRadiusIndex > borderRadiusPropValueIndex) {
+                    BORDER_RADIUS_VALUES[2] = borderBottomLeftRadiusValue
                   } else {
-                    borderRadiusValuesOutput[2] = (borderRadiusPropValue = getValueOfSquareProp(borderRadiusPropValue, 'bottom')) ? borderRadiusPropValue : borderRadiusValuesOutput[2]
+                    const propValue = getValueOfSquareProp(borderRadiusPropValue, 'bottom')
+                    if (propValue) BORDER_RADIUS_VALUES[2] = propValue
                   }
-                  if (borderRadiusProps.indexOf('border-bottom-right-radius') > borderRadiusPropValueIndex) {
-                    borderRadiusValuesOutput[3] = borderRadiusValues[borderRadiusProps.indexOf('border-bottom-right-radius')]
+
+                  if (borderBottomRightRadiusIndex > borderRadiusPropValueIndex) {
+                    BORDER_RADIUS_VALUES[3] = borderBottomRightRadiusValue
                   } else {
-                    borderRadiusValuesOutput[3] = (borderRadiusPropValue = getValueOfSquareProp(borderRadiusPropValue, 'left')) ? borderRadiusPropValue : borderRadiusValuesOutput[3]
+                    const propValue = getValueOfSquareProp(borderRadiusPropValue, 'left')
+                    if (propValue) BORDER_RADIUS_VALUES[3] = propValue
                   }
                 }
 
                 borderRadiusProps = [...DEFAULT_BORDER_RADIUS_PROPS]
-                borderRadiusValues = borderRadiusValuesOutput
+                borderRadiusValues = BORDER_RADIUS_VALUES
 
                 // check for requirements
-                const borderRadiusLeftIndex = borderRadiusProps.indexOf('border-bottom-right-radius')
-                const borderRadiusRightIndex = borderRadiusProps.indexOf('border-top-right-radius')
-                const borderRadiusTopIndex = borderRadiusProps.indexOf('border-top-left-radius')
-                const borderRadiusBottomIndex = borderRadiusProps.indexOf('border-bottom-left-radius')
+                borderTopLeftRadiusIndex = borderRadiusProps.indexOf('border-top-left-radius')
+                borderTopRightRadiusIndex = borderRadiusProps.indexOf('border-top-right-radius')
+                borderBottomLeftRadiusIndex = borderRadiusProps.indexOf('border-bottom-left-radius')
+                borderBottomRightRadiusIndex = borderRadiusProps.indexOf('border-bottom-right-radius')
 
-                // apply rules
-                // 1 value
                 if (
-                  borderRadiusTopIndex !== -1 && borderRadiusBottomIndex !== -1 &&
-                  borderRadiusLeftIndex !== -1 && borderRadiusRightIndex !== -1 &&
-                  borderRadiusValues[borderRadiusTopIndex] == borderRadiusValues[borderRadiusBottomIndex] &&
-                  borderRadiusValues[borderRadiusTopIndex] == borderRadiusValues[borderRadiusRightIndex] &&
-                  borderRadiusValues[borderRadiusTopIndex] == borderRadiusValues[borderRadiusLeftIndex]
+                  borderTopLeftRadiusIndex !== -1 &&
+                  borderBottomLeftRadiusIndex !== -1 &&
+                  borderBottomRightRadiusIndex !== -1 &&
+                  borderTopRightRadiusIndex !== -1
                 ) {
-                  borderRadiusProps = ['border-radius']
-                  borderRadiusValues = [borderRadiusValues[borderRadiusTopIndex]]
-                } else if ( // 2
-                  borderRadiusTopIndex !== -1 && borderRadiusBottomIndex !== -1 &&
-                  borderRadiusLeftIndex !== -1 && borderRadiusRightIndex !== -1 &&
-                  borderRadiusValues[borderRadiusTopIndex] === borderRadiusValues[borderRadiusBottomIndex] &&
-                  borderRadiusValues[borderRadiusLeftIndex] === borderRadiusValues[borderRadiusRightIndex]
-                ) {
-                  const borderRadiusTopBottomValue = borderRadiusValues[borderRadiusTopIndex]
-                  // remove Top + Bottom values
-                  borderRadiusValues.splice(borderRadiusTopIndex, 1)
-                  borderRadiusValues.splice(borderRadiusBottomIndex - 1, 1)
-                  // add TopBottom value
-                  borderRadiusValues.splice(0, 0, borderRadiusTopBottomValue)
+                  const borderTopLeftRadiusValue = borderRadiusValues[borderTopLeftRadiusIndex]
+                  const borderTopRightRadiusValue = borderRadiusValues[borderTopRightRadiusIndex]
+                  const borderBottomLeftRadiusValue = borderRadiusValues[borderBottomLeftRadiusIndex]
+                  const borderBottomRightRadiusValue = borderRadiusValues[borderBottomRightRadiusIndex]
 
-                  // remove Top + Bottom properties
-                  borderRadiusProps.splice(borderRadiusTopIndex, 1)
-                  borderRadiusProps.splice(borderRadiusBottomIndex - 1, 1)
-                  // add TopBottom property - for alignment sake
-                  borderRadiusProps.splice(0, 0, 'border-radius-top-bottom')
+                  // 1 value
+                  if (
+                    borderTopLeftRadiusValue === borderBottomLeftRadiusValue &&
+                    borderTopLeftRadiusValue === borderTopRightRadiusValue &&
+                    borderTopLeftRadiusValue === borderBottomRightRadiusValue
+                  ) {
+                    borderRadiusProps = ['border-radius']
+                    borderRadiusValues = [borderTopLeftRadiusValue]
+                  } else {
+                    // 2 values
+                    if (
+                      borderTopLeftRadiusValue === borderBottomLeftRadiusValue &&
+                      borderBottomRightRadiusValue === borderTopRightRadiusValue
+                    ) {
+                      // remove Top Left + Bottom Left values
+                      borderRadiusValues.splice(borderTopLeftRadiusIndex, 1)
+                      borderRadiusValues.splice(borderBottomLeftRadiusIndex - 1, 1)
+                      // use Top Left as Top Bottom value
+                      borderRadiusValues.splice(0, 0, borderTopLeftRadiusValue)
 
-                  const borderRadiusRightLeftValue = borderRadiusValues[borderRadiusRightIndex]
-                  // remove Right + Left values
-                  borderRadiusValues.splice(borderRadiusRightIndex, 1)
-                  borderRadiusValues.splice(borderRadiusLeftIndex - 2, 1)
-                  // add RightLeft value
-                  borderRadiusValues.splice(1, 0, borderRadiusRightLeftValue)
+                      // remove Top Left + Bottom Left properties
+                      borderRadiusProps.splice(borderTopLeftRadiusIndex, 1)
+                      borderRadiusProps.splice(borderBottomLeftRadiusIndex - 1, 1)
+                      // add TopBottom property - for alignment sake
+                      borderRadiusProps.splice(0, 0, 'border-radius-top-bottom')
 
-                  // remove Right + Left properties
-                  borderRadiusProps.splice(borderRadiusRightIndex, 1)
-                  borderRadiusProps.splice(borderRadiusLeftIndex - 2, 1)
-                  // add RightLeft property - for alignment sake
-                  borderRadiusProps.splice(1, 0, 'border-radius-right-left')
-                } else if ( // 3 values
-                  borderRadiusLeftIndex !== -1 && borderRadiusRightIndex !== -1 &&
-                  borderRadiusTopIndex !== -1 && borderRadiusBottomIndex !== -1 &&
-                  borderRadiusValues[borderRadiusLeftIndex] === borderRadiusValues[borderRadiusRightIndex]
-                ) {
-                  const borderRadiusRightLeftValue = borderRadiusValues[borderRadiusRightIndex]
+                      // remove Top Right + Bottom Right values
+                      borderRadiusValues.splice(borderTopRightRadiusIndex, 1)
+                      borderRadiusValues.splice(borderBottomRightRadiusIndex - 2, 1)
+                      // use Top Right as Right Left value
+                      borderRadiusValues.splice(1, 0, borderTopRightRadiusValue)
 
-                  // remove right + left values
-                  borderRadiusValues.splice(borderRadiusRightIndex, 1)
-                  borderRadiusValues.splice(borderRadiusLeftIndex - 1, 1)
-                  // add rightleft value
-                  borderRadiusValues.splice(1, 0, borderRadiusRightLeftValue)
+                      // remove Top Right + Bottom Right properties
+                      borderRadiusProps.splice(borderTopRightRadiusIndex, 1)
+                      borderRadiusProps.splice(borderBottomRightRadiusIndex - 2, 1)
+                      // add RightLeft property - for alignment sake
+                      borderRadiusProps.splice(1, 0, 'border-radius-right-left')
+                    } else {
+                      // 3 values
+                      if (
+                        borderBottomRightRadiusValue === borderTopRightRadiusValue
+                      ) {
+                        // remove Top Right + Bottom Right values
+                        borderRadiusValues.splice(borderTopRightRadiusIndex, 1)
+                        borderRadiusValues.splice(borderBottomRightRadiusIndex - 1, 1)
+                        // use TopRight as TopBottom value
+                        borderRadiusValues.splice(1, 0, borderTopRightRadiusValue)
 
-                  // remove right + left properties
-                  borderRadiusProps.splice(borderRadiusRightIndex, 1)
-                  borderRadiusProps.splice(borderRadiusLeftIndex - 1, 1)
-                  // add rightleft property - for alignment sake
-                  borderRadiusProps.splice(1, 0, 'border-radius-left-right')
-                }
-
-                // check for !important
-                let borderRadiusHasImportant = false
-                for (let n = 0, j = borderRadiusValues.length; n < j; ++n) {
-                  borderRadiusValues[n] = borderRadiusValues[n].toString().replace(/(!important)/g, () => {
-                    borderRadiusHasImportant = true
-                    return ''
-                  })
-                }
-
-                if (borderRadiusHasImportant) {
-                  borderRadiusValues[borderRadiusValues.length - 1] += ' !important'
+                        // remove Top Right + Bottom Right properties
+                        borderRadiusProps.splice(borderTopRightRadiusIndex, 1)
+                        borderRadiusProps.splice(borderBottomRightRadiusIndex - 1, 1)
+                        // add LeftRight property - for alignment sake
+                        borderRadiusProps.splice(1, 0, 'border-radius-left-right')
+                      }
+                    }
+                  }
                 }
 
                 const declarations = rules[i].declarations
+
+                // check for !important
+                const hasImportant = borderRadiusValues.some((borderRadius) => /(!important)/g.test(borderRadius))
+
+                borderRadiusValues = borderRadiusValues.map((borderRadius) => borderRadius.replace(/(!important)/g, ''))
+
+                if (hasImportant) {
+                  borderRadiusValues[borderRadiusValues.length - 1] += ' !important'
+                }
 
                 // remove any spaces from empty values
                 borderRadiusValues = borderRadiusValues.filter(Boolean)
 
                 // add declaration
-                let borderRadiusRuleValueIndex = declarations.length
-                for (let j = 0; j < borderRadiusRuleValueIndex; ++j) {
-                  switch (declarations[j].property) {
-                    case 'border-top-left-radius':
-                    case 'border-top-right-radius':
-                    case 'border-bottom-left-radius':
-                    case 'border-bottom-right-radius':
-                    case 'border-radius':
-                      if (j < borderRadiusRuleValueIndex) { borderRadiusRuleValueIndex = j }
-                      break
-                  }
-                }
+                const borderRadiusRuleValueIndex = declarations.findIndex(filterForBorderRadius)
 
                 declarations.splice(borderRadiusRuleValueIndex, 0, {
                   type: 'declaration',
@@ -3250,25 +3241,25 @@ class CSSPurge {
                 let borderRadiusIndex
 
                 // remove originals
-                borderRadiusIndex = declarations.map(toProperty).indexOf('border-top-left-radius')
+                borderRadiusIndex = declarations.findIndex(({ property }) => property === 'border-top-left-radius')
                 if (borderRadiusIndex !== -1) {
                   declarations.splice(borderRadiusIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                borderRadiusIndex = declarations.map(toProperty).indexOf('border-top-right-radius')
+                borderRadiusIndex = declarations.findIndex(({ property }) => property === 'border-top-right-radius')
                 if (borderRadiusIndex !== -1) {
                   declarations.splice(borderRadiusIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                borderRadiusIndex = declarations.map(toProperty).indexOf('border-bottom-left-radius')
+                borderRadiusIndex = declarations.findIndex(({ property }) => property === 'border-bottom-left-radius')
                 if (borderRadiusIndex !== -1) {
                   declarations.splice(borderRadiusIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                borderRadiusIndex = declarations.map(toProperty).indexOf('border-bottom-right-radius')
+                borderRadiusIndex = declarations.findIndex(({ property }) => property === 'border-bottom-right-radius')
                 if (borderRadiusIndex !== -1) {
                   declarations.splice(borderRadiusIndex, 1)
                   DECLARATION_COUNT -= 1
@@ -3276,9 +3267,9 @@ class CSSPurge {
 
                 // remove existing borderRadiuss
                 const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((value) => value === 'border-radius').length
+                const j = properties.filter((property) => property === 'border-radius').length
                 if (j > 1) {
-                  for (let i = 0; i < j; ++i) {
+                  for (let i = 1; i < j; ++i) {
                     const was = properties.indexOf('border-radius')
                     const now = properties.indexOf('border-radius', (was + 1))
                     declarations.splice(now, 1)
@@ -3291,7 +3282,7 @@ class CSSPurge {
 
           // margin
           if (SHORTEN || SHORTEN_MARGIN) {
-            margin = rules[i].declarations.filter(filterForMargin)
+            const margin = rules[i].declarations.filter(filterForMargin)
             let marginProps = margin.map(toProperty)
             if (
               (
@@ -3307,11 +3298,21 @@ class CSSPurge {
               const marginHasInherit = margin.some(hasInherit)
               if (!marginHasInherit) {
                 let marginValues = margin.map(toValue)
-                marginValuesOutput = [
-                  (marginValues[marginProps.indexOf('margin-top')] ? marginValues[marginProps.indexOf('margin-top')] : ''),
-                  (marginValues[marginProps.indexOf('margin-right')] ? marginValues[marginProps.indexOf('margin-right')] : ''),
-                  (marginValues[marginProps.indexOf('margin-bottom')] ? marginValues[marginProps.indexOf('margin-bottom')] : ''),
-                  (marginValues[marginProps.indexOf('margin-left')] ? marginValues[marginProps.indexOf('margin-left')] : '')
+
+                let marginTopIndex = marginProps.indexOf('margin-top')
+                let marginRightIndex = marginProps.indexOf('margin-right')
+                let marginBottomIndex = marginProps.indexOf('margin-bottom')
+                let marginLeftIndex = marginProps.indexOf('margin-left')
+                const marginTopValue = marginValues[marginTopIndex] ?? ''
+                const marginRightValue = marginValues[marginRightIndex] ?? ''
+                const marginBottomValue = marginValues[marginBottomIndex] ?? ''
+                const marginLeftValue = marginValues[marginLeftIndex] ?? ''
+
+                const MARGIN_VALUES = [
+                  marginTopValue,
+                  marginRightValue,
+                  marginBottomValue,
+                  marginLeftValue
                 ]
 
                 // existing margin check
@@ -3320,136 +3321,138 @@ class CSSPurge {
                   const marginPropValue = marginValues[marginPropValueIndex]
 
                   // fill missing attribute with existing margin
-                  if (marginProps.indexOf('margin-top') > marginPropValueIndex) {
-                    marginValuesOutput[0] = marginValues[marginProps.indexOf('margin-top')]
+                  if (marginTopIndex > marginPropValueIndex) {
+                    MARGIN_VALUES[0] = marginTopValue
                   } else {
-                    marginValuesOutput[0] = getValueOfSquareProp(marginPropValue, 'top')
+                    const propValue = getValueOfSquareProp(marginPropValue, 'top')
+                    if (propValue) MARGIN_VALUES[0] = propValue
                   }
-                  if (marginProps.indexOf('margin-right') > marginPropValueIndex) {
-                    marginValuesOutput[1] = marginValues[marginProps.indexOf('margin-right')]
+
+                  if (marginRightIndex > marginPropValueIndex) {
+                    MARGIN_VALUES[1] = marginRightValue
                   } else {
-                    marginValuesOutput[1] = getValueOfSquareProp(marginPropValue, 'right')
+                    const propValue = getValueOfSquareProp(marginPropValue, 'right')
+                    if (propValue) MARGIN_VALUES[1] = propValue
                   }
-                  if (marginProps.indexOf('margin-bottom') > marginPropValueIndex) {
-                    marginValuesOutput[2] = marginValues[marginProps.indexOf('margin-bottom')]
+
+                  if (marginBottomIndex > marginPropValueIndex) {
+                    MARGIN_VALUES[2] = marginBottomValue
                   } else {
-                    marginValuesOutput[2] = getValueOfSquareProp(marginPropValue, 'bottom')
+                    const propValue = getValueOfSquareProp(marginPropValue, 'bottom')
+                    if (propValue) MARGIN_VALUES[2] = propValue
                   }
-                  if (marginProps.indexOf('margin-left') > marginPropValueIndex) {
-                    marginValuesOutput[3] = marginValues[marginProps.indexOf('margin-left')]
+
+                  if (marginLeftIndex > marginPropValueIndex) {
+                    MARGIN_VALUES[3] = marginLeftValue
                   } else {
-                    marginValuesOutput[3] = getValueOfSquareProp(marginPropValue, 'left')
+                    const propValue = getValueOfSquareProp(marginPropValue, 'left')
+                    if (propValue) MARGIN_VALUES[3] = propValue
                   }
                 }
 
                 if (
-                  marginValuesOutput[0] === '' &&
-                  marginValuesOutput[1] === '' &&
-                  marginValuesOutput[2] === '' &&
-                  marginValuesOutput[3] === ''
+                  MARGIN_VALUES[0] === '' &&
+                  MARGIN_VALUES[1] === '' &&
+                  MARGIN_VALUES[2] === '' &&
+                  MARGIN_VALUES[3] === ''
                 ) {
                   //
                 } else {
                   marginProps = [...DEFAULT_MARGIN_PROPS]
-                  marginValues = marginValuesOutput
+                  marginValues = MARGIN_VALUES
                 }
+
+                const declarations = rules[i].declarations
 
                 // check for !important
-                let marginHasImportant = false
-                for (let n = 0, j = marginValues.length; n < j; ++n) {
-                  marginValues[n] = marginValues[n].toString().replace(/(!important)/g, () => {
-                    marginHasImportant = true
-                    return ''
-                  })
-                }
+                const hasImportant = marginValues.some((margin) => /(!important)/g.test(margin))
 
-                if (marginHasImportant) {
+                marginValues = marginValues.map((margin) => margin.replace(/(!important)/g, ''))
+
+                if (hasImportant) {
                   marginValues[marginValues.length - 1] += ' !important'
                 }
 
                 // check for requirements
-                const marginLeftIndex = marginProps.indexOf('margin-left')
-                const marginRightIndex = marginProps.indexOf('margin-right')
-                const marginTopIndex = marginProps.indexOf('margin-top')
-                const marginBottomIndex = marginProps.indexOf('margin-bottom')
+                marginTopIndex = marginProps.indexOf('margin-top')
+                marginRightIndex = marginProps.indexOf('margin-right')
+                marginBottomIndex = marginProps.indexOf('margin-bottom')
+                marginLeftIndex = marginProps.indexOf('margin-left')
 
-                // apply rules
-                // 1 value
                 if (
-                  marginTopIndex !== -1 && marginBottomIndex !== -1 &&
-                  marginLeftIndex !== -1 && marginRightIndex !== -1 &&
-                  marginValues[marginTopIndex] == marginValues[marginBottomIndex] &&
-                  marginValues[marginTopIndex] == marginValues[marginRightIndex] &&
-                  marginValues[marginTopIndex] == marginValues[marginLeftIndex]) {
-                  marginProps = ['margin']
-                  marginValues = [marginValues[marginTopIndex]]
-                } else if ( // 2
-                  marginTopIndex !== -1 && marginBottomIndex !== -1 &&
-                  marginLeftIndex !== -1 && marginRightIndex !== -1 &&
-                  marginValues[marginTopIndex] == marginValues[marginBottomIndex] &&
-                  marginValues[marginLeftIndex] == marginValues[marginRightIndex]) {
-                  const marginTopBottomValue = marginValues[marginTopIndex]
-                  // remove Top + Bottom values
-                  marginValues.splice(marginTopIndex, 1)
-                  marginValues.splice(marginBottomIndex - 1, 1)
-                  // add TopBottom value
-                  marginValues.splice(0, 0, marginTopBottomValue)
+                  marginTopIndex !== -1 &&
+                  marginBottomIndex !== -1 &&
+                  marginLeftIndex !== -1 &&
+                  marginRightIndex !== -1
+                ) {
+                  const marginTopValue = marginValues[marginTopIndex]
+                  const marginRightValue = marginValues[marginRightIndex]
+                  const marginBottomValue = marginValues[marginBottomIndex]
+                  const marginLeftValue = marginValues[marginLeftIndex]
 
-                  // remove Top + Bottom properties
-                  marginProps.splice(marginTopIndex, 1)
-                  marginProps.splice(marginBottomIndex - 1, 1)
-                  // add TopBottom property - for alignment sake
-                  marginProps.splice(0, 0, 'marginTopBottom')
+                  // 1 value
+                  if (
+                    marginTopValue === marginBottomValue &&
+                    marginTopValue === marginRightValue &&
+                    marginTopValue === marginLeftValue
+                  ) {
+                    marginProps = ['margin']
+                    marginValues = [marginTopValue]
+                  } else {
+                    // 2 values
+                    if (
+                      marginTopValue === marginBottomValue &&
+                      marginRightValue == marginLeftValue
+                    ) {
+                      // remove Top + Bottom values
+                      marginValues.splice(marginTopIndex, 1)
+                      marginValues.splice(marginBottomIndex - 1, 1)
+                      // use Top as TopBottom
+                      marginValues.splice(0, 0, marginTopValue)
 
-                  const marginLeftRightValue = marginValues[marginRightIndex]
-                  // remove Right + Left values
-                  marginValues.splice(marginRightIndex, 1)
-                  marginValues.splice(marginLeftIndex - 2, 1)
-                  // add RightLeft value
-                  marginValues.splice(1, 0, marginLeftRightValue)
+                      // remove Top + Bottom properties
+                      marginProps.splice(marginTopIndex, 1)
+                      marginProps.splice(marginBottomIndex - 1, 1)
+                      // add TopBottom property - for alignment sake
+                      marginProps.splice(0, 0, 'marginTopBottom')
 
-                  // remove Right + Left properties
-                  marginProps.splice(marginRightIndex, 1)
-                  marginProps.splice(marginLeftIndex - 2, 1)
-                  // add RightLeft property - for alignment sake
-                  marginProps.splice(1, 0, 'marginRightLeft')
-                } else if ( // 3 values
-                  marginLeftIndex !== -1 && marginRightIndex !== -1 &&
-                  marginTopIndex !== -1 && marginBottomIndex !== -1 &&
-                  marginValues[marginLeftIndex] == marginValues[marginRightIndex]) {
-                  const marginLeftRightValue = marginValues[marginRightIndex]
+                      // remove Right + Left values
+                      marginValues.splice(marginRightIndex, 1)
+                      marginValues.splice(marginLeftIndex - 2, 1)
+                      // use Right as RightLeft value
+                      marginValues.splice(1, 0, marginRightValue)
 
-                  // remove right + left values
-                  marginValues.splice(marginRightIndex, 1)
-                  marginValues.splice(marginLeftIndex - 1, 1)
-                  // add rightleft value
-                  marginValues.splice(1, 0, marginLeftRightValue)
+                      // remove Right + Left properties
+                      marginProps.splice(marginRightIndex, 1)
+                      marginProps.splice(marginLeftIndex - 2, 1)
+                      // add RightLeft property - for alignment sake
+                      marginProps.splice(1, 0, 'marginRightLeft')
+                    } else {
+                      // 3 values
+                      if (
+                        marginRightValue === marginLeftValue
+                      ) {
+                        // remove Right + Left values
+                        marginValues.splice(marginRightIndex, 1)
+                        marginValues.splice(marginLeftIndex - 1, 1)
+                        // use Right as RightLeft value
+                        marginValues.splice(1, 0, marginRightValue)
 
-                  // remove right + left properties
-                  marginProps.splice(marginRightIndex, 1)
-                  marginProps.splice(marginLeftIndex - 1, 1)
-                  // add rightleft property - for alignment sake
-                  marginProps.splice(1, 0, 'marginLeftRight')
+                        // remove Right + Left properties
+                        marginProps.splice(marginRightIndex, 1)
+                        marginProps.splice(marginLeftIndex - 1, 1)
+                        // add LeftRight property - for alignment sake
+                        marginProps.splice(1, 0, 'marginLeftRight')
+                      }
+                    }
+                  }
                 }
-
-                const declarations = rules[i].declarations
 
                 // remove any spaces from empty values
                 marginValues = marginValues.filter(Boolean)
 
                 // add declaration
-                let marginRuleIndex = declarations.length
-                for (let j = 0; j < marginRuleIndex; ++j) {
-                  switch (declarations[j].property) {
-                    case 'margin-top':
-                    case 'margin-right':
-                    case 'margin-bottom':
-                    case 'margin-left':
-                    case 'margin':
-                      if (j < marginRuleIndex) { marginRuleIndex = j }
-                      break
-                  }
-                }
+                const marginRuleIndex = declarations.findIndex(filterForMargin)
 
                 declarations.splice(marginRuleIndex, 0, {
                   type: 'declaration',
@@ -3463,25 +3466,25 @@ class CSSPurge {
                 let marginIndex
 
                 // remove originals
-                marginIndex = declarations.map(toProperty).indexOf('margin-top')
+                marginIndex = declarations.findIndex(({ property }) => property === 'margin-top')
                 if (marginIndex !== -1) {
                   declarations.splice(marginIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                marginIndex = declarations.map(toProperty).indexOf('margin-right')
+                marginIndex = declarations.findIndex(({ property }) => property === 'margin-right')
                 if (marginIndex !== -1) {
                   declarations.splice(marginIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                marginIndex = declarations.map(toProperty).indexOf('margin-bottom')
+                marginIndex = declarations.findIndex(({ property }) => property === 'margin-bottom')
                 if (marginIndex !== -1) {
                   declarations.splice(marginIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                marginIndex = declarations.map(toProperty).indexOf('margin-left')
+                marginIndex = declarations.findIndex(({ property }) => property === 'margin-left')
                 if (marginIndex !== -1) {
                   declarations.splice(marginIndex, 1)
                   DECLARATION_COUNT -= 1
@@ -3489,7 +3492,7 @@ class CSSPurge {
 
                 // remove existing margins
                 const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((value) => value === 'margin').length
+                const j = properties.filter((property) => property === 'margin').length
                 if (j > 1) {
                   for (let i = 1; i < j; ++i) {
                     const was = properties.indexOf('margin')
@@ -3504,7 +3507,7 @@ class CSSPurge {
 
           // padding
           if (SHORTEN || SHORTEN_PADDING) {
-            padding = rules[i].declarations.filter(filterForPadding)
+            const padding = rules[i].declarations.filter(filterForPadding)
             let paddingProps = padding.map(toProperty)
             if (
               (
@@ -3520,149 +3523,161 @@ class CSSPurge {
               const paddingHasInherit = padding.some(hasInherit)
               if (!paddingHasInherit) {
                 let paddingValues = padding.map(toValue)
-                paddingValuesOutput = [
-                  (paddingValues[paddingProps.indexOf('padding-top')] ? paddingValues[paddingProps.indexOf('padding-top')] : ''),
-                  (paddingValues[paddingProps.indexOf('padding-right')] ? paddingValues[paddingProps.indexOf('padding-right')] : ''),
-                  (paddingValues[paddingProps.indexOf('padding-bottom')] ? paddingValues[paddingProps.indexOf('padding-bottom')] : ''),
-                  (paddingValues[paddingProps.indexOf('padding-left')] ? paddingValues[paddingProps.indexOf('padding-left')] : '')
+
+                let paddingTopIndex = paddingProps.indexOf('padding-top')
+                let paddingRightIndex = paddingProps.indexOf('padding-right')
+                let paddingBottomIndex = paddingProps.indexOf('padding-bottom')
+                let paddingLeftIndex = paddingProps.indexOf('padding-left')
+                const paddingTopValue = paddingValues[paddingTopIndex] ?? ''
+                const paddingRightValue = paddingValues[paddingRightIndex] ?? ''
+                const paddingBottomValue = paddingValues[paddingBottomIndex] ?? ''
+                const paddingLeftValue = paddingValues[paddingLeftIndex] ?? ''
+
+                const PADDING_VALUES = [
+                  paddingTopValue,
+                  paddingRightValue,
+                  paddingBottomValue,
+                  paddingLeftValue
                 ]
 
                 // existing padding check
                 const paddingPropValueIndex = paddingProps.indexOf('padding')
                 if (paddingPropValueIndex !== -1) {
-                  let paddingPropValue = paddingValues[paddingPropValueIndex]
+                  const paddingPropValue = paddingValues[paddingPropValueIndex]
 
                   // fill missing attribute with existing padding
-                  if (paddingProps.indexOf('padding-top') > paddingPropValueIndex) {
-                    paddingValuesOutput[0] = paddingValues[paddingProps.indexOf('padding-top')]
+                  if (paddingTopIndex > paddingPropValueIndex) {
+                    PADDING_VALUES[0] = paddingTopValue
                   } else {
-                    paddingValuesOutput[0] = (paddingPropValue = getValueOfSquareProp(paddingPropValue, 'top')) ? paddingPropValue : paddingValuesOutput[0]
+                    const propValue = getValueOfSquareProp(paddingPropValue, 'top')
+                    if (propValue) PADDING_VALUES[0] = propValue
                   }
-                  if (paddingProps.indexOf('padding-right') > paddingPropValueIndex) {
-                    paddingValuesOutput[1] = paddingValues[paddingProps.indexOf('padding-right')]
+
+                  if (paddingRightIndex > paddingPropValueIndex) {
+                    PADDING_VALUES[1] = paddingRightValue
                   } else {
-                    paddingValuesOutput[1] = (paddingPropValue = getValueOfSquareProp(paddingPropValue, 'right')) ? paddingPropValue : paddingValuesOutput[1]
+                    const propValue = getValueOfSquareProp(paddingPropValue, 'right')
+                    if (propValue) PADDING_VALUES[1] = propValue
                   }
-                  if (paddingProps.indexOf('padding-bottom') > paddingPropValueIndex) {
-                    paddingValuesOutput[2] = paddingValues[paddingProps.indexOf('padding-bottom')]
+
+                  if (paddingBottomIndex > paddingPropValueIndex) {
+                    PADDING_VALUES[2] = paddingBottomValue
                   } else {
-                    paddingValuesOutput[2] = (paddingPropValue = getValueOfSquareProp(paddingPropValue, 'bottom')) ? paddingPropValue : paddingValuesOutput[2]
+                    const propValue = getValueOfSquareProp(paddingPropValue, 'bottom')
+                    if (propValue) PADDING_VALUES[2] = propValue
                   }
-                  if (paddingProps.indexOf('padding-left') > paddingPropValueIndex) {
-                    paddingValuesOutput[3] = paddingValues[paddingProps.indexOf('padding-left')]
+
+                  if (paddingLeftIndex > paddingPropValueIndex) {
+                    PADDING_VALUES[3] = paddingLeftValue
                   } else {
-                    paddingValuesOutput[3] = (paddingPropValue = getValueOfSquareProp(paddingPropValue, 'left')) ? paddingPropValue : paddingValuesOutput[3]
+                    const propValue = getValueOfSquareProp(paddingPropValue, 'left')
+                    if (propValue) PADDING_VALUES[3] = propValue
                   }
                 }
 
                 if (
-                  paddingValuesOutput[0] === '' &&
-                  paddingValuesOutput[1] === '' &&
-                  paddingValuesOutput[2] === '' &&
-                  paddingValuesOutput[3] === ''
+                  PADDING_VALUES[0] === '' &&
+                  PADDING_VALUES[1] === '' &&
+                  PADDING_VALUES[2] === '' &&
+                  PADDING_VALUES[3] === ''
                 ) {
                   //
                 } else {
                   paddingProps = [...DEFAULT_PADDING_PROPS]
-                  paddingValues = paddingValuesOutput
+                  paddingValues = PADDING_VALUES
                 }
+
+                const declarations = rules[i].declarations
 
                 // check for !important
-                let paddingHasImportant = false
-                for (let n = 0, j = paddingValues.length; n < j; ++n) {
-                  paddingValues[n] = paddingValues[n].toString().replace(/(!important)/g, () => {
-                    paddingHasImportant = true
-                    return ''
-                  })
-                }
+                const hasImportant = paddingValues.some((padding) => /(!important)/g.test(padding))
 
-                if (paddingHasImportant) {
+                paddingValues = paddingValues.map((padding) => padding.replace(/(!important)/g, ''))
+
+                if (hasImportant) {
                   paddingValues[paddingValues.length - 1] += ' !important'
                 }
 
                 // check for requirements
-                const paddingLeftIndex = paddingProps.indexOf('padding-left')
-                const paddingRightIndex = paddingProps.indexOf('padding-right')
-                const paddingTopIndex = paddingProps.indexOf('padding-top')
-                const paddingBottomIndex = paddingProps.indexOf('padding-bottom')
+                paddingTopIndex = paddingProps.indexOf('padding-top')
+                paddingRightIndex = paddingProps.indexOf('padding-right')
+                paddingBottomIndex = paddingProps.indexOf('padding-bottom')
+                paddingLeftIndex = paddingProps.indexOf('padding-left')
 
-                // 1 value
                 if (
-                  paddingTopIndex !== -1 && paddingBottomIndex !== -1 &&
-                  paddingLeftIndex !== -1 && paddingRightIndex !== -1 &&
-                  paddingValues[paddingTopIndex] == paddingValues[paddingBottomIndex] &&
-                  paddingValues[paddingTopIndex] == paddingValues[paddingRightIndex] &&
-                  paddingValues[paddingTopIndex] == paddingValues[paddingLeftIndex]
+                  paddingTopIndex !== -1 &&
+                  paddingBottomIndex !== -1 &&
+                  paddingLeftIndex !== -1 &&
+                  paddingRightIndex !== -1
                 ) {
-                  paddingProps = ['padding']
-                  paddingValues = [paddingValues[paddingTopIndex]]
-                } else if ( // 2
-                  paddingTopIndex !== -1 && paddingBottomIndex !== -1 &&
-                  paddingLeftIndex !== -1 && paddingRightIndex !== -1 &&
-                  paddingValues[paddingTopIndex] == paddingValues[paddingBottomIndex] &&
-                  paddingValues[paddingLeftIndex] == paddingValues[paddingRightIndex]) {
-                  const paddingTopBottomValue = paddingValues[paddingTopIndex]
-                  // remove Top + Bottom values
-                  paddingValues.splice(paddingTopIndex, 1)
-                  paddingValues.splice(paddingBottomIndex - 1, 1)
-                  // add TopBottom value
-                  paddingValues.splice(0, 0, paddingTopBottomValue)
+                  const paddingTopValue = paddingValues[paddingTopIndex]
+                  const paddingRightValue = paddingValues[paddingRightIndex]
+                  const paddingBottomValue = paddingValues[paddingBottomIndex]
+                  const paddingLeftValue = paddingValues[paddingLeftIndex]
 
-                  // remove Top + Bottom properties
-                  paddingProps.splice(paddingTopIndex, 1)
-                  paddingProps.splice(paddingBottomIndex - 1, 1)
-                  // add TopBottom property - for alignment sake
-                  paddingProps.splice(0, 0, 'paddingTopBottom')
+                  // 1 value
+                  if (
+                    paddingTopValue === paddingBottomValue &&
+                    paddingTopValue === paddingRightValue &&
+                    paddingTopValue === paddingLeftValue
+                  ) {
+                    paddingProps = ['padding']
+                    paddingValues = [paddingTopValue]
+                  } else {
+                    // 2 values
+                    if (
+                      paddingTopValue === paddingBottomValue &&
+                      paddingRightValue === paddingLeftValue
+                    ) {
+                      // remove Top + Bottom values
+                      paddingValues.splice(paddingTopIndex, 1)
+                      paddingValues.splice(paddingBottomIndex - 1, 1)
+                      // use Top as TopBottom value
+                      paddingValues.splice(0, 0, paddingTopValue)
 
-                  const paddingRightLeftValue = paddingValues[paddingRightIndex]
-                  // remove Right + Left values
-                  paddingValues.splice(paddingRightIndex, 1)
-                  paddingValues.splice(paddingLeftIndex - 2, 1)
-                  // add RightLeft value
-                  paddingValues.splice(1, 0, paddingRightLeftValue)
+                      // remove Top + Bottom properties
+                      paddingProps.splice(paddingTopIndex, 1)
+                      paddingProps.splice(paddingBottomIndex - 1, 1)
+                      // add TopBottom property - for alignment sake
+                      paddingProps.splice(0, 0, 'paddingTopBottom')
 
-                  // remove Right + Left properties
-                  paddingProps.splice(paddingRightIndex, 1)
-                  paddingProps.splice(paddingLeftIndex - 2, 1)
-                  // add RightLeft property - for alignment sake
-                  paddingProps.splice(1, 0, 'paddingRightLeft')
-                } else if ( // 3 values
-                  paddingLeftIndex !== -1 && paddingRightIndex !== -1 &&
-                  paddingTopIndex !== -1 && paddingBottomIndex !== -1 &&
-                  paddingValues[paddingLeftIndex] == paddingValues[paddingRightIndex]) {
-                  const paddingRightLeftValue = paddingValues[paddingRightIndex]
+                      // remove Right + Left values
+                      paddingValues.splice(paddingRightIndex, 1)
+                      paddingValues.splice(paddingLeftIndex - 2, 1)
+                      // use Right as RightLeft value
+                      paddingValues.splice(1, 0, paddingRightValue)
 
-                  // remove right + left values
-                  paddingValues.splice(paddingRightIndex, 1)
-                  paddingValues.splice(paddingLeftIndex - 1, 1)
-                  // add rightleft value
-                  paddingValues.splice(1, 0, paddingRightLeftValue)
+                      // remove Right + Left properties
+                      paddingProps.splice(paddingRightIndex, 1)
+                      paddingProps.splice(paddingLeftIndex - 2, 1)
+                      // add RightLeft property - for alignment sake
+                      paddingProps.splice(1, 0, 'paddingRightLeft')
+                    } else {
+                      // 3 values
+                      if (
+                        paddingRightValue === paddingLeftValue
+                      ) {
+                        // remove Right + Left values
+                        paddingValues.splice(paddingRightIndex, 1)
+                        paddingValues.splice(paddingLeftIndex - 1, 1)
+                        // use Right as RightLeft value
+                        paddingValues.splice(1, 0, paddingRightValue)
 
-                  // remove right + left properties
-                  paddingProps.splice(paddingRightIndex, 1)
-                  paddingProps.splice(paddingLeftIndex - 1, 1)
-                  // add rightleft property - for alignment sake
-                  paddingProps.splice(1, 0, 'paddingLeftRight')
+                        // remove Right + Left properties
+                        paddingProps.splice(paddingRightIndex, 1)
+                        paddingProps.splice(paddingLeftIndex - 1, 1)
+                        // add LeftRight property - for alignment sake
+                        paddingProps.splice(1, 0, 'paddingLeftRight')
+                      }
+                    }
+                  }
                 }
-
-                const declarations = rules[i].declarations
 
                 // remove any spaces from empty values
                 paddingValues = paddingValues.filter(Boolean)
 
                 // add declaration
-                let paddingRuleIndex = rules[i].declarations.length
-                for (let j = 0; j < paddingRuleIndex; ++j) {
-                  switch (declarations[j].property) {
-                    case 'padding-top':
-                    case 'padding-right':
-                    case 'padding-bottom':
-                    case 'padding-left':
-                    case 'padding':
-                      if (j < paddingRuleIndex) { paddingRuleIndex = j }
-                      break
-                  }
-                }
+                const paddingRuleIndex = declarations.findIndex(filterForPadding)
 
                 declarations.splice(paddingRuleIndex, 0, {
                   type: 'declaration',
@@ -3676,25 +3691,25 @@ class CSSPurge {
                 let paddingIndex
 
                 // remove originals
-                paddingIndex = declarations.map(toProperty).indexOf('padding-top')
+                paddingIndex = declarations.findIndex(({ property }) => property === 'padding-top')
                 if (paddingIndex !== -1) {
                   declarations.splice(paddingIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                paddingIndex = declarations.map(toProperty).indexOf('padding-right')
+                paddingIndex = declarations.findIndex(({ property }) => property === 'padding-right')
                 if (paddingIndex !== -1) {
                   declarations.splice(paddingIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                paddingIndex = declarations.map(toProperty).indexOf('padding-bottom')
+                paddingIndex = declarations.findIndex(({ property }) => property === 'padding-bottom')
                 if (paddingIndex !== -1) {
                   declarations.splice(paddingIndex, 1)
                   DECLARATION_COUNT -= 1
                 }
 
-                paddingIndex = declarations.map(toProperty).indexOf('padding-left')
+                paddingIndex = declarations.findIndex(({ property }) => property === 'padding-left')
                 if (paddingIndex !== -1) {
                   declarations.splice(paddingIndex, 1)
                   DECLARATION_COUNT -= 1
@@ -3702,7 +3717,7 @@ class CSSPurge {
 
                 // remove existing paddings
                 const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((value) => value === 'padding').length
+                const j = properties.filter((property) => property === 'padding').length
                 if (j > 1) {
                   for (let i = 1; i < j; ++i) {
                     const was = properties.indexOf('padding')
@@ -3720,7 +3735,7 @@ class CSSPurge {
             for (let l = 0; l < DECLARATION_COUNT; ++l) {
               // zero check
               if (SHORTEN || SHORTEN_ZERO &&
-                OPTIONS.zero_ignore_declaration.indexOf(rules[i].declarations[l].property) == -1) {
+                OPTIONS.zero_ignore_declaration.indexOf(rules[i].declarations[l].property) === -1) {
                 let value = rules[i].declarations[l].value
 
                 if (value !== undefined) {
@@ -3757,24 +3772,24 @@ class CSSPurge {
               */
               if (SHORTEN || SHORTEN_HEXCOLOR &&
                 (
-                  rules[i].declarations[l].property == 'color' ||
-                  rules[i].declarations[l].property == 'font' ||
-                  rules[i].declarations[l].property == 'font-color' ||
-                  rules[i].declarations[l].property == 'background' ||
-                  rules[i].declarations[l].property == 'background-color' ||
-                  rules[i].declarations[l].property == 'outline-color' ||
-                  rules[i].declarations[l].property == 'box-shadow' ||
-                  rules[i].declarations[l].property == 'text-shadow' ||
-                  rules[i].declarations[l].property == 'border-color' ||
-                  rules[i].declarations[l].property == 'border-top-color' ||
-                  rules[i].declarations[l].property == 'border-right-color' ||
-                  rules[i].declarations[l].property == 'border-bottom-color' ||
-                  rules[i].declarations[l].property == 'border-left-color' ||
-                  rules[i].declarations[l].property == 'border' ||
-                  rules[i].declarations[l].property == 'border-top' ||
-                  rules[i].declarations[l].property == 'border-right' ||
-                  rules[i].declarations[l].property == 'border-bottom' ||
-                  rules[i].declarations[l].property == 'border-left'
+                  rules[i].declarations[l].property === 'color' ||
+                  rules[i].declarations[l].property === 'font' ||
+                  rules[i].declarations[l].property === 'font-color' ||
+                  rules[i].declarations[l].property === 'background' ||
+                  rules[i].declarations[l].property === 'background-color' ||
+                  rules[i].declarations[l].property === 'outline-color' ||
+                  rules[i].declarations[l].property === 'box-shadow' ||
+                  rules[i].declarations[l].property === 'text-shadow' ||
+                  rules[i].declarations[l].property === 'border-color' ||
+                  rules[i].declarations[l].property === 'border-top-color' ||
+                  rules[i].declarations[l].property === 'border-right-color' ||
+                  rules[i].declarations[l].property === 'border-bottom-color' ||
+                  rules[i].declarations[l].property === 'border-left-color' ||
+                  rules[i].declarations[l].property === 'border' ||
+                  rules[i].declarations[l].property === 'border-top' ||
+                  rules[i].declarations[l].property === 'border-right' ||
+                  rules[i].declarations[l].property === 'border-bottom' ||
+                  rules[i].declarations[l].property === 'border-left'
                 )) {
                 let value = '' + rules[i].declarations[l].value
                 if (value !== 'undefined' && !value.includes('Microsoft')) {
@@ -3869,7 +3884,7 @@ class CSSPurge {
               Object.keys(directParents).forEach(function (key, index, val) {
                 if (this[key].length > 1) {
                   for (let j = 0; j < this[key].length; j++) {
-                    if (keys[i] == this[key][j].selector) {
+                    if (keys[i] === this[key][j].selector) {
                       if (OPTIONS.verbose) { console.log(success('Process - Rules - Group Common Parent Rule : ' + keys[i])) }
                       commonParentsKeys.push({
                         selector: key,
@@ -3910,7 +3925,7 @@ class CSSPurge {
           }
 
           Object.keys(commonParentDeclarations).forEach(function (val, index, key) {
-            if (this[val].count == directParents[this[val].commonParent].length) {
+            if (this[val].count === directParents[this[val].commonParent].length) {
               if (newParentDeclarations[this[val].commonParent] !== undefined) {
                 newParentDeclarations[this[val].commonParent].declarations.push({
                   type: 'declaration',
@@ -3936,7 +3951,7 @@ class CSSPurge {
 
           for (let i = 0; i < commonParentsLen; i++) {
             Object.keys(newParentDeclarations).forEach(function (key, index) {
-              if (commonParentsKeys[i] !== undefined && commonParentsKeys[i].selector == key) {
+              if (commonParentsKeys[i] !== undefined && commonParentsKeys[i].selector === key) {
                 if (rules[commonParentsKeys[i].index] !== undefined && rules[commonParentsKeys[i].index].declarations !== undefined) {
                   // clone declarations
                   tmpDeclarations = rules[commonParentsKeys[i].index].declarations.slice(0) // clone
@@ -3946,9 +3961,9 @@ class CSSPurge {
                     // remove declarations
                     for (let k = 0; k < DECLARATION_COUNT; k++) { // each child declaration
                       if (this[key].declarations[j] !== undefined &&
-                        this[key].declarations[j].type == 'declaration' &&
-                        this[key].declarations[j].property == tmpDeclarations[k].property &&
-                        this[key].declarations[j].value == tmpDeclarations[k].value) {
+                        this[key].declarations[j].type === 'declaration' &&
+                        this[key].declarations[j].property === tmpDeclarations[k].property &&
+                        this[key].declarations[j].value === tmpDeclarations[k].value) {
                         tmpDeclarations.splice(k, 1)
                         k -= 1
                         DECLARATION_COUNT -= 1
@@ -3956,7 +3971,7 @@ class CSSPurge {
                     } // end of k loop
                   } // end of j loop
 
-                  if (tmpDeclarations.length == 0) {
+                  if (tmpDeclarations.length === 0) {
                     // remove whole rule
                     rules.splice(commonParentsKeys[i].index, 1)
                     i -= 1
@@ -4003,7 +4018,7 @@ class CSSPurge {
 
             for (let j = 0; j < DECLARATION_COUNT; ++j) {
               // check for empty properties
-              if (rules[i].declarations[j].value == '') {
+              if (rules[i].declarations[j].value === '') {
                 summary.empty_declarations.push({
                   selectors: rules[i].selectors,
                   property: rules[i].declarations[j]
@@ -4012,7 +4027,7 @@ class CSSPurge {
 
               // remove comments in declarations - for turning off comments
               if (OPTIONS.trim_comments || OPTIONS.trim) {
-                if (declarations[j] !== undefined && declarations[j].type == 'comment') {
+                if (declarations[j] !== undefined && declarations[j].type === 'comment') {
                   if (OPTIONS.verbose) { console.log(info('Process - Rules - Remove Comment')) }
                   rules[i].declarations.splice(j, 1)
                   j -= 1
@@ -4024,7 +4039,7 @@ class CSSPurge {
 
           // remove comments in root - for turning off comments
           if (OPTIONS.trim_comments || OPTIONS.trim) {
-            if (rules[i] !== undefined && rules[i].type == 'comment') {
+            if (rules[i] !== undefined && rules[i].type === 'comment') {
               if (OPTIONS.verbose) { console.log(info('Process - Rules - Remove Comment')) }
               rules.splice(i, 1)
               i -= 1
@@ -4039,14 +4054,14 @@ class CSSPurge {
             // root rules
             // rule selector
             if (rules[i] !== undefined &&
-              // && rules[i].type == 'rule'
+              // && rules[i].type === 'rule'
               rules[i].selectors !== undefined &&
               rules[j] !== undefined && rules[j].selectors !== undefined) {
               // duplicate rule found
-              if (rules[i].selectors.toString() == rules[j].selectors.toString()) {
+              if (rules[i].selectors.toString() === rules[j].selectors.toString()) {
                 // remove previous comment in root
                 if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                  if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+                  if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                     rules.splice(i - 1, 1)
                     i -= 1
                     j -= 1
@@ -4060,14 +4075,14 @@ class CSSPurge {
                 summary.stats.summary.noDuplicateRules += 1
                 if (j < i && (j - i) > 1) { // check comparison distance
                   summary.duplicate_rules.push({
-                    selectors: (rules[i].type == 'page') ? '@page' : rules[i].selectors,
+                    selectors: (rules[i].type === 'page') ? '@page' : rules[i].selectors,
                     position: rules[i].position
                   })
                   rules[j].declarations = rules[j].declarations.concat(rules[i].declarations)
                   rules.splice(i, 1)
                 } else {
                   summary.duplicate_rules.push({
-                    selectors: (rules[j].type == 'page') ? '@page' : rules[j].selectors,
+                    selectors: (rules[j].type === 'page') ? '@page' : rules[j].selectors,
                     position: rules[j].position
                   })
                   rules[i].declarations = rules[i].declarations.concat(rules[j].declarations)
@@ -4080,15 +4095,15 @@ class CSSPurge {
             } // end of rule selector
 
             // media selector - it could affect evaluation sequence
-            if (rules[i] !== undefined && rules[i].type == 'media' &&
+            if (rules[i] !== undefined && rules[i].type === 'media' &&
               rules[i].media !== undefined &&
               rules[j] !== undefined && rules[j].media !== undefined &&
               OPTIONS.bypass_media_rules != true) {
               // duplicate rule found
-              if (rules[i].media.toString() == rules[j].media.toString()) {
+              if (rules[i].media.toString() === rules[j].media.toString()) {
                 // remove previous comment in root
                 if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                  if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+                  if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                     rules.splice(i - 1, 1)
                     i -= 1
                     j -= 1
@@ -4122,14 +4137,14 @@ class CSSPurge {
             }
             // end of media selector
             // document selector
-            if (rules[i] !== undefined && rules[i].type == 'document' &&
+            if (rules[i] !== undefined && rules[i].type === 'document' &&
               rules[i].document !== undefined &&
               rules[j] !== undefined && rules[j].document !== undefined) {
               // duplicate rule found
-              if (rules[i].document.toString() == rules[j].document.toString()) {
+              if (rules[i].document.toString() === rules[j].document.toString()) {
                 // remove previous comment in root
                 if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                  if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+                  if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                     rules.splice(i - 1, 1)
                     i -= 1
                     j -= 1
@@ -4163,14 +4178,14 @@ class CSSPurge {
             } // end of document selector
 
             // supports selector
-            if (rules[i] !== undefined && rules[i].type == 'supports' &&
+            if (rules[i] !== undefined && rules[i].type === 'supports' &&
               rules[i].supports !== undefined &&
               rules[j] !== undefined && rules[j].supports !== undefined) {
               // duplicate rule found
-              if (rules[i].supports.toString() == rules[j].supports.toString()) {
+              if (rules[i].supports.toString() === rules[j].supports.toString()) {
                 // remove previous comment in root
                 if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                  if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+                  if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                     rules.splice(i - 1, 1)
                     i -= 1
                     j -= 1
@@ -4208,14 +4223,14 @@ class CSSPurge {
           /// /declarations
           // reduce root delcarations by property name and by duplicate values
           if (rules[i] !== undefined &&
-            (rules[i].type == 'rule' || (rules[i].type == 'page' && OPTIONS.bypass_page_rules == false))) {
+            (rules[i].type === 'rule' || (rules[i].type === 'page' && OPTIONS.bypass_page_rules === false))) {
             declarationsNameCounts = []
 
             DECLARATION_COUNT = rules[i].declarations.length
 
             // declarations duplicate check
             for (let l = 0; l < DECLARATION_COUNT; ++l) {
-              if (rules[i].declarations[l].type == 'declaration') {
+              if (rules[i].declarations[l].type === 'declaration') {
                 if (declarationsNameCounts[rules[i].declarations[l].property] !== undefined) {
                   declarationsNameCounts[rules[i].declarations[l].property] += 1
                 } else {
@@ -4231,8 +4246,8 @@ class CSSPurge {
               if (!declarationNames.includes(key)) { // only properties not in list
                 for (let l = 0; l < DECLARATION_COUNT; ++l) {
                   if (
-                    rules[i].declarations[l].type == 'declaration' &&
-                    rules[i].declarations[l].property == key) {
+                    rules[i].declarations[l].type === 'declaration' &&
+                    rules[i].declarations[l].property === key) {
                     hash = crypto.createHash('sha256')
                     hash.update(rules[i].declarations[l].property + rules[i].declarations[l].value)
 
@@ -4266,7 +4281,7 @@ class CSSPurge {
                   for (let l = 0; l < duplicateIds.length - 1; ++l) { // -1 to leave last behind
                     // remove previous comment above declaration to be removed
                     if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                      if (rules[i].declarations[duplicateIds[l] - 1] !== undefined && rules[i].declarations[duplicateIds[l] - 1].type == 'comment') {
+                      if (rules[i].declarations[duplicateIds[l] - 1] !== undefined && rules[i].declarations[duplicateIds[l] - 1].type === 'comment') {
                         rules[i].declarations.splice(duplicateIds[l] - 1, 1)
                         DECLARATION_COUNT -= 1
 
@@ -4322,19 +4337,19 @@ class CSSPurge {
                 if (declarationsNameCounts.hasOwnProperty(key)) {
                   if (declarationsNameCounts[key] > 1) {
                     for (let l = 0; l < DECLARATION_COUNT; ++l) {
-                      if (rules[i].declarations[l].type == 'declaration') {
-                        if (rules[i].declarations[l].property == key &&
+                      if (rules[i].declarations[l].type === 'declaration') {
+                        if (rules[i].declarations[l].property === key &&
                           declarationsNameCounts[key] > 1 // leave behind 1
                         ) {
                           // reduce according to list
-                          if (rules[i].declarations[l].property == declarationNames[k]) {
+                          if (rules[i].declarations[l].property === declarationNames[k]) {
                             // console.log(declarationsNameCounts[key])
                             // console.log(key)
                             // console.log(rules[i].declarations[l].property)
                             // console.log(declarationNames[k])
                             // remove previous comment above declaration to be removed
                             if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                              if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type == 'comment') {
+                              if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
                                 rules[i].declarations.splice(l - 1, 1)
                                 l -= 1
                                 DECLARATION_COUNT -= 1
@@ -4376,13 +4391,13 @@ class CSSPurge {
 
           for (let k = 0; k < selectorsCount; ++k) {
             if (rules[i] !== undefined &&
-              rules[i].type == 'rule') {
+              rules[i].type === 'rule') {
               if (rules[i].selectors !== undefined && rules[i].selectors.toString() === selectors[k]) {
                 DECLARATION_COUNT = rules[i].declarations.length
 
                 // detect declarations duplicates
                 for (let l = 0; l < DECLARATION_COUNT; ++l) {
-                  if (rules[i].declarations[l].type == 'declaration') {
+                  if (rules[i].declarations[l].type === 'declaration') {
                     if (declarationsCounts[rules[i].declarations[l].property] !== undefined) {
                       declarationsCounts[rules[i].declarations[l].property] += 1
                     } else {
@@ -4396,16 +4411,16 @@ class CSSPurge {
                   if (declarationsCounts.hasOwnProperty(key)) {
                     if (declarationsCounts[key] > 1) {
                       for (let l = 0; l < DECLARATION_COUNT; ++l) {
-                        if (rules[i].declarations[l].type == 'declaration') {
+                        if (rules[i].declarations[l].type === 'declaration') {
                           selectorPropertiesList = selectorPropertyValues[selectors[k]]
 
                           if (selectorPropertiesList !== undefined) { // specific in selector
-                            if (rules[i].declarations[l].property == key &&
+                            if (rules[i].declarations[l].property === key &&
                               (selectorPropertiesList.includes(rules[i].declarations[l].property)) &&
                               declarationsCounts[key] > 1) { // leave behind 1
                               // remove previous comment above declaration to be removed
                               if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                                if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type == 'comment') {
+                                if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
                                   rules[i].declarations.splice(l - 1, 1)
                                   l -= 1
                                   DECLARATION_COUNT -= 1
@@ -4421,11 +4436,11 @@ class CSSPurge {
                               declarationsCounts[key] -= 1
                             }
                           } else { // all in selector
-                            if (rules[i].declarations[l].property == key &&
+                            if (rules[i].declarations[l].property === key &&
                               declarationsCounts[key] > 1) { // leave behind 1
                               // remove previous comment above declaration to be removed
                               if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                                if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type == 'comment') {
+                                if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
                                   rules[i].declarations.splice(l - 1, 1)
                                   l -= 1
                                   DECLARATION_COUNT -= 1
@@ -4453,10 +4468,10 @@ class CSSPurge {
           /// /end of declarations
           /// /empty nodes
           // remove empty @sign keyframes
-          if (rules[i] != undefined && rules[i].keyframes !== undefined && rules[i].keyframes.length == 0) {
+          if (rules[i] != undefined && rules[i].keyframes !== undefined && rules[i].keyframes.length === 0) {
             // remove previous comment in root
             if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-              if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+              if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                 if (OPTIONS.verbose) { console.log(info('Process - @keyframes - Remove comment : ' + (rules[i].keyframes ? rules[i].keyframes.join(', ') : ''))) }
                 rules.splice(i - 1, 1)
                 i -= 1
@@ -4472,11 +4487,11 @@ class CSSPurge {
           }
 
           // remove empty @sign media
-          if (rules[i] !== undefined && rules[i].type == 'media' &&
-            rules[i].rules.length == 0) {
+          if (rules[i] !== undefined && rules[i].type === 'media' &&
+            rules[i].rules.length === 0) {
             // remove previous comment in root
             if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-              if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+              if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                 if (OPTIONS.verbose) { console.log(info('Process - @media - Remove comment : ' + (rules[i].media ? rules[i].media : ''))) }
                 rules.splice(i - 1, 1)
                 i -= 1
@@ -4490,11 +4505,11 @@ class CSSPurge {
           }
 
           // remove empty @sign document
-          if (rules[i] !== undefined && rules[i].type == 'document' &&
-            rules[i].rules.length == 0) {
+          if (rules[i] !== undefined && rules[i].type === 'document' &&
+            rules[i].rules.length === 0) {
             // remove previous comment in root
             if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-              if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+              if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                 if (OPTIONS.verbose) { console.log(info('Process - @document - Remove comment : ' + (rules[i].document ? rules[i].document : ''))) }
                 rules.splice(i - 1, 1)
                 i -= 1
@@ -4509,11 +4524,11 @@ class CSSPurge {
           }
 
           // remove empty @sign supports
-          if (rules[i] !== undefined && rules[i].type == 'supports' &&
-            rules[i].rules.length == 0) {
+          if (rules[i] !== undefined && rules[i].type === 'supports' &&
+            rules[i].rules.length === 0) {
             // remove previous comment in root
             if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-              if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+              if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                 if (OPTIONS.verbose) { console.log(info('Process - @supports - Remove comment : ' + (rules[i].supports ? rules[i].supports : ''))) }
                 rules.splice(i - 1, 1)
                 i -= 1
@@ -4566,7 +4581,7 @@ class CSSPurge {
 
                     // check for any "innocent" amongst the guilty group
                     for (let k = 0, rulesCount3 = tmpSelectors.length; k < rulesCount3; ++k) {
-                      if (selectors.indexOf(tmpSelectors[k]) == -1) {
+                      if (selectors.indexOf(tmpSelectors[k]) === -1) {
                         foundInnocent = true
                         break
                       }
@@ -4612,7 +4627,7 @@ class CSSPurge {
 
                         // check for any "innocent" amongst the guilty group
                         for (let l = 0, rulesCount4 = tmpSelectors.length; l < rulesCount4; ++l) {
-                          if (selectors.indexOf(tmpSelectors[l]) == -1) {
+                          if (selectors.indexOf(tmpSelectors[l]) === -1) {
                             foundInnocent = true
                             break
                           }
@@ -4674,17 +4689,17 @@ class CSSPurge {
             DECLARATION_COUNT = rulesIn[i].declarations.length
 
             for (let j = 0; j < DECLARATION_COUNT; ++j) {
-              if (rulesIn[i].declarations[j].type == 'comment') {
+              if (rulesIn[i].declarations[j].type === 'comment') {
                 summary.stats.after.noComments += 1
               }
             }
           }
 
-          if (rulesIn[i].type == 'comment') {
+          if (rulesIn[i].type === 'comment') {
             summary.stats.after.noComments += 1
           }
 
-          if (rulesIn[i].type == 'rule') {
+          if (rulesIn[i].type === 'rule') {
             summary.stats.after.noRules += 1
 
             summary.stats.after.noDeclarations += rulesIn[i].declarations.length
@@ -4758,7 +4773,7 @@ class CSSPurge {
             // console.log(summary.stats.after.noRules)
             const noOutputFilesNeeded = Math.ceil(summary.stats.after.noRules / 4095)
             // console.log(noOutputFilesNeeded)
-            if (noOutputFilesNeeded == 1) {
+            if (noOutputFilesNeeded === 1) {
               outputCSS = trimCSS(outputCSS)
               outputCSS = restoreHacks(outputCSS)
               writeFileSync(OPTIONS.css_output, outputCSS)
@@ -4790,7 +4805,7 @@ class CSSPurge {
                 rulesGroups[groupCount].push(rules[i])
                 ruleCount += 1
 
-                if (ruleCount == 4095) {
+                if (ruleCount === 4095) {
                   groupCount += 1
                 }
               }
@@ -4981,17 +4996,17 @@ class CSSPurge {
               DECLARATION_COUNT = fRules[i].declarations.length
 
               for (let j = 0; j < DECLARATION_COUNT; ++j) {
-                if (fRules[i].declarations[j].type == 'comment') {
+                if (fRules[i].declarations[j].type === 'comment') {
                   summary.stats.before.noComments += 1
                 }
               }
             }
 
-            if (fRules[i].type == 'comment') {
+            if (fRules[i].type === 'comment') {
               summary.stats.before.noComments += 1
             }
 
-            if (fRules[i].type == 'rule') {
+            if (fRules[i].type === 'rule') {
               summary.stats.before.noRules += 1
 
               summary.stats.before.noDeclarations += fRules[i].declarations.length
@@ -5036,8 +5051,8 @@ class CSSPurge {
             // console.log(g, fRulesCount)
             // @media rules
             if (fRules[g] !== undefined &&
-              fRules[g].type == 'media'
-              // && OPTIONS.bypass_media_rules == false
+              fRules[g].type === 'media'
+              // && OPTIONS.bypass_media_rules === false
             ) {
               if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + (fRules[g].media ? fRules[g].media : ''))) }
 
@@ -5048,8 +5063,8 @@ class CSSPurge {
 
             // @document rules
             if (fRules[g] !== undefined &&
-              fRules[g].type == 'document' &&
-              OPTIONS.bypass_document_rules == false) {
+              fRules[g].type === 'document' &&
+              OPTIONS.bypass_document_rules === false) {
               if (OPTIONS.verbose) { console.log(info('Process - Rules - @document ' + (fRules[g].document ? fRules[g].document : ''))) }
 
               processRules(fRules[g].rules)
@@ -5059,8 +5074,8 @@ class CSSPurge {
 
             // @supports rules
             if (fRules[g] !== undefined &&
-              fRules[g].type == 'supports' &&
-              OPTIONS.bypass_supports_rules == false) {
+              fRules[g].type === 'supports' &&
+              OPTIONS.bypass_supports_rules === false) {
               if (OPTIONS.verbose) { console.log(info('Process - Rules - @supports ' + (fRules[g].supports ? fRules[g].supports : ''))) }
 
               processRules(fRules[g].rules)
@@ -5070,8 +5085,8 @@ class CSSPurge {
 
             /// /charset
             if (fRules[g] !== undefined &&
-              fRules[g].type == 'charset' &&
-              OPTIONS.bypass_charset == false) {
+              fRules[g].type === 'charset' &&
+              OPTIONS.bypass_charset === false) {
               if (OPTIONS.verbose) { console.log(info('Process - Charset')) }
 
               charset = fRules[g].charset
@@ -5081,9 +5096,9 @@ class CSSPurge {
                 if (fRules[h] !== undefined) {
                   charset2 = fRules[h].charset
 
-                  if (charset == charset2) {
+                  if (charset === charset2) {
                     // remove charset
-                    if (fRules[h] !== undefined && fRules[h].type == 'charset') {
+                    if (fRules[h] !== undefined && fRules[h].type === 'charset') {
                       fRules.splice(h, 1)
                       g -= 1
                       h -= 1
@@ -5092,7 +5107,7 @@ class CSSPurge {
 
                       // remove side comment
                       if (fRules[h + 1] !== undefined &&
-                        fRules[h + 1].type == 'comment' &&
+                        fRules[h + 1].type === 'comment' &&
                         fRules[h + 1].comment.includes('_cssp_sc')) {
                         // console.log('hi')
                         // console.log(fRules[h+1])
@@ -5110,14 +5125,14 @@ class CSSPurge {
               if (charset.substr(0, 1) != '"' ||
                 charset.substr(charset.length - 1, charset.length) != '"') {
                 // remove charset
-                if (fRules[g] !== undefined && fRules[g].type == 'charset') {
+                if (fRules[g] !== undefined && fRules[g].type === 'charset') {
                   fRules.splice(g, 1)
                   g -= 1
                   fRulesCount -= 1
 
                   // remove side comment
                   if (fRules[g + 1] !== undefined &&
-                    fRules[g + 1].type == 'comment' &&
+                    fRules[g + 1].type === 'comment' &&
                     fRules[g + 1].comment.includes('_cssp_sc')) {
                     fRules.splice((g + 1), 1)
                     g -= 1
@@ -5142,14 +5157,14 @@ class CSSPurge {
               hasHTML = true
               for (let j = 0; j < fRules[i].declarations.length; ++j) {
                 if (fRules[i].declarations !== undefined) {
-                  if (fRules[i].declarations[j].property == 'font-size') {
+                  if (fRules[i].declarations[j].property === 'font-size') {
                     htmlHasFontSize = true
                     break
                   }
                 }
               }
 
-              if (htmlHasFontSize == false) { // create font-size
+              if (htmlHasFontSize === false) { // create font-size
                 fRules[i].declarations.unshift({
                   type: 'declaration',
                   property: 'font-size',
@@ -5166,7 +5181,7 @@ class CSSPurge {
             }
           } // end of for
 
-          if (hasHTML == false) { // create html with font-size
+          if (hasHTML === false) { // create html with font-size
             fRules.unshift({
               type: 'rule',
               selectors: ['html'],
@@ -5184,9 +5199,9 @@ class CSSPurge {
         /// /charset first check
         if (fRules[0] !== undefined &&
           fRules[1] !== undefined &&
-          fRules[0].type == 'comment' &&
-          fRules[1].type == 'charset' &&
-          OPTIONS.bypass_charset == false) {
+          fRules[0].type === 'comment' &&
+          fRules[1].type === 'charset' &&
+          OPTIONS.bypass_charset === false) {
           fRules.splice(0, 1)
         }
         /// /end of charset first check
@@ -5198,17 +5213,17 @@ class CSSPurge {
               DECLARATION_COUNT = fRules[i].declarations.length
 
               for (let j = 0; j < DECLARATION_COUNT; ++j) {
-                if (fRules[i].declarations[j].type == 'comment') {
+                if (fRules[i].declarations[j].type === 'comment') {
                   summary.stats.after.noComments += 1
                 }
               }
             }
 
-            if (fRules[i].type == 'comment') {
+            if (fRules[i].type === 'comment') {
               summary.stats.after.noComments += 1
             }
 
-            if (fRules[i].type == 'rule') {
+            if (fRules[i].type === 'rule') {
               summary.stats.after.noRules += 1
 
               summary.stats.after.noDeclarations += fRules[i].declarations.length
@@ -5310,7 +5325,7 @@ class CSSPurge {
                     }
                   }
 
-                  if (ignoreFound == false) {
+                  if (ignoreFound === false) {
                     for (let j = 0, rulesCount2 = rulesIn[i].selectors.length; j < rulesCount2; ++j) {
                       selectors.push(rulesIn[i].selectors[j])
                     }
@@ -5329,7 +5344,7 @@ class CSSPurge {
                       }
                     }
 
-                    if (ignoreFound == false) {
+                    if (ignoreFound === false) {
                       for (let k = 0, rulesCount3 = rulesIn[i].rules[j].selectors.length; k < rulesCount3; ++k) {
                         selectors.push(rulesIn[i].rules[j].selectors[k])
                       }
@@ -5348,7 +5363,7 @@ class CSSPurge {
                       }
                     }
 
-                    if (ignoreFound == false) {
+                    if (ignoreFound === false) {
                       for (let k = 0, rulesCount3 = rulesIn[i].rules[j].selectors.length; k < rulesCount3; ++k) {
                         selectors.push(rulesIn[i].rules[j].selectors[k])
                       }
@@ -5367,7 +5382,7 @@ class CSSPurge {
                       }
                     }
 
-                    if (ignoreFound == false) {
+                    if (ignoreFound === false) {
                       for (let k = 0, rulesCount3 = rulesIn[i].rules[j].selectors.length; k < rulesCount3; ++k) {
                         selectors.push(rulesIn[i].rules[j].selectors[k])
                       }
@@ -5400,7 +5415,7 @@ class CSSPurge {
 
       cssPurgeEventEmitter.on('CONFIG_READ_REDUCE_PROPS_END', continueCSSProcess) // end of event
 
-      if (cssDataIn == null) {
+      if (cssDataIn === null) {
         cssPurgeEventEmitter.emit('CONFIG_READ_REDUCE_PROPS_END')
       }
 

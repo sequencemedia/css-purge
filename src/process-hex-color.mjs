@@ -1,6 +1,10 @@
 import processColor from './process-color.mjs'
 
 export default function processHexColor (rule, OPTIONS, summary) {
+  const { verbose: VERBOSE } = OPTIONS
+
+  if (VERBOSE) console.log('Process - Hex Color')
+
   rule.declarations
     .forEach((declarations) => {
       const property = declarations.property
