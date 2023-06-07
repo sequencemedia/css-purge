@@ -34,7 +34,7 @@ export default function processHexColor (rule, OPTIONS, SUMMARY) {
       const property = declaration.property
       if (PROPERTIES.has(property)) {
         const value = declaration.value
-        if (value && !value.includes('Microsoft')) {
+        if (value && !value.toLowerCase().includes('microsoft')) {
           declaration.value = processColor(value, declaration, rule, OPTIONS, SUMMARY)
         }
       }
