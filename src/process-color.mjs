@@ -14,8 +14,8 @@ function getReduceColor (declaration, rule, OPTIONS, SUMMARY) {
   } = declaration
 
   const {
-    verbose: VERBOSE,
-    shorten_hexcolor_uppercase: SHORTEN_HEXCOLOR_UPPERCASE
+    shorten_hexcolor_uppercase: SHORTEN_HEXCOLOR_UPPERCASE,
+    verbose: VERBOSE
   } = OPTIONS
 
   const {
@@ -61,16 +61,27 @@ function processRgbColor (value, declaration, rule, OPTIONS, SUMMARY) {
   // rgb to hex
   const rgb = /(rgb)[(]\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*(?:,\s*([\d.]+)\s*)?[)]/g.exec(value)
   if (rgb) {
+    const {
+      shorten_hexcolor_uppercase: SHORTEN_HEXCOLOR_UPPERCASE,
+      verbose: VERBOSE
+    } = OPTIONS
+
+    const {
+      stats: {
+        summary: collector = {}
+      }
+    } = SUMMARY
+
     const cr = componentFromString(rgb[2], 255)
     const cg = componentFromString(rgb[3], 255)
     const cb = componentFromString(rgb[4], 255)
 
     value = '#' + ((1 << 24) + (cr << 16) + (cg << 8) + cb).toString(16).slice(1)
-    SUMMARY.stats.summary.noRGBColorsShortened += 1
+    collector.noRGBColorsShortened += 1
 
-    if (OPTIONS.shorten_hexcolor_uppercase) value = value.toUpperCase()
+    if (SHORTEN_HEXCOLOR_UPPERCASE) value = value.toUpperCase()
 
-    if (OPTIONS.verbose) { console.log(success('Process - Values - RGB Color : ' + (rule.selectors.join(', ')))) }
+    if (VERBOSE) { console.log(success('Process - Values - RGB Color : ' + (rule.selectors.join(', ')))) }
   }
 
   return value
@@ -80,6 +91,17 @@ function processHslColor (value, declaration, rule, OPTIONS, SUMMARY) {
   // hsl to hex
   const hsl = /(hsl)[(]\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*,\s*([\d.]+\s*%?)\s*(?:,\s*([\d.]+)\s*)?[)]$/.exec(value)
   if (hsl) {
+    const {
+      shorten_hexcolor_uppercase: SHORTEN_HEXCOLOR_UPPERCASE,
+      verbose: VERBOSE
+    } = OPTIONS
+
+    const {
+      stats: {
+        summary: collector = {}
+      }
+    } = SUMMARY
+
     const ch = componentFromString(hsl[2], 360)
     const cs = componentFromString(hsl[3], 100)
     const cl = componentFromString(hsl[4], 100)
@@ -91,11 +113,11 @@ function processHslColor (value, declaration, rule, OPTIONS, SUMMARY) {
     ] = hslToRgb(ch / 360, cs / 100, cl / 100)
 
     value = '#' + ((1 << 24) + (cr << 16) + (cg << 8) + cb).toString(16).slice(1)
-    SUMMARY.stats.summary.noHSLColorsShortened += 1
+    collector.noHSLColorsShortened += 1
 
-    if (OPTIONS.shorten_hexcolor_uppercase) value = value.toUpperCase()
+    if (SHORTEN_HEXCOLOR_UPPERCASE) value = value.toUpperCase()
 
-    if (OPTIONS.verbose) { console.log(success('Process - Values - HSL Color : ' + (rule.selectors.join(', ')))) }
+    if (VERBOSE) { console.log(success('Process - Values - HSL Color : ' + (rule.selectors.join(', ')))) }
   }
 
   return value
@@ -105,12 +127,23 @@ function processHexColor (value, declaration, rule, OPTIONS, SUMMARY) {
   // hex
   const hex = /#(.)\1\1\1\1\1/.exec(value)
   if (hex) { // #aaaaaa
+    const {
+      shorten_hexcolor_uppercase: SHORTEN_HEXCOLOR_UPPERCASE,
+      verbose: VERBOSE
+    } = OPTIONS
+
+    const {
+      stats: {
+        summary: collector = {}
+      }
+    } = SUMMARY
+
     value = value.replace(hex[0], hex[0].substring(0, 4)) // #aaa
-    SUMMARY.stats.summary.noHexColorsShortened += 1
+    collector.noHexColorsShortened += 1
 
-    if (OPTIONS.shorten_hexcolor_uppercase) value = value.toUpperCase()
+    if (SHORTEN_HEXCOLOR_UPPERCASE) value = value.toUpperCase()
 
-    if (OPTIONS.verbose) { console.log(success('Process - Values - Hex Color : ' + (rule.selectors.join(', ')))) }
+    if (VERBOSE) { console.log(success('Process - Values - Hex Color : ' + (rule.selectors.join(', ')))) }
   }
 
   return value
@@ -125,12 +158,23 @@ function processHexColorPairs (value, declaration, rule, OPTIONS, SUMMARY) {
       hexPairs[3][0] === hexPairs[3][1] &&
       hexPairs[4][0] === hexPairs[4][1]
     ) {
+      const {
+        shorten_hexcolor_uppercase: SHORTEN_HEXCOLOR_UPPERCASE,
+        verbose: VERBOSE
+      } = OPTIONS
+
+      const {
+        stats: {
+          summary: collector = {}
+        }
+      } = SUMMARY
+
       value = value.replace(hexPairs[0], '#' + hexPairs[2][0] + hexPairs[3][0] + hexPairs[4][0]) // #aaa
-      SUMMARY.stats.summary.noHexColorsShortened += 1
+      collector.noHexColorsShortened += 1
 
-      if (OPTIONS.shorten_hexcolor_uppercase) value = value.toUpperCase()
+      if (SHORTEN_HEXCOLOR_UPPERCASE) value = value.toUpperCase()
 
-      if (OPTIONS.verbose) { console.log(success('Process - Values - Hex Color : ' + (rule.selectors.join(', ')))) }
+      if (VERBOSE) { console.log(success('Process - Values - Hex Color : ' + (rule.selectors.join(', ')))) }
     }
   }
 

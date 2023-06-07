@@ -1,5 +1,5 @@
-export default function filterForFontFace ({ type }) {
+export default function filterForFontFace ({ property }) {
   return (
-    type === 'font-face'
+    property === 'font-face'
   )
 }

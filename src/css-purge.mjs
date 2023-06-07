@@ -20,6 +20,18 @@ import processColor from './process-color.mjs'
 
 import DEFAULT_DECLARATION_NAMES from './default-declaration-names.mjs'
 
+/**
+ *  Process font
+ */
+
+import filterForFont from './utils/filter-for-font.mjs'
+// import hasInherit from './utils/has-inherit.mjs'
+// import toProperty from './utils/to-property.mjs'
+// import toValue from './utils/to-value.mjs'
+// import toPosition from './utils/to-position.mjs'
+import formatFontFamily from './utils/format-font-family.mjs'
+import getValueOfFontProp from './utils/get-value-of-font-prop.mjs'
+
 import toPosition from './utils/to-position.mjs'
 import toValue from './utils/to-value.mjs'
 import toProperty from './utils/to-property.mjs'
@@ -55,16 +67,14 @@ import filterForBorderRadius from './utils/filter-for-border-radius.mjs'
 import filterForBorderRight from './utils/filter-for-border-right.mjs'
 import filterForBorderTop from './utils/filter-for-border-top.mjs'
 import filterForBorderTopRightBottomLeft from './utils/filter-for-border-top-right-bottom-left.mjs'
-import filterForFont from './utils/filter-for-font.mjs'
 import filterForListStyle from './utils/filter-for-list-style.mjs'
 import filterForMargin from './utils/filter-for-margin.mjs'
 import filterForOutline from './utils/filter-for-outline.mjs'
 import filterForPadding from './utils/filter-for-padding.mjs'
 
-import formatFontFamily from './utils/format-font-family.mjs'
+import hasInherit from './utils/has-inherit.mjs'
 
 import getSelectors from './utils/get-selectors.mjs'
-import getValueOfFontProp from './utils/get-value-of-font-prop.mjs'
 import getValueOfTriProp from './utils/get-value-of-tri-prop.mjs'
 import getValueOfSquareProp from './utils/get-value-of-square-prop.mjs'
 import getBackgroundProp from './utils/get-background-prop.mjs'
@@ -104,8 +114,6 @@ const cool = clc.xterm(105)
 // const appendToFileSync = fs.appendFileSync
 
 let hash
-
-const hasInherit = ({ value }) => value.toLowerCase().includes('inherit')
 
 function getSummaryStatsFor (collector) {
   return function getSummaryStats ({ declarations, type }) {
@@ -211,8 +219,8 @@ class CSSPurge {
       format_font_family: false,
       format_4095_rules_legacy_limit: false,
       special_convert_rem: false,
-      special_convert_rem_browser_default_px: '16',
-      special_convert_rem_desired_html_px: '10',
+      special_convert_rem_default_px: '16',
+      special_convert_rem_px: '10',
       special_convert_rem_font_size: true,
       special_reduce_with_html: false,
       special_reduce_with_html_ignore_selectors: [
@@ -288,8 +296,8 @@ class CSSPurge {
         format_font_family: OPTIONS.format_font_family,
         format_4095_rules_legacy_limit: OPTIONS.format_4095_rules_legacy_limit,
         special_convert_rem: OPTIONS.special_convert_rem,
-        special_convert_rem_browser_default_px: OPTIONS.special_convert_rem_browser_default_px,
-        special_convert_rem_desired_html_px: OPTIONS.special_convert_rem_desired_html_px,
+        special_convert_rem_default_px: OPTIONS.special_convert_rem_default_px,
+        special_convert_rem_px: OPTIONS.special_convert_rem_px,
         special_convert_rem_font_size: OPTIONS.special_convert_rem_font_size,
         generate_report: OPTIONS.generate_report,
         verbose: OPTIONS.verbose,
@@ -1227,7 +1235,7 @@ class CSSPurge {
 
           if (SHORTEN || SHORTEN_HEXCOLOR) processHexColor(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_FONT) processFont(rule, OPTIONS, SUMMARY)
+          // if (SHORTEN || SHORTEN_FONT) processFont(rule, OPTIONS, SUMMARY)
 
           if (SHORTEN || SHORTEN_MARGIN) processMargin(rule, OPTIONS, SUMMARY)
 
@@ -1245,409 +1253,9 @@ class CSSPurge {
           DECLARATION_COUNT = rules[i].declarations.length
 
           // font
-          if (SHORTEN || SHORTEN_FONT) {
-            const font = rules[i].declarations.filter(filterForFont)
+          if (SHORTEN || SHORTEN_FONT) processFont(rules[i], OPTIONS, SUMMARY)
 
-            const fontWeightIndex = font.findIndex(({ property }) => property === 'font-weight')
-
-            // font-weight shortening
-            if (fontWeightIndex !== -1) {
-              let value = font[fontWeightIndex].value
-
-              switch (value.toLowerCase()) {
-                case 'thin':
-                case 'hairline':
-                  value = '100'
-                  break
-                case 'extra light':
-                case 'ultra light':
-                  value = '200'
-                  break
-                case 'light':
-                  value = '300'
-                  break
-                case 'normal':
-                  value = '400'
-                  break
-                case 'medium':
-                  value = '500'
-                  break
-                case 'semi bold':
-                case 'demi bold':
-                  value = '600'
-                  break
-                case 'bold':
-                  value = '700'
-                  break
-                case 'extra bold':
-                case 'ultra bold':
-                  value = '800'
-                  break
-                case 'black':
-                case 'heavy':
-                  value = '900'
-                  break
-              }
-
-              font[fontWeightIndex] = {
-                ...font[fontWeightIndex],
-                value
-              }
-            }
-
-            // special - convert rem
-            if (OPTIONS.special_convert_rem && OPTIONS.special_convert_rem_font_size) {
-              // for singular declaration
-              for (let j = 0; j < DECLARATION_COUNT; ++j) {
-                if (rules[i].declarations !== undefined && rules[i].declarations[j].property === 'font-size') {
-                  let value = rules[i].declarations[j].value.toLowerCase()
-
-                  if (value.includes('px')) {
-                    value = value.substr(0, value.length - 2) / OPTIONS.special_convert_rem_desired_html_px + 'rem'
-                  }
-
-                  rules[i].declarations[j] = {
-                    ...rules[i].declarations[j],
-                    value
-                  }
-                }
-              }
-
-              const fontSizeIndex = font.findIndex(({ property }) => property === 'font-size')
-              // for combined declaration
-              if (fontSizeIndex !== -1) {
-                let value = font[fontSizeIndex].value.toLowerCase()
-
-                if (value.includes('px')) {
-                  value = value.substr(0, value.length - 2) / OPTIONS.special_convert_rem_desired_html_px + 'rem'
-                }
-
-                font[fontSizeIndex] = {
-                  ...font[fontSizeIndex],
-                  value
-                }
-              }
-            }
-
-            let fontProps = font.map(toProperty)
-
-            if (OPTIONS.format_font_family || OPTIONS.format) {
-              // make sure multi-worded families have quotes
-              if (fontProps.includes('font-family')) {
-                const declarations = rules[i].declarations
-                rules[i].declarations = declarations.map((declaration) => {
-                  if (declaration.property === 'font-family') {
-                    return {
-                      type: 'declaration',
-                      property: 'font-family',
-                      value: formatFontFamily(declaration.value),
-                      position: declaration.position
-                    }
-                  }
-
-                  return declaration
-                })
-              }
-            }
-
-            // reduce to font
-            if (
-              (
-                fontProps.includes('font-size') &&
-                fontProps.includes('font-family')
-              ) ||
-              fontProps.includes('font')) {
-              if (OPTIONS.verbose) { console.log(success('Process - Values - Font : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
-
-              const fontHasInherit = font.some(hasInherit)
-              if (!fontHasInherit) {
-                let fontValues = font.map(toValue)
-                const fontPositions = font.map(toPosition)
-
-                const fontStyleIndex = fontProps.indexOf('font-style')
-                const fontVariantIndex = fontProps.indexOf('font-variant')
-                const fontWeightIndex = fontProps.indexOf('font-weight')
-                const fontStretchIndex = fontProps.indexOf('font-stretch')
-                const fontSizeIndex = fontProps.indexOf('font-size')
-                const lineHeightIndex = fontProps.indexOf('line-height')
-                const fontFamilyIndex = fontProps.indexOf('font-family')
-                const fontStyleValue = fontValues[fontStyleIndex] ?? ''
-                const fontVariantValue = fontValues[fontVariantIndex] ?? ''
-                const fontWeightValue = fontValues[fontWeightIndex] ?? ''
-                const fontStretchValue = fontValues[fontStretchIndex] ?? ''
-                const fontSizeValue = fontValues[fontSizeIndex] ?? ''
-                const lineHeightValue = fontValues[lineHeightIndex] ?? ''
-                const fontFamilyValue = fontValues[fontFamilyIndex] ?? ''
-
-                const FONT_VALUES = [
-                  fontStyleValue,
-                  fontVariantValue,
-                  fontWeightValue,
-                  fontStretchValue,
-                  fontSizeValue,
-                  lineHeightValue,
-                  fontFamilyValue
-                ]
-
-                // existing font check
-                const fontPropValueIndex = fontProps.indexOf('font')
-                if (fontPropValueIndex !== -1) {
-                  let fontPropValue = fontValues[fontPropValueIndex]
-
-                  if (fontSizeIndex > fontPropValueIndex) {
-                    FONT_VALUES[4] = fontSizeValue
-                  } else {
-                    const propPosition = fontPositions[fontPropValueIndex]
-                    const propValue = getValueOfFontProp(fontPropValue, 'size', propPosition)
-                    if (propValue === 'check family') {
-                      if (fontFamilyValue) {
-                        FONT_VALUES[4] = fontPropValue
-                        fontPropValue = fontPropValue + ' ' + fontFamilyValue
-                      } else {
-                        // report error and exit
-                        console.log(error('Error parsing font declaration'))
-                        console.log(errorLine('Source: ' + propPosition.source))
-                        console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
-                        console.log('Required: font-family')
-                        process.exit(1)
-                      }
-                    } else {
-                      if (propValue === 'check size') {
-                        if (fontSizeValue) {
-                          FONT_VALUES[4] = fontPropValue
-                          fontPropValue = fontSizeValue + ' ' + fontPropValue
-                        } else {
-                          if (fontPropValue === 'inherit') {
-                            FONT_VALUES[4] = fontPropValue
-                          } else {
-                            // report error and exit
-                            console.log(error('Error parsing font declaration'))
-                            console.log(errorLine('Source: ' + propPosition.source))
-                            console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
-                            console.log('Required: font-size')
-                            process.exit(1)
-                          }
-                        }
-                      }
-                    }
-                  }
-
-                  if (fontFamilyIndex > fontPropValueIndex) {
-                    FONT_VALUES[6] = fontFamilyValue
-                  } else {
-                    const propPosition = fontPositions[fontPropValueIndex]
-                    const propValue = getValueOfFontProp(fontPropValue, 'family', propPosition)
-                    if (propValue === 'check size') {
-                      if (fontSizeValue) {
-                        FONT_VALUES[6] = fontPropValue
-                        fontPropValue = fontSizeValue + ' ' + fontPropValue
-                      } else {
-                        if (fontPropValue === 'inherit') {
-                          if (FONT_VALUES[4] === 'inherit') {
-                            FONT_VALUES[6] = ''
-                          }
-                        } else {
-                          // report error and exit
-                          console.log(error('Error parsing font declaration'))
-                          console.log(errorLine('Source: ' + propPosition.source))
-                          console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
-                          console.log('Required: font-size')
-                          process.exit(1)
-                        }
-                      }
-                    } else {
-                      if (propValue === 'check family') {
-                        if (fontFamilyValue) {
-                          FONT_VALUES[6] = fontPropValue
-                          fontPropValue = fontPropValue + ' ' + fontFamilyValue
-                        } else {
-                          // report error and exit
-                          console.log(error('Error parsing font declaration'))
-                          console.log(errorLine('Source: ' + propPosition.source))
-                          console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
-                          console.log('Required: font-family')
-                          process.exit(1)
-                        }
-                      } else {
-                        // make sure multi-worded families have quotes
-                        if (OPTIONS.format_font_family || OPTIONS.format) {
-                          FONT_VALUES[6] = formatFontFamily(FONT_VALUES[6])
-                        } // end of format
-                      } // end of font-family checks
-                    }
-                  } // end of font-family
-
-                  if (fontStyleIndex > fontPropValueIndex) {
-                    FONT_VALUES[0] = fontStyleValue
-                  } else {
-                    const propPosition = fontPositions[fontPropValueIndex]
-                    const propValue = getValueOfFontProp(fontPropValue, 'style', propPosition)
-                    FONT_VALUES[0] = (
-                      propValue === 'check size' ||
-                      propValue === 'check family'
-                        ? ''
-                        : propValue
-                    )
-                  }
-
-                  if (fontVariantIndex > fontPropValueIndex) {
-                    FONT_VALUES[1] = fontVariantValue
-                  } else {
-                    const propPosition = fontPositions[fontPropValueIndex]
-                    const propValue = getValueOfFontProp(fontPropValue, 'variant', propPosition)
-                    FONT_VALUES[1] = (
-                      propValue === 'check size' ||
-                      propValue === 'check family'
-                        ? ''
-                        : propValue
-                    )
-                  }
-
-                  if (fontWeightIndex > fontPropValueIndex) {
-                    FONT_VALUES[2] = fontWeightValue
-                  } else {
-                    const propPosition = fontPositions[fontPropValueIndex]
-                    const propValue = getValueOfFontProp(fontPropValue, 'weight', propPosition)
-                    FONT_VALUES[2] = (
-                      propValue === 'check size' ||
-                      propValue === 'check family'
-                        ? ''
-                        : propValue
-                    )
-                  }
-
-                  if (fontStretchIndex > fontPropValueIndex) {
-                    FONT_VALUES[3] = fontStretchValue
-                  } else {
-                    const propPosition = fontPositions[fontPropValueIndex]
-                    const propValue = getValueOfFontProp(fontPropValue, 'stretch', propPosition)
-                    FONT_VALUES[3] = (
-                      propValue === 'check size' ||
-                      propValue === 'check family'
-                        ? ''
-                        : propValue
-                    )
-                  }
-
-                  if (lineHeightIndex > fontPropValueIndex) {
-                    FONT_VALUES[5] = lineHeightValue
-                  } else {
-                    const propPosition = fontPositions[fontPropValueIndex]
-                    const propValue = getValueOfFontProp(fontPropValue, 'lineHeight', propPosition)
-                    FONT_VALUES[5] = (
-                      propValue === 'check size' ||
-                      propValue === 'check family'
-                        ? ''
-                        : propValue
-                    )
-                  }
-                }
-
-                if (
-                  FONT_VALUES[0] === '' &&
-                  FONT_VALUES[1] === '' &&
-                  FONT_VALUES[2] === '' &&
-                  FONT_VALUES[3] === '' &&
-                  FONT_VALUES[4] === '' &&
-                  FONT_VALUES[5] === ''
-                ) {
-                  // !!!
-                } else {
-                  fontProps = [...DEFAULT_FONT_PROPS]
-                  fontValues = FONT_VALUES
-                }
-
-                const declarations = rules[i].declarations
-
-                // check for !important
-                const hasImportant = fontValues.some((font) => /(!important)/g.test(font))
-
-                fontValues = fontValues.map((font) => font.replace(/(!important)/g, ''))
-
-                if (hasImportant) {
-                  fontValues[fontValues.length - 1] += ' !important'
-                }
-
-                // merge line-height with font-size
-                if (fontValues[fontProps.indexOf('line-height')] !== '') {
-                  fontValues[fontProps.indexOf('font-size')] = fontValues[fontProps.indexOf('font-size')] + '/' + fontValues[fontProps.indexOf('line-height')]
-                  fontValues.splice(fontProps.indexOf('line-height'), 1)
-                }
-
-                // remove any spaces from empty values
-                fontValues = fontValues.filter(Boolean)
-
-                // add declaration
-                const fontRuleIndex = declarations.findIndex(filterForFont)
-
-                declarations.splice(fontRuleIndex, 0, {
-                  type: 'declaration',
-                  property: 'font',
-                  value: fontValues.join(' ')
-                })
-
-                DECLARATION_COUNT += 1
-                SUMMARY.stats.summary.noFontsShortened += 1
-
-                let fontIndex
-
-                // remove existing originals
-                fontIndex = declarations.findIndex(({ property }) => property === 'font-style')
-                if (fontIndex !== -1) {
-                  declarations.splice(fontIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                fontIndex = declarations.findIndex(({ property }) => property === 'font-variant')
-                if (fontIndex !== -1) {
-                  declarations.splice(fontIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                fontIndex = declarations.findIndex(({ property }) => property === 'font-weight')
-                if (fontIndex !== -1) {
-                  declarations.splice(fontIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                fontIndex = declarations.findIndex(({ property }) => property === 'font-stretch')
-                if (fontIndex !== -1) {
-                  declarations.splice(fontIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                fontIndex = declarations.findIndex(({ property }) => property === 'font-size')
-                if (fontIndex !== -1) {
-                  declarations.splice(fontIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                fontIndex = declarations.findIndex(({ property }) => property === 'line-height')
-                if (fontIndex !== -1) {
-                  declarations.splice(fontIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                fontIndex = declarations.findIndex(({ property }) => property === 'font-family')
-                if (fontIndex !== -1) {
-                  declarations.splice(fontIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                // remove existing fonts
-                const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((property) => property === 'font').length
-                if (j > 1) {
-                  for (let i = 1; i < j; ++i) {
-                    const was = properties.indexOf('font')
-                    const now = properties.indexOf('font', (was + 1))
-                    declarations.splice(now, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-                }
-              } // end of inherit check
-            }
-          } // end of font
+          DECLARATION_COUNT = rules[i].declarations.length
 
           // background
           if (SHORTEN || SHORTEN_BACKGROUND) {
@@ -4933,7 +4541,7 @@ class CSSPurge {
                 rules[i].declarations.unshift({
                   type: 'declaration',
                   property: 'font-size',
-                  value: ((parseInt(OPTIONS.special_convert_rem_desired_html_px) / parseInt(OPTIONS.special_convert_rem_browser_default_px)) * 100) + '%'
+                  value: ((parseInt(OPTIONS.special_convert_rem_px) / parseInt(OPTIONS.special_convert_rem_default_px)) * 100) + '%'
                 })
               }
 
@@ -4953,7 +4561,7 @@ class CSSPurge {
               declarations: [{
                 type: 'declaration',
                 property: 'font-size',
-                value: ((parseInt(OPTIONS.special_convert_rem_desired_html_px) / parseInt(OPTIONS.special_convert_rem_browser_default_px)) * 100) + '%'
+                value: ((parseInt(OPTIONS.special_convert_rem_px) / parseInt(OPTIONS.special_convert_rem_default_px)) * 100) + '%'
               }]
             })
           }

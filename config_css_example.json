@@ -74,8 +74,8 @@
         "format_4095_rules_legacy_limit": false,
 
         "special_convert_rem": false,
-        "special_convert_rem_browser_default_px": "16",
-        "special_convert_rem_desired_html_px": "10",
+        "special_convert_rem_default_px": "16",
+        "special_convert_rem_px": "10",
         "special_convert_rem_font_size": true,
 
         "special_reduce_with_html" : false,
