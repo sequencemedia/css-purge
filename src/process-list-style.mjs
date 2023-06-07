@@ -24,7 +24,9 @@ const error = cliColor.red
 const errorLine = cliColor.redBright
 
 export default function processListStyle (rule, OPTIONS, SUMMARY) {
-  const { verbose: VERBOSE } = OPTIONS
+  const {
+    verbose: VERBOSE
+  } = OPTIONS
 
   if (VERBOSE) console.log('Process - List Style')
 

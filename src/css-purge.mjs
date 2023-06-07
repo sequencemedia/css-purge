@@ -24,13 +24,13 @@ import DEFAULT_DECLARATION_NAMES from './default-declaration-names.mjs'
  *  Process font
  */
 
-import filterForFont from './utils/filter-for-font.mjs'
+// import filterForFont from './utils/filter-for-font.mjs'
 // import hasInherit from './utils/has-inherit.mjs'
 // import toProperty from './utils/to-property.mjs'
 // import toValue from './utils/to-value.mjs'
 // import toPosition from './utils/to-position.mjs'
-import formatFontFamily from './utils/format-font-family.mjs'
-import getValueOfFontProp from './utils/get-value-of-font-prop.mjs'
+// import formatFontFamily from './utils/format-font-family.mjs'
+// import getValueOfFontProp from './utils/get-value-of-font-prop.mjs'
 
 import toPosition from './utils/to-position.mjs'
 import toValue from './utils/to-value.mjs'
@@ -2086,7 +2086,7 @@ class CSSPurge {
               borderRadiusProps.includes('border-top-right-radius') &&
               borderRadiusProps.includes('border-bottom-left-radius') &&
               borderRadiusProps.includes('border-bottom-right-radius')
-              ) ||
+            ) ||
               borderRadiusProps.includes('border-radius')
             ) {
               if (OPTIONS.verbose) { console.log(success('Process - Values - Border Radius : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
