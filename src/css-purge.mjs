@@ -1217,9 +1217,13 @@ class CSSPurge {
         .filter(filterForDeclarations)
         .filter(filterForRule)
         .forEach((rule) => {
-          if (SHORTEN || SHORTEN_BACKGROUND) processBackground(rule, OPTIONS, SUMMARY)
+          // if (SHORTEN || SHORTEN_FONT) processFont(rule, OPTIONS, SUMMARY)
 
-          if (SHORTEN || SHORTEN_LIST_STYLE) processListStyle(rule, OPTIONS, SUMMARY)
+          // if (SHORTEN || SHORTEN_BACKGROUND) processBackground(rule, OPTIONS, SUMMARY)
+
+          // if (SHORTEN || SHORTEN_LIST_STYLE) processListStyle(rule, OPTIONS, SUMMARY)
+
+          // if (SHORTEN || SHORTEN_OUTLINE) processOutline(rule, OPTIONS, SUMMARY)
 
           if (SHORTEN || SHORTEN_BORDER_TOP) processBorderTop(rule, OPTIONS, SUMMARY)
 
@@ -1235,13 +1239,9 @@ class CSSPurge {
 
           if (SHORTEN || SHORTEN_HEXCOLOR) processHexColor(rule, OPTIONS, SUMMARY)
 
-          // if (SHORTEN || SHORTEN_FONT) processFont(rule, OPTIONS, SUMMARY)
-
           if (SHORTEN || SHORTEN_MARGIN) processMargin(rule, OPTIONS, SUMMARY)
 
           if (SHORTEN || SHORTEN_PADDING) processPadding(rule, OPTIONS, SUMMARY)
-
-          if (SHORTEN || SHORTEN_OUTLINE) processOutline(rule, OPTIONS, SUMMARY)
 
           if (SHORTEN || SHORTEN_ZERO) processZero(rule, OPTIONS, SUMMARY)
         })
@@ -1258,457 +1258,19 @@ class CSSPurge {
           DECLARATION_COUNT = rules[i].declarations.length
 
           // background
-          if (SHORTEN || SHORTEN_BACKGROUND) {
-            const background = rules[i].declarations.filter(filterForBackground)
-            let backgroundProps = background.map(toProperty)
+          if (SHORTEN || SHORTEN_BACKGROUND) processBackground(rules[i], OPTIONS, SUMMARY)
 
-            if (backgroundProps.length >= OPTIONS.shorten_background_min) {
-              if (OPTIONS.verbose) { console.log(success('Process - Values - Background : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
-
-              const backgroundHasInherit = background.some(hasInherit)
-              if (!backgroundHasInherit) {
-                let backgroundValues = background.map(toValue)
-
-                const backgroundColorIndex = backgroundProps.indexOf('background-color')
-                const backgroundImageIndex = backgroundProps.indexOf('background-image')
-                const backgroundRepeatIndex = backgroundProps.indexOf('background-repeat')
-                const backgroundAttachmentIndex = backgroundProps.indexOf('background-attachment')
-                const backgoundPositionIndex = backgroundProps.indexOf('background-position')
-                const backgroundColorValue = backgroundValues[backgroundColorIndex] ?? ''
-                const backgroundImageValue = backgroundValues[backgroundImageIndex] ?? ''
-                const backgroundRepeatValue = backgroundValues[backgroundRepeatIndex] ?? ''
-                const backgroundAttachmentValue = backgroundValues[backgroundAttachmentIndex] ?? ''
-                const backgoundPositionValue = backgroundValues[backgoundPositionIndex] ?? ''
-
-                const BACKGROUND_VALUES = [
-                  backgroundColorValue,
-                  backgroundImageValue,
-                  backgroundRepeatValue,
-                  backgroundAttachmentValue,
-                  backgoundPositionValue
-                ]
-
-                const hasMultipleBackgrounds = backgroundValues.some((background) => background.match(/([^0-9]),([^0-9])/g))
-
-                const hasGradient = backgroundValues.some((background) => background.includes('gradient'))
-
-                // existing background check
-                backgroundProps
-                  .forEach((backgroundProp, i) => {
-                    if (backgroundProp === 'background') {
-                      const backgroundPropValue = backgroundValues[i]
-
-                      if (backgroundPropValue.includes('gradient')) {
-                        if (backgroundColorIndex > i) {
-                          BACKGROUND_VALUES[0] = backgroundColorValue
-                        } else {
-                          const propValue = getBackgroundProp(backgroundPropValue, 'color')
-                          if (propValue) BACKGROUND_VALUES[0] = propValue
-                        }
-
-                        if (backgroundImageIndex > i) {
-                          BACKGROUND_VALUES[1] = backgroundImageValue
-                        } else {
-                          const propValue = getBackgroundProp(backgroundPropValue, 'image')
-                          if (propValue) BACKGROUND_VALUES[1] = propValue
-                        }
-
-                        if (backgroundRepeatIndex > i) {
-                          BACKGROUND_VALUES[2] = backgroundRepeatValue
-                        } else {
-                          const propValue = getBackgroundProp(backgroundPropValue, 'repeat')
-                          if (propValue) BACKGROUND_VALUES[2] = propValue
-                        }
-
-                        if (backgroundAttachmentIndex > i) {
-                          BACKGROUND_VALUES[3] = backgroundAttachmentValue
-                        } else {
-                          const propValue = getBackgroundProp(backgroundPropValue, 'attachment')
-                          if (propValue) BACKGROUND_VALUES[3] = propValue
-                        }
-
-                        if (backgoundPositionIndex > i) {
-                          BACKGROUND_VALUES[4] = backgoundPositionValue
-                        } else {
-                          const propValue = getBackgroundProp(backgroundPropValue, 'position')
-                          if (propValue) BACKGROUND_VALUES[4] = propValue
-                        }
-                      }
-                    }
-                  })
-
-                if (hasMultipleBackgrounds && !hasGradient) {
-                  let backgroundPropValue = ''
-                  for (let j = 0; j < BACKGROUND_VALUES.length; ++j) {
-                    const backgroundPropValues = BACKGROUND_VALUES[j].split(',')
-                    backgroundPropValue += (backgroundPropValues[0]) ? backgroundPropValues[0].trim() + ' ' : ''
-                    backgroundPropValue += (backgroundPropValues[1]) ? backgroundPropValues[1].trim() + ' ' : ''
-                    BACKGROUND_VALUES[j] = ''
-                  }
-                  backgroundPropValue = backgroundPropValue.trim()
-                  backgroundPropValue += ', ' + backgroundPropValue.trim()
-                  BACKGROUND_VALUES[0] = backgroundPropValue
-                }
-
-                if (!hasGradient) {
-                  if (
-                    BACKGROUND_VALUES[0] === '' &&
-                    BACKGROUND_VALUES[1] === '' &&
-                    BACKGROUND_VALUES[2] === '' &&
-                    BACKGROUND_VALUES[3] === '' &&
-                    BACKGROUND_VALUES[4] === ''
-                  ) {
-                    // !!!
-                  } else {
-                    backgroundProps = [...DEFAULT_BACKGROUND_PROPS]
-                    backgroundValues = BACKGROUND_VALUES
-                  }
-
-                  const declarations = rules[i].declarations
-
-                  // check for !important
-                  const hasImportant = backgroundValues.some((background) => /(!important)/g.test(background))
-
-                  backgroundValues = backgroundValues.map((background) => background.replace(/(!important)/g, ''))
-
-                  if (hasImportant) {
-                    backgroundValues[backgroundValues.length - 1] += ' !important'
-                  }
-
-                  // remove any spaces from empty values
-                  backgroundValues = backgroundValues.filter(Boolean)
-
-                  // add declaration
-                  const backgroundRuleIndex = declarations.findIndex(filterForBackground)
-
-                  declarations.splice(backgroundRuleIndex, 0, {
-                    type: 'declaration',
-                    property: 'background',
-                    value: backgroundValues.join(' ')
-                  })
-
-                  DECLARATION_COUNT += 1
-                  SUMMARY.stats.summary.noBackgroundsShortened += 1
-
-                  let backgroundIndex
-
-                  // remove originals
-                  backgroundIndex = declarations.findIndex(({ property }) => property === 'background-color')
-                  if (backgroundIndex !== -1) {
-                    declarations.splice(backgroundIndex, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-
-                  backgroundIndex = declarations.findIndex(({ property }) => property === 'background-image')
-                  if (backgroundIndex !== -1) {
-                    declarations.splice(backgroundIndex, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-
-                  backgroundIndex = declarations.findIndex(({ property }) => property === 'background-position')
-                  if (backgroundIndex !== -1) {
-                    declarations.splice(backgroundIndex, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-
-                  backgroundIndex = declarations.findIndex(({ property }) => property === 'background-repeat')
-                  if (backgroundIndex !== -1) {
-                    declarations.splice(backgroundIndex, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-
-                  backgroundIndex = declarations.findIndex(({ property }) => property === 'background-attachment')
-                  if (backgroundIndex !== -1) {
-                    declarations.splice(backgroundIndex, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-
-                  // remove existing backgrounds
-                  const properties = declarations.filter(toProperty).map(toProperty)
-                  const j = properties.filter((property) => property === 'background').length
-                  if (j > 1) {
-                    for (let i = 1; i < j; ++i) {
-                      const was = properties.indexOf('background')
-                      const now = properties.indexOf('background', (was + 1))
-                      declarations.splice(now, 1)
-                      DECLARATION_COUNT -= 1
-                    }
-                  }
-                }
-              } // end of inherit check
-            }
-          } // end of background
+          DECLARATION_COUNT = rules[i].declarations.length
 
           // listStyle
-          if (SHORTEN || SHORTEN_LIST_STYLE) {
-            const listStyle = rules[i].declarations.filter(filterForListStyle)
-            let listStyleProps = listStyle.map(toProperty)
-            if (
-              (
-                listStyleProps.includes('list-style-type') ||
-                listStyleProps.includes('list-style-position') ||
-                listStyleProps.includes('list-style-image')
-              ) ||
-              listStyleProps.includes('list-style')
-            ) {
-              if (OPTIONS.verbose) { console.log(success('Process - Values - List-style : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
+          if (SHORTEN || SHORTEN_LIST_STYLE) processListStyle(rules[i], OPTIONS, SUMMARY)
 
-              const listStyleHasInherit = listStyle.some(hasInherit)
-              if (!listStyleHasInherit) {
-                let listStyleValues = listStyle.map(toValue)
-
-                const listStyleTypeIndex = listStyleProps.indexOf('list-style-type')
-                const listStylePositionIndex = listStyleProps.indexOf('list-style-position')
-                const listStyleImageIndex = listStyleProps.indexOf('list-style-image')
-                const listStyleTypeValue = listStyleValues[listStyleTypeIndex] ?? ''
-                const listStylePositionValue = listStyleValues[listStylePositionIndex] ?? ''
-                const listStyleImageValue = listStyleValues[listStyleImageIndex] ?? ''
-
-                const LIST_STYLE_VALUES = [
-                  listStyleTypeValue,
-                  listStylePositionValue,
-                  listStyleImageValue
-                ]
-
-                // existing listStyle check
-                const listStylePropValueIndex = listStyleProps.indexOf('list-style')
-                if (listStylePropValueIndex !== -1) {
-                  const listStylePropValue = listStyleValues[listStylePropValueIndex]
-
-                  if (listStylePropValue !== 'none') {
-                    if (listStyleTypeIndex > listStylePropValueIndex) {
-                      LIST_STYLE_VALUES[0] = listStyleTypeValue
-                    } else {
-                      const propValue = getValueOfTriProp(listStylePropValue, 'type')
-                      if (propValue) LIST_STYLE_VALUES[0] = propValue
-                    }
-
-                    if (listStylePositionIndex > listStylePropValueIndex) {
-                      LIST_STYLE_VALUES[1] = listStylePositionValue
-                    } else {
-                      const propValue = getValueOfTriProp(listStylePropValue, 'position')
-                      if (propValue) LIST_STYLE_VALUES[1] = propValue
-                    }
-
-                    if (listStyleImageIndex > listStylePropValueIndex) {
-                      LIST_STYLE_VALUES[2] = listStyleImageValue
-                    } else {
-                      const propValue = getValueOfTriProp(listStylePropValue, 'image')
-                      if (propValue) LIST_STYLE_VALUES[2] = propValue
-                    }
-                  } else {
-                    LIST_STYLE_VALUES[0] = listStylePropValue
-                    LIST_STYLE_VALUES[1] = ''
-                    LIST_STYLE_VALUES[2] = ''
-                  }
-                }
-
-                if (
-                  LIST_STYLE_VALUES[0] === '' &&
-                  LIST_STYLE_VALUES[1] === '' &&
-                  LIST_STYLE_VALUES[2] === ''
-                ) {
-                  // !!!
-                } else {
-                  listStyleProps = [...DEFAULT_LIST_STYLE_PROPS]
-                  listStyleValues = LIST_STYLE_VALUES
-                }
-
-                const declarations = rules[i].declarations
-
-                // check for !important
-                const hasImportant = listStyleValues.some((listStyle) => /(!important)/g.test(listStyle))
-
-                listStyleValues = listStyleValues.map((listStyle) => listStyle.replace(/(!important)/g, ''))
-
-                if (hasImportant) {
-                  listStyleValues[listStyleValues.length - 1] += ' !important'
-                }
-
-                // remove any spaces from empty values
-                listStyleValues = listStyleValues.filter(Boolean)
-
-                // add declaration
-                const listStyleRuleIndex = declarations.findIndex(filterForListStyle)
-
-                declarations.splice(listStyleRuleIndex, 0, {
-                  type: 'declaration',
-                  property: 'list-style',
-                  value: listStyleValues.join(' ')
-                })
-
-                DECLARATION_COUNT += 1
-                SUMMARY.stats.summary.noListStylesShortened += 1
-
-                let listStyleIndex
-
-                listStyleIndex = declarations.findIndex(({ property }) => property === 'list-style-type')
-                if (listStyleIndex !== -1) {
-                  declarations.splice(listStyleIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                listStyleIndex = declarations.findIndex(({ property }) => property === 'list-style-position')
-                if (listStyleIndex !== -1) {
-                  declarations.splice(listStyleIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                listStyleIndex = declarations.findIndex(({ property }) => property === 'list-style-image')
-                if (listStyleIndex !== -1) {
-                  declarations.splice(listStyleIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                // remove existing listStyles
-                const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((property) => property === 'list-style').length
-                if (j > 1) {
-                  for (let i = 1; i < j; ++i) {
-                    const was = properties.indexOf('list-style')
-                    const now = properties.indexOf('list-style', (was + 1))
-                    declarations.splice(now, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-                }
-              } // end of inherit check
-            }
-          } // end of listStyle
+          DECLARATION_COUNT = rules[i].declarations.length
 
           // outline
-          if (SHORTEN || SHORTEN_OUTLINE) {
-            const outline = rules[i].declarations.filter(filterForOutline)
-            let outlineProps = outline.map(toProperty)
-            if (
-              (
-                outlineProps.includes('outline-width') ||
-                outlineProps.includes('outline-style') ||
-                outlineProps.includes('outline-color')
-              ) ||
-              outlineProps.includes('outline')
-            ) {
-              if (OPTIONS.verbose) { console.log(success('Process - Values - Outline : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : ''))) }
+          if (SHORTEN || SHORTEN_OUTLINE) processOutline(rules[i], OPTIONS, SUMMARY)
 
-              const outlineHasInherit = outline.some(hasInherit)
-              if (!outlineHasInherit) {
-                let outlineValues = outline.map(toValue)
-
-                const outlineWidthIndex = outlineProps.indexOf('outline-width')
-                const outlineStyleIndex = outlineProps.indexOf('outline-style')
-                const outlineColorIndex = outlineProps.indexOf('outline-color')
-                const outlineWidthValue = outlineValues[outlineWidthIndex] ?? ''
-                const outlineStyleValue = outlineValues[outlineStyleIndex] ?? ''
-                const outlineColorValue = outlineValues[outlineColorIndex] ?? ''
-
-                const OUTLINE_VALUES = [
-                  outlineWidthValue,
-                  outlineStyleValue,
-                  outlineColorValue
-                ]
-
-                // existing outline check
-                const outlinePropValueIndex = outlineProps.indexOf('outline')
-                if (outlinePropValueIndex !== -1) {
-                  const outlinePropValue = outlineValues[outlinePropValueIndex]
-                  if (outlinePropValue !== 'none') {
-                    if (outlineWidthIndex > outlinePropValueIndex) {
-                      OUTLINE_VALUES[0] = outlineWidthValue
-                    } else {
-                      const propValue = getValueOfTriProp(outlinePropValue, 'width')
-                      if (propValue) OUTLINE_VALUES[0] = propValue
-                    }
-
-                    if (outlineStyleIndex > outlinePropValueIndex) {
-                      OUTLINE_VALUES[1] = outlineStyleValue
-                    } else {
-                      const propValue = getValueOfTriProp(outlinePropValue, 'style')
-                      if (propValue) OUTLINE_VALUES[1] = propValue
-                    }
-
-                    if (outlineColorIndex > outlinePropValueIndex) {
-                      OUTLINE_VALUES[2] = outlineColorValue
-                    } else {
-                      const propValue = getValueOfTriProp(outlinePropValue, 'color')
-                      if (propValue) OUTLINE_VALUES[2] = propValue
-                    }
-                  } else {
-                    OUTLINE_VALUES[0] = '0'
-                    OUTLINE_VALUES[1] = ''
-                    OUTLINE_VALUES[2] = ''
-                  }
-                }
-
-                if (
-                  OUTLINE_VALUES[0] === '' &&
-                  OUTLINE_VALUES[1] === '' &&
-                  OUTLINE_VALUES[2] === ''
-                ) {
-                  // !!!
-                } else {
-                  outlineProps = [...DEFAULT_OUTLINE_PROPS]
-                  outlineValues = OUTLINE_VALUES
-                }
-
-                const declarations = rules[i].declarations
-
-                // check for !important
-                const hasImportant = outlineValues.some((outline) => /(!important)/g.test(outline))
-
-                outlineValues = outlineValues.map((outline) => outline.replace(/(!important)/g, ''))
-
-                if (hasImportant) {
-                  outlineValues[outlineValues.length - 1] += ' !important'
-                }
-
-                // remove any spaces from empty values
-                outlineValues = outlineValues.filter(Boolean)
-
-                // add declaration
-                const outlineRuleIndex = declarations.findIndex(filterForOutline)
-
-                declarations.splice(outlineRuleIndex, 0, {
-                  type: 'declaration',
-                  property: 'outline',
-                  value: outlineValues.join(' ')
-                })
-
-                DECLARATION_COUNT += 1
-                SUMMARY.stats.summary.noOutlinesShortened += 1
-
-                let outlineIndex
-
-                outlineIndex = declarations.findIndex(({ property }) => property === 'outline-width')
-                if (outlineIndex !== -1) {
-                  declarations.splice(outlineIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                outlineIndex = declarations.findIndex(({ property }) => property === 'outline-style')
-                if (outlineIndex !== -1) {
-                  declarations.splice(outlineIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                outlineIndex = declarations.findIndex(({ property }) => property === 'outline-color')
-                if (outlineIndex !== -1) {
-                  declarations.splice(outlineIndex, 1)
-                  DECLARATION_COUNT -= 1
-                }
-
-                // remove existing outlines
-                const properties = declarations.filter(toProperty).map(toProperty)
-                const j = properties.filter((property) => property === 'outline').length
-                if (j > 1) {
-                  for (let i = 1; i < j; ++i) {
-                    const was = properties.indexOf('outline')
-                    const now = properties.indexOf('outline', (was + 1))
-                    declarations.splice(now, 1)
-                    DECLARATION_COUNT -= 1
-                  }
-                }
-              } // end of inherit check
-            }
-          } // end of outline
+          DECLARATION_COUNT = rules[i].declarations.length
 
           // borderTop
           if (SHORTEN || SHORTEN_BORDER_TOP) {
@@ -2519,12 +2081,11 @@ class CSSPurge {
           if (SHORTEN || SHORTEN_BORDER_RADIUS) {
             const borderRadius = rules[i].declarations.filter(filterForBorderRadius)
             let borderRadiusProps = borderRadius.map(toProperty)
-            if (
-              (
-                borderRadiusProps.includes('border-top-left-radius') &&
-                borderRadiusProps.includes('border-top-right-radius') &&
-                borderRadiusProps.includes('border-bottom-left-radius') &&
-                borderRadiusProps.includes('border-bottom-right-radius')
+            if ((
+              borderRadiusProps.includes('border-top-left-radius') &&
+              borderRadiusProps.includes('border-top-right-radius') &&
+              borderRadiusProps.includes('border-bottom-left-radius') &&
+              borderRadiusProps.includes('border-bottom-right-radius')
               ) ||
               borderRadiusProps.includes('border-radius')
             ) {

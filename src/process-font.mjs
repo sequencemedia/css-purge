@@ -2,13 +2,13 @@ import cliColor from 'cli-color'
 
 import filterForFont from './utils/filter-for-font.mjs'
 import filterForFontFace from './utils/filter-for-font-face.mjs'
-import filterForFontFamily from './utils/filter-for-font-family.mjs'
-import filterForFontSize from './utils/filter-for-font-size.mjs'
-import filterForFontStretch from './utils/filter-for-font-stretch.mjs'
 import filterForFontStyle from './utils/filter-for-font-style.mjs'
 import filterForFontVariant from './utils/filter-for-font-variant.mjs'
 import filterForFontWeight from './utils/filter-for-font-weight.mjs'
+import filterForFontStretch from './utils/filter-for-font-stretch.mjs'
 import filterForLineHeight from './utils/filter-for-line-height.mjs'
+import filterForFontSize from './utils/filter-for-font-size.mjs'
+import filterForFontFamily from './utils/filter-for-font-family.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import toProperty from './utils/to-property.mjs'
@@ -326,12 +326,7 @@ export default function processFont (rule, OPTIONS, SUMMARY) {
       }
 
       if (
-        FONT_VALUES[0] === '' &&
-        FONT_VALUES[1] === '' &&
-        FONT_VALUES[2] === '' &&
-        FONT_VALUES[3] === '' &&
-        FONT_VALUES[4] === '' &&
-        FONT_VALUES[5] === ''
+        FONT_VALUES.every((v) => v === '')
       ) {
         // !!!
       } else {
@@ -355,7 +350,6 @@ export default function processFont (rule, OPTIONS, SUMMARY) {
         if (lineHeightValue !== '') {
           const fontSizeIndex = fontProps.indexOf('font-size')
           const fontSizeValue = fontValues[fontSizeIndex]
-          fontValues[fontSizeIndex]
           fontValues[fontSizeIndex] = fontSizeValue + '/' + lineHeightValue
           fontValues.splice(lineHeightIndex, 1)
         }
@@ -381,21 +375,6 @@ export default function processFont (rule, OPTIONS, SUMMARY) {
         declarations.splice(i, 1)
       }
 
-      if (declarations.some(filterForFontFamily)) {
-        const i = declarations.findIndex(filterForFontFamily)
-        declarations.splice(i, 1)
-      }
-
-      if (declarations.some(filterForFontSize)) {
-        const i = declarations.findIndex(filterForFontSize)
-        declarations.splice(i, 1)
-      }
-
-      if (declarations.some(filterForFontStretch)) {
-        const i = declarations.findIndex(filterForFontStretch)
-        declarations.splice(i, 1)
-      }
-
       if (declarations.some(filterForFontStyle)) {
         const i = declarations.findIndex(filterForFontStyle)
         declarations.splice(i, 1)
@@ -411,8 +390,23 @@ export default function processFont (rule, OPTIONS, SUMMARY) {
         declarations.splice(i, 1)
       }
 
+      if (declarations.some(filterForFontStretch)) {
+        const i = declarations.findIndex(filterForFontStretch)
+        declarations.splice(i, 1)
+      }
+
+      if (declarations.some(filterForFontSize)) {
+        const i = declarations.findIndex(filterForFontSize)
+        declarations.splice(i, 1)
+      }
+
       if (declarations.some(filterForLineHeight)) {
         const i = declarations.findIndex(filterForLineHeight)
+        declarations.splice(i, 1)
+      }
+
+      if (declarations.some(filterForFontFamily)) {
+        const i = declarations.findIndex(filterForFontFamily)
         declarations.splice(i, 1)
       }
 
