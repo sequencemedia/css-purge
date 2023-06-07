@@ -1,34 +1,38 @@
 import processColor from './process-color.mjs'
 
+const PROPERTIES = new Set([
+  'color',
+  'font',
+  'font-color',
+  'background',
+  'background-color',
+  'outline',
+  'outline-color',
+  'border',
+  'border-color',
+  'border-top-color',
+  'border-right-color',
+  'border-bottom-color',
+  'border-left-color',
+  'border-top',
+  'border-right',
+  'border-bottom',
+  'border-left',
+  'box-shadow',
+  'text-shadow'
+])
+
 export default function processHexColor (rule, OPTIONS, SUMMARY) {
-  const { verbose: VERBOSE } = OPTIONS
+  const {
+    verbose: VERBOSE
+  } = OPTIONS
 
   if (VERBOSE) console.log('Process - Hex Color')
 
   rule.declarations
     .forEach((declaration) => {
       const property = declaration.property
-      if (
-        property === 'color' ||
-        property === 'font' ||
-        property === 'font-color' ||
-        property === 'background' ||
-        property === 'background-color' ||
-        property === 'outline' ||
-        property === 'outline-color' ||
-        property === 'border' ||
-        property === 'border-color' ||
-        property === 'border-top-color' ||
-        property === 'border-right-color' ||
-        property === 'border-bottom-color' ||
-        property === 'border-left-color' ||
-        property === 'border-top' ||
-        property === 'border-right' ||
-        property === 'border-bottom' ||
-        property === 'border-left' ||
-        property === 'box-shadow' ||
-        property === 'text-shadow'
-      ) {
+      if (PROPERTIES.has(property)) {
         const value = declaration.value
         if (value && !value.includes('Microsoft')) {
           declaration.value = processColor(value, declaration, rule, OPTIONS, SUMMARY)
