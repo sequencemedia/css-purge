@@ -5,9 +5,6 @@ export default function filterForBackground ({ property }) {
     property === 'background-repeat' ||
     property === 'background-attachment' ||
     property === 'background-position' ||
-    // || property === 'background-size'
-    // || property === 'background-origin'
-    // || property === 'background-clip'
     property === 'background'
   )
 }

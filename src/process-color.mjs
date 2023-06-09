@@ -182,14 +182,19 @@ function processHexColorPairs (value, declaration, rule, OPTIONS, SUMMARY) {
 }
 
 export default function processColor (value, declaration, rule, OPTIONS, SUMMARY) {
-  const { verbose: VERBOSE } = OPTIONS
+  const {
+    verbose: VERBOSE,
+    shorten_hexcolor_extended: SHORTEN_HEXCOLOR_EXTENDED,
+    shorten_hexcolor: SHORTEN_HEXCOLOR,
+    shorten: SHORTEN
+  } = OPTIONS
 
   if (VERBOSE) console.log('Process - Color')
 
   if (value) {
     let hasChanged = false
 
-    if (OPTIONS.shorten_hexcolor_extended || OPTIONS.shorten) {
+    if (SHORTEN_HEXCOLOR_EXTENDED || SHORTEN) {
       ({
         hasChanged,
         value
@@ -201,7 +206,7 @@ export default function processColor (value, declaration, rule, OPTIONS, SUMMARY
         }))
     }
 
-    if (OPTIONS.shorten_hexcolor || OPTIONS.shorten) {
+    if (SHORTEN_HEXCOLOR || SHORTEN) {
       ({
         hasChanged,
         value
