@@ -2289,23 +2289,40 @@ class CSSPurge {
           rules
             .forEach((rule, i) => {
               if (rule) {
-                if (rule.type === 'charset') {
-                  const ALPHA = rule.charset
+                const {
+                  type
+                } = rule
+
+                if (type === 'charset') {
+                  const {
+                    charset: ALPHA = ''
+                  } = rule
 
                   rules.slice(i)
                     .forEach((rule, j) => {
                       if (rule) {
-                        if (rule.type === 'charset') {
-                          const OMEGA = rule.charset
+                        const {
+                          type
+                        } = rule
+
+                        if (type === 'charset') {
+                          const {
+                            charset: OMEGA = ''
+                          } = rule
 
                           if (ALPHA === OMEGA) {
                             rules.splice(j, 1) // remove charset
 
-                            const nextSiblingRule = rules.slice(j).shift()
-                            if (nextSiblingRule) {
+                            const siblingRule = rules[j] // rules.slice(j).shift()
+                            if (siblingRule) {
+                              const {
+                                type,
+                                comment
+                              } = siblingRule
+
                               if (
-                                nextSiblingRule.type === 'comment' &&
-                                nextSiblingRule.comment.includes('_cssp_sc')
+                                type === 'comment' &&
+                                comment.includes('_cssp_sc')
                               ) {
                                 rules.splice(j, 1) // remove comment
                               }
@@ -2315,14 +2332,19 @@ class CSSPurge {
                       }
                     })
 
-                  if (!ALPHA.startsWith('"') || !ALPHA.endsWith('"')) {
+                  if (!(ALPHA.startsWith('"') && ALPHA.endsWith('"'))) {
                     rules.splice(i, 1) // remove charset
 
-                    const nextSiblingRule = rules.slice(i).shift()
-                    if (nextSiblingRule) {
+                    const siblingRule = rules[i] // rules.slice(i).shift()
+                    if (siblingRule) {
+                      const {
+                        type,
+                        comment
+                      } = siblingRule
+
                       if (
-                        nextSiblingRule.type === 'comment' &&
-                        nextSiblingRule.comment.includes('_cssp_sc')
+                        type === 'comment' &&
+                        comment.includes('_cssp_sc')
                       ) {
                         rules.splice(i, 1) // remove comment
                       }
