@@ -23,6 +23,10 @@ import processValues from './process-values.mjs'
 import trim from './css/trim.mjs'
 import hack from './css/hack.mjs'
 
+import filterForMedia from './utils/filter-for-media.mjs'
+import filterForDocument from './utils/filter-for-document.mjs'
+import filterForSupports from './utils/filter-for-supports.mjs'
+
 import getTokens from './utils/get-tokens.mjs'
 
 import getSelectors from './utils/get-selectors.mjs'
@@ -107,6 +111,27 @@ function getSummaryStatsFor (collector) {
   }
 }
 
+function toGroups (rules) {
+  const {
+    groups
+  } = rules.reduce(({ groups, count }, rule) => {
+    const group = groups[count]
+    group.push(rule)
+
+    if (group.length === 4095) {
+      groups.push([])
+      count += 1
+    }
+
+    return {
+      groups,
+      count
+    }
+  }, { groups: [[]], count: 0 })
+
+  return groups
+}
+
 class CSSPurgeEmitter extends EventEmitter {}
 
 class CSSPurge {
@@ -177,11 +202,13 @@ class CSSPurge {
       reduce_declarations_file_location: 'default_options_reduce_declarations.json'
     }
 
+    const DEFAULT_OPTIONS_FILE_LOCATION = 'default_options.json'
+
     let OPTIONS = {
       ...DEFAULT_OPTIONS
     }
 
-    let CURRENT_OPTIONS_FILE_LOCATION = null
+    let OPTIONS_FILE_LOCATION
 
     const FILE_DATA = []
     let dataHTMLIn = []
@@ -303,19 +330,20 @@ class CSSPurge {
     }
 
     /* read declaration reduce lists */
+    let DEFAULT_OPTIONS_REDUCE_DECLARATIONS = {}
     let DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = 'default_options_reduce_declarations.json'
     let HAS_READ_REDUCE_DECLARATIONS = false
 
-    let selectors = ''
+    const selectors = ''
     let selectorsCount = 0
     const selectorPropertyValues = []
 
-    let declarationNames = [
+    const SELECTOR_PROPERTY_MAP = new Map()
+
+    const declarationNames = [
       ...DEFAULT_DECLARATION_NAMES
     ]
     let declarationNamesCount = declarationNames.length
-
-    const DEFAULT_OPTIONS_FILE_LOCATION = 'default_options.json'
 
     let fileLocation = 'demo/test1.css'
 
@@ -580,13 +608,15 @@ class CSSPurge {
     }
 
     function readHTMLFile (files = []) {
-      if (OPTIONS.verbose) { console.log(info('Input - HTML File : ' + files[readHTMLFileCount])) }
+      const file = files[readHTMLFileCount]
 
-      if (validUrl.isUri(files[readHTMLFileCount])) {
+      if (OPTIONS.verbose) { console.log(info('Input - HTML File : ' + file)) }
+
+      if (validUrl.isUri(file)) {
         request({
-          url: files[readHTMLFileCount],
+          url: file,
           method: 'GET'
-        }, function (e, head, body) {
+        }, (e, head, body) => {
           let fileSizeKB = 0
 
           if (head) {
@@ -605,26 +635,26 @@ class CSSPurge {
           }
 
           STATS.files.html.push({
-            fileName: files[readHTMLFileCount],
+            fileName: file,
             fileSizeKB
           })
         })
       } else {
-        const fileSizeKB = getFileSizeInKB(files[readHTMLFileCount])
+        const fileSizeKB = getFileSizeInKB(file)
 
         STATS.files.html.push({
-          fileName: files[readHTMLFileCount],
+          fileName: file,
           fileSizeKB
         })
       }
 
-      SUMMARY.files.input_html.push(files[readHTMLFileCount])
+      SUMMARY.files.input_html.push(file)
 
-      if (validUrl.isUri(files[readHTMLFileCount])) {
-        request(files[readHTMLFileCount], (e, response, body) => {
+      if (validUrl.isUri(file)) {
+        request(file, (e, response, body) => {
           if (response === undefined) {
             // try again
-            request(files[readHTMLFileCount], (e, response, body) => {
+            request(file, (e, response, body) => {
               if (response.statusCode === 200) {
                 dataHTMLIn.push(body)
 
@@ -660,7 +690,7 @@ class CSSPurge {
           }
         })
       } else {
-        const readHTMLStream = createReadStream(files[readHTMLFileCount], 'utf8')
+        const readHTMLStream = createReadStream(file, 'utf8')
 
         readHTMLStream
           .on('data', (chunk) => {
@@ -683,11 +713,12 @@ class CSSPurge {
       }
     } // end of readHTMLFile
 
-    function readReduceDeclarations (jsonConfigIn = '') {
-      if (jsonConfigIn) {
-        const jsonConfig = jsonConfigIn
-        declarationNames = jsonConfig.declaration_names
-        selectors = jsonConfig.selectors
+    function readReduceDeclarations (reduceDeclarations) {
+      if (reduceDeclarations) {
+        let {
+          declaration_names: declarationNames,
+          selectors
+        } = reduceDeclarations
 
         switch (typeof selectors) {
           case 'string':
@@ -696,18 +727,16 @@ class CSSPurge {
               selectors = selectors.replace(/\r?\n|\r/g, '')
               selectors = selectors.split(',')
               selectorsCount = selectors.length
-            } else {
-              selectors = null
             }
             break
           case 'object':
-            const selectorPropertyKeys = []
-            for (const i in selectors) {
-              selectorPropertyKeys.push(i)
-              selectorPropertyValues[i] = selectors[i].replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',')
-            }
-            selectors = selectorPropertyKeys
-            selectorsCount = selectors.length
+            Object
+              .entries(selectors)
+              .forEach(([key, value]) => {
+                SELECTOR_PROPERTY_MAP.set(key, value.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(','))
+              })
+
+            selectorsCount = Object.keys(selectors).length
             break
         }
 
@@ -715,34 +744,40 @@ class CSSPurge {
         if (declarationNames.length) {
           if (typeof declarationNames === 'string') {
             declarationNames = declarationNames.replace(/^\s+|\s+$/g, '')
-            declarationNames = declarationNames.split(',')
+            declarationNames = declarationNames.split(',').filter((declarationName) => declarationName.trim() !== '')
             declarationNamesCount = declarationNames.length
+          } else {
+            if (Array.isArray(declarationNames)) {
+              declarationNames = declarationNames.filter((declarationName) => declarationName.trim() !== '')
+              declarationNamesCount = declarationNames.length
+            }
           }
-
-          if (typeof declarationNames === 'object' || typeof declarationNames === 'array') {
-            declarationNames = declarationNames.filter((entry) => entry.trim() !== '')
-            declarationNamesCount = declarationNames.length
-          }
-        } else {
-          declarationNames = null
         }
 
         HAS_READ_REDUCE_DECLARATIONS = true
         cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
       } else {
-        let jsonConfig = ''
+        let defaultOptionsReduceDeclarations = ''
 
         const readStream = createReadStream(DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION, 'utf8')
 
         readStream
           .on('data', (chunk) => {
-            jsonConfig += chunk
+            defaultOptionsReduceDeclarations += chunk
           })
           .on('end', () => {
-            jsonConfig = JSON.parse(jsonConfig)
+            try {
+              DEFAULT_OPTIONS_REDUCE_DECLARATIONS = JSON.parse(defaultOptionsReduceDeclarations)
+            } catch (e) {
+              console.log(error(`Config file read error in "${DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION}"`))
+              console.log(e)
+              process.exit(1)
+            }
 
-            declarationNames = jsonConfig.declaration_names
-            selectors = jsonConfig.selectors
+            let {
+              declaration_names: declarationNames,
+              selectors
+            } = DEFAULT_OPTIONS_REDUCE_DECLARATIONS
 
             switch (typeof selectors) {
               case 'string':
@@ -751,18 +786,16 @@ class CSSPurge {
                   selectors = selectors.replace(/\r?\n|\r/g, '')
                   selectors = selectors.split(',')
                   selectorsCount = selectors.length
-                } else {
-                  selectors = null
                 }
                 break
               case 'object':
-                const selectorPropertyKeys = []
-                for (const i in selectors) {
-                  selectorPropertyKeys.push(i)
-                  selectorPropertyValues[i] = selectors[i].replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',')
-                }
-                selectors = selectorPropertyKeys
-                selectorsCount = selectors.length
+                Object
+                  .entries(selectors)
+                  .forEach(([key, value]) => {
+                    SELECTOR_PROPERTY_MAP.set(key, value.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(','))
+                  })
+
+                selectorsCount = Object.keys(selectors).length
                 break
             }
 
@@ -770,16 +803,14 @@ class CSSPurge {
             if (declarationNames.length) {
               if (typeof declarationNames === 'string') {
                 declarationNames = declarationNames.replace(/^\s+|\s+$/g, '')
-                declarationNames = declarationNames.split(',')
+                declarationNames = declarationNames.split(',').filter((declarationName) => declarationName.trim() !== '')
                 declarationNamesCount = declarationNames.length
               } else {
-                if (typeof declarationNames === 'object' || typeof declarationNames === 'array') {
-                  declarationNames = declarationNames.filter((entry) => entry.trim() !== '')
+                if (Array.isArray(declarationNames)) {
+                  declarationNames = declarationNames.filter((declarationName) => declarationName.trim() !== '')
                   declarationNamesCount = declarationNames.length
                 }
               }
-            } else {
-              declarationNames = null
             }
 
             HAS_READ_REDUCE_DECLARATIONS = true
@@ -872,7 +903,7 @@ class CSSPurge {
         })
 
       return readStream
-    }
+    } // end of readOptions
 
     /* read css input files */
     function processCSSFiles (options = null, optionsFilePath = '') {
@@ -950,8 +981,7 @@ class CSSPurge {
           })
 
           cssPurgeEventEmitter.on('CSS_READ_END', () => {
-            processCSS(null, OPTIONS, () => {
-            })
+            processCSS(null, OPTIONS)
           })
 
           readCSSFiles(files)
@@ -961,11 +991,11 @@ class CSSPurge {
       function handleDefaultOptionsReduceDeclarationsEnd () {
         cssPurgeEventEmitter.removeListener('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionsReduceDeclarationsEnd)
 
-        if (CURRENT_OPTIONS_FILE_LOCATION !== optionsFilePath) { // don't read same config
+        if (OPTIONS_FILE_LOCATION !== optionsFilePath) { // don't read same config
           cssPurgeEventEmitter.on('DEFAULT_OPTIONS_READ_END', handleDefaultOptionsReadEnd) // end of config read
         }
 
-        CURRENT_OPTIONS_FILE_LOCATION = optionsFilePath
+        OPTIONS_FILE_LOCATION = optionsFilePath
 
         if (optionsFilePath !== 'cmd_default') {
           readOptions(optionsFilePath)
@@ -1000,13 +1030,15 @@ class CSSPurge {
     } // end of processCSSFiles
 
     function readCSSFiles (files = []) {
-      if (OPTIONS.verbose) { console.log(info('Input - CSS File : ' + files[readCSSFilesCount])) }
+      const file = files[readCSSFilesCount]
 
-      if (validUrl.isUri(files[readCSSFilesCount])) {
+      if (OPTIONS.verbose) { console.log(info('Input - CSS File : ' + file)) }
+
+      if (validUrl.isUri(file)) {
         request({
-          url: files[readCSSFilesCount],
+          url: file,
           method: 'GET'
-        }, function (e, head, body) {
+        }, (e, head, body) => {
           let fileSizeKB
 
           if (head) {
@@ -1022,28 +1054,28 @@ class CSSPurge {
           }
 
           STATS.files.css.push({
-            fileName: files[readCSSFilesCount],
+            fileName: file,
             fileSizeKB
           })
           STATS.before.totalFileSizeKB += fileSizeKB
         })
       } else {
-        const fileSizeKB = getFileSizeInKB(files[readCSSFilesCount])
+        const fileSizeKB = getFileSizeInKB(file)
 
         STATS.files.css.push({
-          fileName: files[readCSSFilesCount],
+          fileName: file,
           fileSizeKB
         })
         STATS.before.totalFileSizeKB += fileSizeKB
       }
 
-      SUMMARY.files.input_css.push(files[readCSSFilesCount])
+      SUMMARY.files.input_css.push(file)
 
-      if (validUrl.isUri(files[readCSSFilesCount])) {
-        request(files[readCSSFilesCount], (e, response, body) => {
+      if (validUrl.isUri(file)) {
+        request(file, (e, response, body) => {
           if (response === undefined) {
             // try again
-            request(files[readCSSFilesCount], (e, response, body) => {
+            request(file, (e, response, body) => {
               if (response.statusCode === 200) {
                 FILE_DATA.push(body)
 
@@ -1079,7 +1111,7 @@ class CSSPurge {
           }
         })
       } else {
-        const readStream = createReadStream(files[readCSSFilesCount], 'utf8')
+        const readStream = createReadStream(file, 'utf8')
 
         readStream
           .on('data', (chunk) => {
@@ -1711,9 +1743,9 @@ class CSSPurge {
                     if (declarationsCounts[key] > 1) {
                       for (let l = 0; l < DECLARATION_COUNT; ++l) {
                         if (rules[i].declarations[l].type === 'declaration') {
-                          selectorPropertiesList = selectorPropertyValues[selectors[k]]
-
-                          if (selectorPropertiesList !== undefined) { // specific in selector
+                          const key = selectors[k]
+                          if (SELECTOR_PROPERTY_MAP.has(key)) {
+                            selectorPropertiesList = SELECTOR_PROPERTY_MAP.get(key)
                             if (rules[i].declarations[l].property === key &&
                               (selectorPropertiesList.includes(rules[i].declarations[l].property)) &&
                               declarationsCounts[key] > 1) { // leave behind 1
@@ -1844,14 +1876,6 @@ class CSSPurge {
         } // end of i
       } // end of undefined
     } // end of processRules
-
-    function processRulesReset () {
-      declarationsNameCounts = null
-      declarationsValueCounts = null
-      amountRemoved = 1
-      duplicateIds = null
-      selectorPropertiesList = null
-    }
 
     function processHTMLResults (rulesIn, selectors) {
       if (OPTIONS.verbose) { console.log(info('Process - HTML - Remove Unused Rules')) }
@@ -2003,19 +2027,17 @@ class CSSPurge {
       SUMMARY.stats.summary.noReductions.noSupports = SUMMARY.stats.before.noSupports - SUMMARY.stats.after.noSupports
       SUMMARY.stats.summary.noReductions.noNodes = SUMMARY.stats.before.noNodes - SUMMARY.stats.after.noNodes
 
-      outputAST = {
+      const outputCSS = cssTools.stringify({
         type: 'stylesheet',
         stylesheet: {
           rules: rulesIn
         }
-      }
-
-      outputCSS = cssTools.stringify(outputAST)
+      })
 
       return outputCSS
     } // end of processHTMLResults
 
-    function completeOutput (outputCSS = '') {
+    function completeOutput (css = '') {
       const {
         css_output_file_location: CSS_OUTPUT_FILE_LOCATION
       } = OPTIONS
@@ -2026,23 +2048,12 @@ class CSSPurge {
           name
         } = path.parse(CSS_OUTPUT_FILE_LOCATION)
 
-        // console.log(outputCSS)
-        // write output
         try {
           if (OPTIONS.format_4095_rules_legacy_limit) {
-            // console.log(SUMMARY.stats.after.noRules)
-            const noOutputFilesNeeded = Math.ceil(SUMMARY.stats.after.noRules / 4095)
-            // console.log(noOutputFilesNeeded)
-            if (noOutputFilesNeeded === 1) {
-              outputCSS = trim(outputCSS, OPTIONS, SUMMARY)
-              outputCSS = hack(outputCSS, OPTIONS, SUMMARY, getTokens())
-              const fileName = path.join(directoryPath, CSS_OUTPUT_FILE_LOCATION)
-              writeFileSync(fileName, outputCSS)
-              fileSizeKB = getFileSizeInKB(fileName)
-            } else { // group 4095 rules
+            if (Math.ceil(SUMMARY.stats.after.noRules / 4095) > 1) {
               let ast
               try {
-                ast = cssTools.parse(outputCSS, { source: fileLocation })
+                ast = cssTools.parse(css, { source: CSS_OUTPUT_FILE_LOCATION })
               } catch (e) {
                 console.log(error('CSS parser error'))
                 console.log('Reason: ' + e.reason)
@@ -2052,56 +2063,39 @@ class CSSPurge {
                 process.exit(1)
               }
 
-              const rulesGroups = []
-              let rulesGroupsLength = 0
-              const rules = ast.stylesheet.rules
-              const rulesLength = rules.length
-              let ruleCount = 0
-              let groupCount = 0
-
-              for (let i = 0; i < rulesLength; ++i) {
-                if (rulesGroups[groupCount] === undefined) {
-                  rulesGroups[groupCount] = []
+              const {
+                stylesheet: {
+                  rules
                 }
-                rulesGroups[groupCount].push(rules[i])
-                ruleCount += 1
+              } = ast
 
-                if (ruleCount === 4095) {
-                  groupCount += 1
-                }
-              }
-
-              rulesGroupsLength = rulesGroups.length
-              fileSizeKB = 0
-
-              for (let i = 0; i < rulesGroupsLength; i++) {
-                outputAST = {
-                  type: 'stylesheet',
-                  stylesheet: {
-                    rules: rulesGroups[i]
-                  }
-                }
-                outputCSS = cssTools.stringify(outputAST)
-
-                outputCSS = trim(outputCSS, OPTIONS, SUMMARY)
-                outputCSS = hack(outputCSS, OPTIONS, SUMMARY, getTokens())
-
-                const fileName = `${name}_${i}.css`
-                writeFileSync(path.join(directoryPath, fileName), outputCSS)
-                fileSizeKB += getFileSizeInKB(fileName)
-              }
+              toGroups(rules)
+                .forEach((rules, i) => {
+                  css = cssTools.stringify({
+                    type: 'stylesheet',
+                    stylesheet: {
+                      rules
+                    }
+                  })
+                  css = trim(css, OPTIONS, SUMMARY)
+                  css = hack(css, OPTIONS, SUMMARY, getTokens())
+                  const fileName = path.join(directoryPath, `${name}_${i}.css`)
+                  writeFileSync(fileName, css)
+                  fileSizeKB += getFileSizeInKB(fileName)
+                })
+            } else {
+              css = trim(css, OPTIONS, SUMMARY)
+              css = hack(css, OPTIONS, SUMMARY, getTokens())
+              const fileName = path.join(directoryPath, name + '.css')
+              writeFileSync(fileName, css)
+              fileSizeKB = getFileSizeInKB(fileName)
             }
           } else {
-            outputCSS = trim(outputCSS, OPTIONS, SUMMARY)
-            outputCSS = hack(outputCSS, OPTIONS, SUMMARY, getTokens())
-            const fileName = path.join(directoryPath, CSS_OUTPUT_FILE_LOCATION)
-            if (fileName) {
-              writeFileSync(fileName, outputCSS)
-              fileSizeKB = getFileSizeInKB(fileName)
-            } else {
-              const size = getSizeInKB(outputCSS)
-              fileSizeKB = size / 1000
-            }
+            css = trim(css, OPTIONS, SUMMARY)
+            css = hack(css, OPTIONS, SUMMARY, getTokens())
+            const fileName = path.join(directoryPath, name + '.css')
+            writeFileSync(fileName, css)
+            fileSizeKB = getFileSizeInKB(fileName)
           }
         } catch (e) {
           console.log(error('Output file error'))
@@ -2109,9 +2103,9 @@ class CSSPurge {
           process.exit(1)
         }
       } else {
-        outputCSS = trim(outputCSS, OPTIONS, SUMMARY)
-        outputCSS = hack(outputCSS, OPTIONS, SUMMARY, getTokens())
-        const size = getSizeInKB(outputCSS)
+        css = trim(css, OPTIONS, SUMMARY)
+        css = hack(css, OPTIONS, SUMMARY, getTokens())
+        const size = getSizeInKB(css)
         fileSizeKB = size / 1000
       }
 
@@ -2134,16 +2128,13 @@ class CSSPurge {
         console.log(cool('Before: ' + SUMMARY.stats.before.totalFileSizeKB + 'KB'))
         console.log(cool('After: ' + SUMMARY.stats.after.totalFileSizeKB + 'KB'))
         console.log(cool('Saved: ' + SUMMARY.stats.summary.savingsKB + 'KB (' + SUMMARY.stats.summary.savingsPercentage + '%)'))
-
         console.timeEnd(logoRed('Purged ' + date + ' in'))
       }
 
-      if (!CSS_OUTPUT_FILE_LOCATION) {
-        return outputCSS
-      }
+      return css
     }
 
-    function processCSS (css = null, options = null, callback = () => {}) {
+    function processCSS (css = null, options = null, complete = () => {}) {
       function handleDefaultOptionReduceDeclarationsEnd () {
         cssPurgeEventEmitter.removeListener('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionReduceDeclarationsEnd)
 
@@ -2260,118 +2251,114 @@ class CSSPurge {
         if (OPTIONS.verbose) { console.log(info('Process - Rules - Base')) }
 
         processRules(rules)
-        processRulesReset()
+        processValues(rules, OPTIONS, SUMMARY)
 
-        let rulesLength = rules.length
+        // @media rules
+        rules
+          .filter(Boolean)
+          .filter(filterForMedia)
+          .forEach(({ rules, media }) => {
+            console.log(info('Process - Rules - @media ' + media)) // if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + rule.media)) }
 
-        for (let g = 0; g < rulesLength; ++g) {
-          if (rules[g] !== undefined) {
-            // console.log(g, rulesLength)
-            // @media rules
-            if (rules[g] !== undefined &&
-              rules[g].type === 'media'
-              // && OPTIONS.bypass_media_rules === false
-            ) {
-              if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + (rules[g].media ? rules[g].media : ''))) }
+            processRules(rules)
+            processValues(rules, OPTIONS, SUMMARY)
+          })
 
-              processRules(rules[g].rules)
-              processRulesReset()
-              processValues(rules[g].rules, OPTIONS, SUMMARY)
-            }
+        // @document rules
+        if (!OPTIONS.bypass_document_rules) {
+          rules
+            .filter(Boolean)
+            .filter(filterForDocument)
+            .forEach(({ rules, document }) => {
+              console.log(info('Process - Rules - @document ' + document)) // if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + rule.media)) }
 
-            // @document rules
-            if (rules[g] !== undefined &&
-              rules[g].type === 'document' &&
-              OPTIONS.bypass_document_rules === false) {
-              if (OPTIONS.verbose) { console.log(info('Process - Rules - @document ' + (rules[g].document ? rules[g].document : ''))) }
+              processRules(rules)
+              processValues(rules, OPTIONS, SUMMARY)
+            })
+        }
 
-              processRules(rules[g].rules)
-              processRulesReset()
-              processValues(rules[g].rules, OPTIONS, SUMMARY)
-            }
+        // @supports rules
+        if (!OPTIONS.bypass_supports_rules) {
+          rules
+            .filter(Boolean)
+            .filter(filterForSupports)
+            .forEach(({ rules, supports }) => {
+              console.log(info('Process - Rules - @supports ' + supports)) // if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + rule.media)) }
 
-            // @supports rules
-            if (rules[g] !== undefined &&
-              rules[g].type === 'supports' &&
-              OPTIONS.bypass_supports_rules === false) {
-              if (OPTIONS.verbose) { console.log(info('Process - Rules - @supports ' + (rules[g].supports ? rules[g].supports : ''))) }
+              processRules(rules)
+              processValues(rules, OPTIONS, SUMMARY)
+            })
+        }
 
-              processRules(rules[g].rules)
-              processRulesReset()
-              processValues(rules[g].rules, OPTIONS, SUMMARY)
-            }
+        // charset rules
+        if (!OPTIONS.bypass_charset) {
+          for (let alpha = 0, j = rules.length; alpha < j; alpha = alpha + 1) {
+            const rule = rules[alpha]
 
-            /// /charset
-            if (rules[g] !== undefined &&
-              rules[g].type === 'charset' &&
-              OPTIONS.bypass_charset === false) {
-              if (OPTIONS.verbose) { console.log(info('Process - Charset')) }
+            if (rule) {
+              if (rule.type === 'charset') {
+                const ALPHA = rule.charset
 
-              const charset1 = rules[g].charset
-              let x = rules.length
+                for (let omega = alpha + 1; omega < j; omega = omega + 1) {
+                  const rule = rules[omega]
 
-              for (let h = g + 1; h < x; ++h) {
-                const rule = rules[h]
-
-                if (rule) {
-                  const charset2 = rule.charset
-
-                  if (charset1 === charset2) {
-                    // remove charset
+                  if (rule) {
                     if (rule.type === 'charset') {
-                      rules.splice(h, 1)
-                      g -= 1
-                      h -= 1
-                      x -= 1
-                      rulesLength -= 1
+                      const OMEGA = rule.charset
+
+                      if (ALPHA === OMEGA) {
+                        rules.splice(omega, 1) // remove charset
+                        alpha -= 1
+                        omega -= 1
+                        j -= 1
+
+                        // remove side comment
+                        let delta = omega + 1
+                        const nextSiblingRule = rules[delta]
+                        if (nextSiblingRule) {
+                          if (
+                            nextSiblingRule.type === 'comment' &&
+                            nextSiblingRule.comment.includes('_cssp_sc')
+                          ) {
+                            rules.splice(delta, 1)
+                            omega -= 1
+                            delta -= 1
+                            j -= 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                } // end of omega
+
+                if (!ALPHA.startsWith('"') || !ALPHA.endsWith('"')) {
+                  const rule = rules[alpha]
+                  if (rule) {
+                    if (rule.type === 'charset') {
+                      rules.splice(alpha, 1) // remove charset
+                      alpha -= 1
+                      j -= 1
 
                       // remove side comment
-                      const i = h + 1
-                      const nextSiblingRule = rules[i]
+                      const delta = alpha + 1
+                      const nextSiblingRule = rules[delta]
                       if (nextSiblingRule) {
                         if (
                           nextSiblingRule.type === 'comment' &&
                           nextSiblingRule.comment.includes('_cssp_sc')
                         ) {
-                          rules.splice(i, 1)
-                          g -= 1
-                          rulesLength -= 1
+                          rules.splice(delta, 1)
+                          alpha -= 1
+                          j -= 1
                         }
-                      }
-                    }
-                  }
-                }
-              } // end of h
-
-              if (!charset1.startsWith('"') || !charset1.endsWith('"')) {
-                const rule = rules[g]
-                if (rule) {
-                  // remove charset
-                  if (rule.type === 'charset') {
-                    rules.splice(g, 1)
-                    g -= 1
-                    rulesLength -= 1
-
-                    // remove side comment
-                    const h = g + 1
-                    const nextSiblingRule = rules[h]
-                    if (nextSiblingRule) {
-                      if (
-                        nextSiblingRule.type === 'comment' &&
-                        nextSiblingRule.comment.includes('_cssp_sc')
-                      ) {
-                        rules.splice(h, 1)
-                        g -= 1
-                        rulesLength -= 1
                       }
                     }
                   }
                 }
               }
             }
-            /// /end of charset
-          } // end of undefined
-        } // end of for loop
+          } // end of alpha
+        }
 
         // rems - html check
         if (OPTIONS.special_convert_rem) {
@@ -2422,9 +2409,7 @@ class CSSPurge {
           }
         } // end of rems - html check
 
-        processValues(rules, OPTIONS, SUMMARY)
-
-        /// /charset first check
+        /// charset check
         if (!OPTIONS.bypass_charset) {
           if (rules.length >= 2) {
             const [
@@ -2440,7 +2425,7 @@ class CSSPurge {
             }
           }
         }
-        /// /end of charset first check
+        /// end of charset check
 
         // after
         STATS.after.noNodes = rules.length
@@ -2467,13 +2452,12 @@ class CSSPurge {
         SUMMARY.stats.summary.noReductions.noNodes = SUMMARY.stats.before.noNodes - SUMMARY.stats.after.noNodes
 
         // prepare output
-        const outputAST = {
+        const outputCSS = cssTools.stringify({
           type: 'stylesheet',
           stylesheet: {
             rules
           }
-        }
-        let outputCSS = cssTools.stringify(outputAST)
+        })
 
         // Detect via JS
         // Detect via HTML
@@ -2515,14 +2499,14 @@ class CSSPurge {
           cssPurgeEventEmitter.on('HTML_RESULTS_END', (selectorsRemoved) => {
             SUMMARY.selectors_removed = selectorsRemoved
 
-            outputCSS = processHTMLResults(rules, selectors)
+            const outputCSS = processHTMLResults(rules, selectors)
 
-            callback(null, completeOutput(outputCSS))
+            complete(null, completeOutput(outputCSS))
           })
 
           processHTML(selectors)
         } else { // end of special_reduce_with_html
-          callback(null, completeOutput(outputCSS))
+          complete(null, completeOutput(outputCSS))
         } // end of special_reduce_with_html
       }
 
@@ -2551,8 +2535,8 @@ class CSSPurge {
       }
     } // end of processCSS
 
-    this.purgeCSS = function purgeCSS (css, options, callback) {
-      processCSS(css, options, callback)
+    this.purgeCSS = function purgeCSS (css, options, complete) {
+      processCSS(css, options, complete)
     }
 
     this.purgeCSSFiles = function purgeCSSFiles (options, optionsFilePath) {
@@ -2562,10 +2546,10 @@ class CSSPurge {
 } // end of CSSPurge
 
 export default {
-  purgeCSS (css, options, callback) {
+  purgeCSS (css, options, complete) {
     const cssPurge = new CSSPurge()
 
-    cssPurge.purgeCSS(css, options, callback)
+    cssPurge.purgeCSS(css, options, complete)
   },
   purgeCSSFiles (options, optionsFilePath) {
     const cssPurge = new CSSPurge()
