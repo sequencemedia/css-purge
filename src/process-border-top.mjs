@@ -1,9 +1,9 @@
 import cliColor from 'cli-color'
 
-import filterForBorderTop from './utils/filter-for-border-top.mjs'
-import filterForBorderTopWidth from './utils/filter-for-border-top-width.mjs'
-import filterForBorderTopStyle from './utils/filter-for-border-top-style.mjs'
-import filterForBorderTopColor from './utils/filter-for-border-top-color.mjs'
+import hasPropertyBorderTop from './utils/declarations/has-property-border-top.mjs'
+import hasPropertyBorderTopWidth from './utils/declarations/has-property-border-top-width.mjs'
+import hasPropertyBorderTopStyle from './utils/declarations/has-property-border-top-style.mjs'
+import hasPropertyBorderTopColor from './utils/declarations/has-property-border-top-color.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -39,7 +39,7 @@ function hasBorderTop (array) {
 
 export default function processBorderTop ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const borderTop = declarations.filter(filterForBorderTop)
+    const borderTop = declarations.filter(hasPropertyBorderTop)
     if (!borderTop.some(hasInherit)) {
       let borderTopProperties = borderTop.map(toProperty)
       if (hasBorderTop(borderTopProperties)) {
@@ -111,8 +111,8 @@ export default function processBorderTop ({ declarations = [], selectors = [] },
         }
 
         // add declaration
-        if (declarations.some(filterForBorderTop)) {
-          const i = declarations.findIndex(filterForBorderTop)
+        if (declarations.some(hasPropertyBorderTop)) {
+          const i = declarations.findIndex(hasPropertyBorderTop)
           declarations.splice(i, 0, {
             type: 'declaration',
             property: 'border-top',
@@ -122,18 +122,18 @@ export default function processBorderTop ({ declarations = [], selectors = [] },
           SUMMARY.stats.summary.noBorderTopsShortened += 1
         }
 
-        if (declarations.some(filterForBorderTopWidth)) {
-          const i = declarations.findIndex(filterForBorderTopWidth)
+        if (declarations.some(hasPropertyBorderTopWidth)) {
+          const i = declarations.findIndex(hasPropertyBorderTopWidth)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForBorderTopStyle)) {
-          const i = declarations.findIndex(filterForBorderTopStyle)
+        if (declarations.some(hasPropertyBorderTopStyle)) {
+          const i = declarations.findIndex(hasPropertyBorderTopStyle)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForBorderTopColor)) {
-          const i = declarations.findIndex(filterForBorderTopColor)
+        if (declarations.some(hasPropertyBorderTopColor)) {
+          const i = declarations.findIndex(hasPropertyBorderTopColor)
           declarations.splice(i, 1)
         }
 

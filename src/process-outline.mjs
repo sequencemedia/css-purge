@@ -1,9 +1,9 @@
 import cliColor from 'cli-color'
 
-import filterForOutline from './utils/filter-for-outline.mjs'
-import filterForOutlineWidth from './utils/filter-for-outline-width.mjs'
-import filterForOutlineStyle from './utils/filter-for-outline-style.mjs'
-import filterForOutlineColor from './utils/filter-for-outline-color.mjs'
+import hasPropertyOutline from './utils/declarations/has-property-outline.mjs'
+import hasPropertyOutlineWidth from './utils/declarations/has-property-outline-width.mjs'
+import hasPropertyOutlineStyle from './utils/declarations/has-property-outline-style.mjs'
+import hasPropertyOutlineColor from './utils/declarations/has-property-outline-color.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -38,7 +38,7 @@ function hasOutline (array) {
 
 export default function processOutline ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const outline = declarations.filter(filterForOutline)
+    const outline = declarations.filter(hasPropertyOutline)
     if (!outline.some(hasInherit)) {
       let outlineProperties = outline.map(toProperty)
       if (hasOutline(outlineProperties)) {
@@ -107,8 +107,8 @@ export default function processOutline ({ declarations = [], selectors = [] }, O
         }
 
         // add declaration
-        if (declarations.some(filterForOutline)) {
-          const i = declarations.findIndex(filterForOutline)
+        if (declarations.some(hasPropertyOutline)) {
+          const i = declarations.findIndex(hasPropertyOutline)
           declarations.splice(i, 0, {
             type: 'declaration',
             property: 'outline',
@@ -118,18 +118,18 @@ export default function processOutline ({ declarations = [], selectors = [] }, O
           SUMMARY.stats.summary.noOutlinesShortened += 1
         }
 
-        if (declarations.some(filterForOutlineWidth)) {
-          const i = declarations.findIndex(filterForOutlineWidth)
+        if (declarations.some(hasPropertyOutlineWidth)) {
+          const i = declarations.findIndex(hasPropertyOutlineWidth)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForOutlineStyle)) {
-          const i = declarations.findIndex(filterForOutlineStyle)
+        if (declarations.some(hasPropertyOutlineStyle)) {
+          const i = declarations.findIndex(hasPropertyOutlineStyle)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForOutlineColor)) {
-          const i = declarations.findIndex(filterForOutlineColor)
+        if (declarations.some(hasPropertyOutlineColor)) {
+          const i = declarations.findIndex(hasPropertyOutlineColor)
           declarations.splice(i, 1)
         }
 

@@ -24,10 +24,10 @@ import hack from './css/hack.mjs'
 
 import hasHtml from './utils/selectors/has-html.mjs'
 
-import filterForMedia from './utils/filter-for-media.mjs'
-import filterForDocument from './utils/filter-for-document.mjs'
-import filterForSupports from './utils/filter-for-supports.mjs'
-import filterForComment from './utils/filter-for-comment.mjs'
+import hasTypeMedia from './utils/declarations/has-type-media.mjs'
+import hasTypeDocument from './utils/declarations/has-type-document.mjs'
+import hasTypeSupports from './utils/declarations/has-type-supports.mjs'
+import hasTypeComment from './utils/declarations/has-type-comment.mjs'
 
 import getTokens from './utils/get-tokens.mjs'
 import getSelectors from './utils/get-selectors.mjs'
@@ -62,7 +62,7 @@ function toTrim (value) {
 function getSummaryStatsFor (collector) {
   return function getSummaryStats ({ declarations, type }) {
     if (Array.isArray(declarations)) {
-      collector.noComments = declarations.filter(filterForComment).length
+      collector.noComments = declarations.filter(hasTypeComment).length
     }
 
     switch (type) {
@@ -1917,7 +1917,7 @@ class CSSPurge {
         // @media rules
         rules
           .filter(Boolean)
-          .filter(filterForMedia)
+          .filter(hasTypeMedia)
           .forEach(({ rules, media }) => {
             console.log(info('Process - Rules - @media ' + media)) // if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + rule.media)) }
 
@@ -1929,7 +1929,7 @@ class CSSPurge {
         if (!OPTIONS.bypass_document_rules) {
           rules
             .filter(Boolean)
-            .filter(filterForDocument)
+            .filter(hasTypeDocument)
             .forEach(({ rules, document }) => {
               console.log(info('Process - Rules - @document ' + document)) // if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + rule.media)) }
 
@@ -1942,7 +1942,7 @@ class CSSPurge {
         if (!OPTIONS.bypass_supports_rules) {
           rules
             .filter(Boolean)
-            .filter(filterForSupports)
+            .filter(hasTypeSupports)
             .forEach(({ rules, supports }) => {
               console.log(info('Process - Rules - @supports ' + supports)) // if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + rule.media)) }
 

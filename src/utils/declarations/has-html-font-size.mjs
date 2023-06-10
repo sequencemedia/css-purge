@@ -1,4 +1,4 @@
-import filterForFontSize from '../filter-for-font-size.mjs'
+import hasPropertyFontSize from './filter-for-font-size.mjs'
 
 export default function hasHtmlFontSize (rule) {
   const {
@@ -11,7 +11,7 @@ export default function hasHtmlFontSize (rule) {
         declarations = []
       } = rule
 
-      return declarations.some(filterForFontSize)
+      return declarations.some(hasPropertyFontSize)
     }
 
     return false

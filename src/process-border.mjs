@@ -1,7 +1,7 @@
-import filterForBorder from './utils/filter-for-border.mjs'
-import filterForBorderWidth from './utils/filter-for-border-width.mjs'
-import filterForBorderStyle from './utils/filter-for-border-style.mjs'
-import filterForBorderColor from './utils/filter-for-border-color.mjs'
+import hasPropertyBorder from './utils/declarations/has-property-border.mjs'
+import hasPropertyBorderWidth from './utils/declarations/has-property-border-width.mjs'
+import hasPropertyBorderStyle from './utils/declarations/has-property-border-style.mjs'
+import hasPropertyBorderColor from './utils/declarations/has-property-border-color.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -35,7 +35,7 @@ function hasBorder (array) {
 
 export default function processBorder ({ declarations }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const border = declarations.filter(filterForBorder)
+    const border = declarations.filter(hasPropertyBorder)
     if (!border.some(hasInherit)) {
       let borderProperties = border.map(toProperty)
       if (hasBorder(borderProperties)) {
@@ -105,8 +105,8 @@ export default function processBorder ({ declarations }, OPTIONS, SUMMARY) {
           }
 
           // add declaration
-          if (declarations.some(filterForBorder)) {
-            const i = declarations.findIndex(filterForBorder)
+          if (declarations.some(hasPropertyBorder)) {
+            const i = declarations.findIndex(hasPropertyBorder)
             declarations.splice(i, 0, {
               type: 'declaration',
               property: 'border',
@@ -116,18 +116,18 @@ export default function processBorder ({ declarations }, OPTIONS, SUMMARY) {
             SUMMARY.stats.summary.noBordersShortened += 1
           }
 
-          if (declarations.some(filterForBorderWidth)) {
-            const i = declarations.findIndex(filterForBorderWidth)
+          if (declarations.some(hasPropertyBorderWidth)) {
+            const i = declarations.findIndex(hasPropertyBorderWidth)
             declarations.splice(i, 1)
           }
 
-          if (declarations.some(filterForBorderStyle)) {
-            const i = declarations.findIndex(filterForBorderStyle)
+          if (declarations.some(hasPropertyBorderStyle)) {
+            const i = declarations.findIndex(hasPropertyBorderStyle)
             declarations.splice(i, 1)
           }
 
-          if (declarations.some(filterForBorderColor)) {
-            const i = declarations.findIndex(filterForBorderColor)
+          if (declarations.some(hasPropertyBorderColor)) {
+            const i = declarations.findIndex(hasPropertyBorderColor)
             declarations.splice(i, 1)
           }
 

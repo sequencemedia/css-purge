@@ -1,11 +1,11 @@
 import cliColor from 'cli-color'
 
-import filterForBackground from './utils/filter-for-background.mjs'
-import filterForBackgroundColor from './utils/filter-for-background-color.mjs'
-import filterForBackgroundImage from './utils/filter-for-background-image.mjs'
-import filterForBackgroundRepeat from './utils/filter-for-background-repeat.mjs'
-import filterForBackgroundAttachment from './utils/filter-for-background-attachment.mjs'
-import filterForBackgroundPosition from './utils/filter-for-background-position.mjs'
+import hasPropertyBackground from './utils/declarations/has-property-background.mjs'
+import hasPropertyBackgroundColor from './utils/declarations/has-property-background-color.mjs'
+import hasPropertyBackgroundImage from './utils/declarations/has-property-background-image.mjs'
+import hasPropertyBackgroundRepeat from './utils/declarations/has-property-background-repeat.mjs'
+import hasPropertyBackgroundAttachment from './utils/declarations/has-property-background-attachment.mjs'
+import hasPropertyBackgroundPosition from './utils/declarations/has-property-background-position.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -28,7 +28,7 @@ const success = cliColor.greenBright
 
 export default function processBackground ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const background = declarations.filter(filterForBackground)
+    const background = declarations.filter(hasPropertyBackground)
     if (!background.some(hasInherit)) {
       const {
         shorten_background_min: SHORTEN_BACKGROUND_MIN
@@ -141,8 +141,8 @@ export default function processBackground ({ declarations = [], selectors = [] }
           }
 
           // add declaration
-          if (declarations.some(filterForBackground)) {
-            const i = declarations.findIndex(filterForBackground)
+          if (declarations.some(hasPropertyBackground)) {
+            const i = declarations.findIndex(hasPropertyBackground)
             declarations.splice(i, 0, {
               type: 'declaration',
               property: 'background',
@@ -153,28 +153,28 @@ export default function processBackground ({ declarations = [], selectors = [] }
           }
 
           // remove originals
-          if (declarations.some(filterForBackgroundColor)) {
-            const i = declarations.findIndex(filterForBackgroundColor)
+          if (declarations.some(hasPropertyBackgroundColor)) {
+            const i = declarations.findIndex(hasPropertyBackgroundColor)
             declarations.splice(i, 1)
           }
 
-          if (declarations.some(filterForBackgroundImage)) {
-            const i = declarations.findIndex(filterForBackgroundImage)
+          if (declarations.some(hasPropertyBackgroundImage)) {
+            const i = declarations.findIndex(hasPropertyBackgroundImage)
             declarations.splice(i, 1)
           }
 
-          if (declarations.some(filterForBackgroundRepeat)) {
-            const i = declarations.findIndex(filterForBackgroundRepeat)
+          if (declarations.some(hasPropertyBackgroundRepeat)) {
+            const i = declarations.findIndex(hasPropertyBackgroundRepeat)
             declarations.splice(i, 1)
           }
 
-          if (declarations.some(filterForBackgroundAttachment)) {
-            const i = declarations.findIndex(filterForBackgroundAttachment)
+          if (declarations.some(hasPropertyBackgroundAttachment)) {
+            const i = declarations.findIndex(hasPropertyBackgroundAttachment)
             declarations.splice(i, 1)
           }
 
-          if (declarations.some(filterForBackgroundPosition)) {
-            const i = declarations.findIndex(filterForBackgroundPosition)
+          if (declarations.some(hasPropertyBackgroundPosition)) {
+            const i = declarations.findIndex(hasPropertyBackgroundPosition)
             declarations.splice(i, 1)
           }
 

@@ -1,10 +1,10 @@
 import cliColor from 'cli-color'
 
-import filterForBorderRadius from './utils/filter-for-border-radius.mjs'
-import filterForBorderTopLeftRadius from './utils/filter-for-border-top-left-radius.mjs'
-import filterForBorderTopRightRadius from './utils/filter-for-border-top-right-radius.mjs'
-import filterForBorderBottomLeftRadius from './utils/filter-for-border-bottom-left-radius.mjs'
-import filterForBorderBottomRightRadius from './utils/filter-for-border-bottom-right-radius.mjs'
+import hasPropertyBorderRadius from './utils/declarations/has-property-border-radius.mjs'
+import hasPropertyBorderTopLeftRadius from './utils/declarations/has-property-border-top-left-radius.mjs'
+import hasPropertyBorderTopRightRadius from './utils/declarations/has-property-border-top-right-radius.mjs'
+import hasPropertyBorderBottomLeftRadius from './utils/declarations/has-property-border-bottom-left-radius.mjs'
+import hasPropertyBorderBottomRightRadius from './utils/declarations/has-property-border-bottom-right-radius.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -35,7 +35,7 @@ function hasBorderRadius (array) {
 
 export default function processBorderRadius ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const borderRadius = declarations.filter(filterForBorderRadius)
+    const borderRadius = declarations.filter(hasPropertyBorderRadius)
     let borderRadiusProperties = borderRadius.map(toProperty)
     if (hasBorderRadius(borderRadiusProperties)) {
       const {
@@ -181,8 +181,8 @@ export default function processBorderRadius ({ declarations = [], selectors = []
         }
 
         // add declaration
-        if (declarations.some(filterForBorderRadius)) {
-          const i = declarations.findIndex(filterForBorderRadius)
+        if (declarations.some(hasPropertyBorderRadius)) {
+          const i = declarations.findIndex(hasPropertyBorderRadius)
           declarations.splice(i, 0, {
             type: 'declaration',
             property: 'border-radius',
@@ -193,23 +193,23 @@ export default function processBorderRadius ({ declarations = [], selectors = []
         }
 
         // remove originals
-        if (declarations.some(filterForBorderTopLeftRadius)) {
-          const i = declarations.findIndex(filterForBorderTopLeftRadius)
+        if (declarations.some(hasPropertyBorderTopLeftRadius)) {
+          const i = declarations.findIndex(hasPropertyBorderTopLeftRadius)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForBorderTopRightRadius)) {
-          const i = declarations.findIndex(filterForBorderTopRightRadius)
+        if (declarations.some(hasPropertyBorderTopRightRadius)) {
+          const i = declarations.findIndex(hasPropertyBorderTopRightRadius)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForBorderBottomLeftRadius)) {
-          const i = declarations.findIndex(filterForBorderBottomLeftRadius)
+        if (declarations.some(hasPropertyBorderBottomLeftRadius)) {
+          const i = declarations.findIndex(hasPropertyBorderBottomLeftRadius)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForBorderBottomRightRadius)) {
-          const i = declarations.findIndex(filterForBorderBottomRightRadius)
+        if (declarations.some(hasPropertyBorderBottomRightRadius)) {
+          const i = declarations.findIndex(hasPropertyBorderBottomRightRadius)
           declarations.splice(i, 1)
         }
 

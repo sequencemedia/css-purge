@@ -1,10 +1,10 @@
 import cliColor from 'cli-color'
 
-import filterForPadding from './utils/filter-for-padding.mjs'
-import filterForPaddingTop from './utils/filter-for-padding-top.mjs'
-import filterForPaddingRight from './utils/filter-for-padding-right.mjs'
-import filterForPaddingBottom from './utils/filter-for-padding-bottom.mjs'
-import filterForPaddingLeft from './utils/filter-for-padding-left.mjs'
+import hasPropertyPadding from './utils/declarations/has-property-padding.mjs'
+import hasPropertyPaddingTop from './utils/declarations/has-property-padding-top.mjs'
+import hasPropertyPaddingRight from './utils/declarations/has-property-padding-right.mjs'
+import hasPropertyPaddingBottom from './utils/declarations/has-property-padding-bottom.mjs'
+import hasPropertyPaddingLeft from './utils/declarations/has-property-padding-left.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -37,7 +37,7 @@ function hasPadding (array) {
 
 export default function processPadding ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const padding = declarations.filter(filterForPadding)
+    const padding = declarations.filter(hasPropertyPadding)
     if (!padding.some(hasInherit)) {
       let paddingProperties = padding.map(toProperty)
       if (hasPadding(paddingProperties)) {
@@ -185,8 +185,8 @@ export default function processPadding ({ declarations = [], selectors = [] }, O
         }
 
         // add declaration
-        if (declarations.some(filterForPadding)) {
-          const i = declarations.findIndex(filterForPadding)
+        if (declarations.some(hasPropertyPadding)) {
+          const i = declarations.findIndex(hasPropertyPadding)
           declarations.splice(i, 0, {
             type: 'declaration',
             property: 'padding',
@@ -197,23 +197,23 @@ export default function processPadding ({ declarations = [], selectors = [] }, O
         }
 
         // remove originals
-        if (declarations.some(filterForPaddingTop)) {
-          const i = declarations.findIndex(filterForPaddingTop)
+        if (declarations.some(hasPropertyPaddingTop)) {
+          const i = declarations.findIndex(hasPropertyPaddingTop)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForPaddingRight)) {
-          const i = declarations.findIndex(filterForPaddingRight)
+        if (declarations.some(hasPropertyPaddingRight)) {
+          const i = declarations.findIndex(hasPropertyPaddingRight)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForPaddingBottom)) {
-          const i = declarations.findIndex(filterForPaddingBottom)
+        if (declarations.some(hasPropertyPaddingBottom)) {
+          const i = declarations.findIndex(hasPropertyPaddingBottom)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForPaddingLeft)) {
-          const i = declarations.findIndex(filterForPaddingLeft)
+        if (declarations.some(hasPropertyPaddingLeft)) {
+          const i = declarations.findIndex(hasPropertyPaddingLeft)
           declarations.splice(i, 1)
         }
 

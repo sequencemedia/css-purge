@@ -1,7 +1,7 @@
 import cliColor from 'cli-color'
 
-import filterForDeclarations from './utils/filter-for-declarations.mjs'
-import filterForRule from './utils/filter-for-rule.mjs'
+import hasDeclarations from './utils/declarations/has-declarations.mjs'
+import hasTypeRule from './utils/declarations/has-type-rule.mjs'
 
 import processBackground from './process-background.mjs'
 import processBorder from './process-border.mjs'
@@ -45,8 +45,8 @@ export default function processValues (rules, OPTIONS, SUMMARY) {
 
   rules
     .filter(Boolean)
-    .filter(filterForDeclarations)
-    .filter(filterForRule)
+    .filter(hasDeclarations)
+    .filter(hasTypeRule)
     .forEach((rule) => {
       // font
       if (SHORTEN || SHORTEN_FONT) processFont(rule, OPTIONS, SUMMARY)

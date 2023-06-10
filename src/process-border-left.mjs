@@ -1,9 +1,9 @@
 import cliColor from 'cli-color'
 
-import filterForBorderLeft from './utils/filter-for-border-left.mjs'
-import filterForBorderLeftWidth from './utils/filter-for-border-left-width.mjs'
-import filterForBorderLeftStyle from './utils/filter-for-border-left-style.mjs'
-import filterForBorderLeftColor from './utils/filter-for-border-left-color.mjs'
+import hasPropertyBorderLeft from './utils/declarations/has-property-border-left.mjs'
+import hasPropertyBorderLeftWidth from './utils/declarations/has-property-border-left-width.mjs'
+import hasPropertyBorderLeftStyle from './utils/declarations/has-property-border-left-style.mjs'
+import hasPropertyBorderLeftColor from './utils/declarations/has-property-border-left-color.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -39,7 +39,7 @@ function hasBorderLeft (array) {
 
 export default function processBorderLeft ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const borderLeft = declarations.filter(filterForBorderLeft)
+    const borderLeft = declarations.filter(hasPropertyBorderLeft)
     if (!borderLeft.some(hasInherit)) {
       let borderLeftProperties = borderLeft.map(toProperty)
       if (hasBorderLeft(borderLeftProperties)) {
@@ -111,8 +111,8 @@ export default function processBorderLeft ({ declarations = [], selectors = [] }
         }
 
         // add declaration
-        if (declarations.some(filterForBorderLeft)) {
-          const i = declarations.findIndex(filterForBorderLeft)
+        if (declarations.some(hasPropertyBorderLeft)) {
+          const i = declarations.findIndex(hasPropertyBorderLeft)
           declarations.splice(i, 0, {
             type: 'declaration',
             property: 'border-left',
@@ -122,18 +122,18 @@ export default function processBorderLeft ({ declarations = [], selectors = [] }
           SUMMARY.stats.summary.noBorderLeftsShortened += 1
         }
 
-        if (declarations.some(filterForBorderLeftWidth)) {
-          const i = declarations.findIndex(filterForBorderLeftWidth)
+        if (declarations.some(hasPropertyBorderLeftWidth)) {
+          const i = declarations.findIndex(hasPropertyBorderLeftWidth)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForBorderLeftStyle)) {
-          const i = declarations.findIndex(filterForBorderLeftStyle)
+        if (declarations.some(hasPropertyBorderLeftStyle)) {
+          const i = declarations.findIndex(hasPropertyBorderLeftStyle)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForBorderLeftColor)) {
-          const i = declarations.findIndex(filterForBorderLeftColor)
+        if (declarations.some(hasPropertyBorderLeftColor)) {
+          const i = declarations.findIndex(hasPropertyBorderLeftColor)
           declarations.splice(i, 1)
         }
 

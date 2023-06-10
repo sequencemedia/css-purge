@@ -1,10 +1,10 @@
 import cliColor from 'cli-color'
 
-import filterForMargin from './utils/filter-for-margin.mjs'
-import filterForMarginTop from './utils/filter-for-margin-top.mjs'
-import filterForMarginRight from './utils/filter-for-margin-right.mjs'
-import filterForMarginBottom from './utils/filter-for-margin-bottom.mjs'
-import filterForMarginLeft from './utils/filter-for-margin-left.mjs'
+import hasPropertyMargin from './utils/declarations/has-property-margin.mjs'
+import hasPropertyMarginTop from './utils/declarations/has-property-margin-top.mjs'
+import hasPropertyMarginRight from './utils/declarations/has-property-margin-right.mjs'
+import hasPropertyMarginBottom from './utils/declarations/has-property-margin-bottom.mjs'
+import hasPropertyMarginLeft from './utils/declarations/has-property-margin-left.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -35,7 +35,7 @@ function hasMargin (array) {
 
 export default function processMargin ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const margin = declarations.filter(filterForMargin)
+    const margin = declarations.filter(hasPropertyMargin)
     if (!margin.some(hasInherit)) {
       let marginProperties = margin.map(toProperty)
       if (hasMargin(marginProperties)) {
@@ -184,8 +184,8 @@ export default function processMargin ({ declarations = [], selectors = [] }, OP
         }
 
         // add declaration
-        if (declarations.some(filterForMargin)) {
-          const i = declarations.findIndex(filterForMargin)
+        if (declarations.some(hasPropertyMargin)) {
+          const i = declarations.findIndex(hasPropertyMargin)
           declarations.splice(i, 0, {
             type: 'declaration',
             property: 'margin',
@@ -196,23 +196,23 @@ export default function processMargin ({ declarations = [], selectors = [] }, OP
         }
 
         // remove originals
-        if (declarations.some(filterForMarginTop)) {
-          const i = declarations.findIndex(filterForMarginTop)
+        if (declarations.some(hasPropertyMarginTop)) {
+          const i = declarations.findIndex(hasPropertyMarginTop)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForMarginRight)) {
-          const i = declarations.findIndex(filterForMarginRight)
+        if (declarations.some(hasPropertyMarginRight)) {
+          const i = declarations.findIndex(hasPropertyMarginRight)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForMarginBottom)) {
-          const i = declarations.findIndex(filterForMarginBottom)
+        if (declarations.some(hasPropertyMarginBottom)) {
+          const i = declarations.findIndex(hasPropertyMarginBottom)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForMarginLeft)) {
-          const i = declarations.findIndex(filterForMarginLeft)
+        if (declarations.some(hasPropertyMarginLeft)) {
+          const i = declarations.findIndex(hasPropertyMarginLeft)
           declarations.splice(i, 1)
         }
 

@@ -1,9 +1,9 @@
 import cliColor from 'cli-color'
 
-import filterForBorderBottom from './utils/filter-for-border-bottom.mjs'
-import filterForBorderBottomWidth from './utils/filter-for-border-bottom-width.mjs'
-import filterForBorderBottomStyle from './utils/filter-for-border-bottom-style.mjs'
-import filterForBorderBottomColor from './utils/filter-for-border-bottom-color.mjs'
+import hasPropertyBorderBottom from './utils/declarations/has-property-border-bottom.mjs'
+import hasPropertyBorderBottomWidth from './utils/declarations/has-property-border-bottom-width.mjs'
+import hasPropertyBorderBottomStyle from './utils/declarations/has-property-border-bottom-style.mjs'
+import hasPropertyBorderBottomColor from './utils/declarations/has-property-border-bottom-color.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -39,7 +39,7 @@ function hasBorderBottom (array) {
 
 export default function processBorderBottom ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const borderBottom = declarations.filter(filterForBorderBottom)
+    const borderBottom = declarations.filter(hasPropertyBorderBottom)
     if (!borderBottom.some(hasInherit)) {
       let borderBottomProperties = borderBottom.map(toProperty)
       if (hasBorderBottom(borderBottomProperties)) {
@@ -110,8 +110,8 @@ export default function processBorderBottom ({ declarations = [], selectors = []
         }
 
         // add declaration
-        if (declarations.some(filterForBorderBottom)) {
-          const i = declarations.findIndex(filterForBorderBottom)
+        if (declarations.some(hasPropertyBorderBottom)) {
+          const i = declarations.findIndex(hasPropertyBorderBottom)
           declarations.splice(i, 0, {
             type: 'declaration',
             property: 'border-bottom',
@@ -121,18 +121,18 @@ export default function processBorderBottom ({ declarations = [], selectors = []
           SUMMARY.stats.summary.noBorderBottomsShortened += 1
         }
 
-        if (declarations.some(filterForBorderBottomWidth)) {
-          const i = declarations.findIndex(filterForBorderBottomWidth)
+        if (declarations.some(hasPropertyBorderBottomWidth)) {
+          const i = declarations.findIndex(hasPropertyBorderBottomWidth)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForBorderBottomStyle)) {
-          const i = declarations.findIndex(filterForBorderBottomStyle)
+        if (declarations.some(hasPropertyBorderBottomStyle)) {
+          const i = declarations.findIndex(hasPropertyBorderBottomStyle)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForBorderBottomColor)) {
-          const i = declarations.findIndex(filterForBorderBottomColor)
+        if (declarations.some(hasPropertyBorderBottomColor)) {
+          const i = declarations.findIndex(hasPropertyBorderBottomColor)
           declarations.splice(i, 1)
         }
 

@@ -1,10 +1,10 @@
 import cliColor from 'cli-color'
 
-import filterForBorderTopRightBottomLeft from './utils/filter-for-border-top-right-bottom-left.mjs'
-import filterForBorderTop from './utils/filter-for-border-top.mjs'
-import filterForBorderRight from './utils/filter-for-border-right.mjs'
-import filterForBorderBottom from './utils/filter-for-border-bottom.mjs'
-import filterForBorderLeft from './utils/filter-for-border-left.mjs'
+import hasPropertyBorderTopRightBottomLeft from './utils/declarations/has-property-border-top-right-bottom-left.mjs'
+import hasPropertyBorderTop from './utils/declarations/has-property-border-top.mjs'
+import hasPropertyBorderRight from './utils/declarations/has-property-border-right.mjs'
+import hasPropertyBorderBottom from './utils/declarations/has-property-border-bottom.mjs'
+import hasPropertyBorderLeft from './utils/declarations/has-property-border-left.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -34,7 +34,7 @@ function hasBorderTopRightBottomLeft (array) {
 
 export default function processBorderTopRightBottomLeft ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const borderTopRightBottomLeft = declarations.filter(filterForBorderTopRightBottomLeft)
+    const borderTopRightBottomLeft = declarations.filter(hasPropertyBorderTopRightBottomLeft)
     if (!borderTopRightBottomLeft.some(hasInherit)) {
       let borderTopRightBottomLeftProperties = borderTopRightBottomLeft.map(toProperty)
       if (hasBorderTopRightBottomLeft(borderTopRightBottomLeftProperties)) {
@@ -96,8 +96,8 @@ export default function processBorderTopRightBottomLeft ({ declarations = [], se
           }
 
           // add declaration
-          if (declarations.some(filterForBorderTopRightBottomLeft)) {
-            const i = declarations.findIndex(filterForBorderTopRightBottomLeft)
+          if (declarations.some(hasPropertyBorderTopRightBottomLeft)) {
+            const i = declarations.findIndex(hasPropertyBorderTopRightBottomLeft)
             declarations.splice(i, 0, {
               type: 'declaration',
               property: 'border',
@@ -107,23 +107,23 @@ export default function processBorderTopRightBottomLeft ({ declarations = [], se
             SUMMARY.stats.summary.noBorderTopRightBottomLeftsShortened += 1
           }
 
-          if (declarations.some(filterForBorderTop)) {
-            const i = declarations.findIndex(filterForBorderTop)
+          if (declarations.some(hasPropertyBorderTop)) {
+            const i = declarations.findIndex(hasPropertyBorderTop)
             declarations.splice(i, 1)
           }
 
-          if (declarations.some(filterForBorderRight)) {
-            const i = declarations.findIndex(filterForBorderRight)
+          if (declarations.some(hasPropertyBorderRight)) {
+            const i = declarations.findIndex(hasPropertyBorderRight)
             declarations.splice(i, 1)
           }
 
-          if (declarations.some(filterForBorderBottom)) {
-            const i = declarations.findIndex(filterForBorderBottom)
+          if (declarations.some(hasPropertyBorderBottom)) {
+            const i = declarations.findIndex(hasPropertyBorderBottom)
             declarations.splice(i, 1)
           }
 
-          if (declarations.some(filterForBorderLeft)) {
-            const i = declarations.findIndex(filterForBorderLeft)
+          if (declarations.some(hasPropertyBorderLeft)) {
+            const i = declarations.findIndex(hasPropertyBorderLeft)
             declarations.splice(i, 1)
           }
         }

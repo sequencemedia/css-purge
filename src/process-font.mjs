@@ -1,14 +1,14 @@
 import cliColor from 'cli-color'
 
-import filterForFont from './utils/filter-for-font.mjs'
-import filterForFontFace from './utils/filter-for-font-face.mjs'
-import filterForFontStyle from './utils/filter-for-font-style.mjs'
-import filterForFontVariant from './utils/filter-for-font-variant.mjs'
-import filterForFontWeight from './utils/filter-for-font-weight.mjs'
-import filterForFontStretch from './utils/filter-for-font-stretch.mjs'
-import filterForLineHeight from './utils/filter-for-line-height.mjs'
-import filterForFontSize from './utils/filter-for-font-size.mjs'
-import filterForFontFamily from './utils/filter-for-font-family.mjs'
+import hasPropertyFont from './utils/declarations/has-property-font.mjs'
+import hasPropertyFontFace from './utils/declarations/has-property-font-face.mjs'
+import hasPropertyFontStyle from './utils/declarations/has-property-font-style.mjs'
+import hasPropertyFontVariant from './utils/declarations/has-property-font-variant.mjs'
+import hasPropertyFontWeight from './utils/declarations/has-property-font-weight.mjs'
+import hasPropertyFontStretch from './utils/declarations/has-property-font-stretch.mjs'
+import hasPropertyLineHeight from './utils/declarations/has-property-line-height.mjs'
+import hasPropertyFontSize from './utils/declarations/has-property-font-size.mjs'
+import hasPropertyFontFamily from './utils/declarations/has-property-font-family.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -100,10 +100,10 @@ function hasFont (array) {
 
 export default function processFont ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const font = declarations.filter(filterForFont)
+    const font = declarations.filter(hasPropertyFont)
 
     font // font-weight shortening
-      .filter(filterForFontWeight)
+      .filter(hasPropertyFontWeight)
       .forEach(transformFontWeight)
 
     const {
@@ -118,7 +118,7 @@ export default function processFont ({ declarations = [], selectors = [] }, OPTI
       } = OPTIONS
 
       font // for singular declaration
-        .filter(filterForFontSize)
+        .filter(hasPropertyFontSize)
         .forEach(getTransformFontSize(SPECIAL_CONVERT_REM_PX))
     }
 
@@ -129,7 +129,7 @@ export default function processFont ({ declarations = [], selectors = [] }, OPTI
 
     if (FORMAT_FONT_FAMILY || FORMAT) {
       font // ensure multi-worded families have quotes
-        .filter(filterForFontFamily)
+        .filter(hasPropertyFontFamily)
         .forEach(transformFontFamily)
     }
 
@@ -349,8 +349,8 @@ export default function processFont ({ declarations = [], selectors = [] }, OPTI
         }
 
         // add declaration
-        if (declarations.some(filterForFont)) {
-          const i = declarations.findIndex(filterForFont)
+        if (declarations.some(hasPropertyFont)) {
+          const i = declarations.findIndex(hasPropertyFont)
           declarations.splice(i, 0, {
             type: 'declaration',
             property: 'font',
@@ -361,43 +361,43 @@ export default function processFont ({ declarations = [], selectors = [] }, OPTI
         }
 
         // remove existing originals
-        if (declarations.some(filterForFontFace)) {
-          const i = declarations.findIndex(filterForFontFace)
+        if (declarations.some(hasPropertyFontFace)) {
+          const i = declarations.findIndex(hasPropertyFontFace)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForFontStyle)) {
-          const i = declarations.findIndex(filterForFontStyle)
+        if (declarations.some(hasPropertyFontStyle)) {
+          const i = declarations.findIndex(hasPropertyFontStyle)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForFontVariant)) {
-          const i = declarations.findIndex(filterForFontVariant)
+        if (declarations.some(hasPropertyFontVariant)) {
+          const i = declarations.findIndex(hasPropertyFontVariant)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForFontWeight)) {
-          const i = declarations.findIndex(filterForFontWeight)
+        if (declarations.some(hasPropertyFontWeight)) {
+          const i = declarations.findIndex(hasPropertyFontWeight)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForFontStretch)) {
-          const i = declarations.findIndex(filterForFontStretch)
+        if (declarations.some(hasPropertyFontStretch)) {
+          const i = declarations.findIndex(hasPropertyFontStretch)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForFontSize)) {
-          const i = declarations.findIndex(filterForFontSize)
+        if (declarations.some(hasPropertyFontSize)) {
+          const i = declarations.findIndex(hasPropertyFontSize)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForLineHeight)) {
-          const i = declarations.findIndex(filterForLineHeight)
+        if (declarations.some(hasPropertyLineHeight)) {
+          const i = declarations.findIndex(hasPropertyLineHeight)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForFontFamily)) {
-          const i = declarations.findIndex(filterForFontFamily)
+        if (declarations.some(hasPropertyFontFamily)) {
+          const i = declarations.findIndex(hasPropertyFontFamily)
           declarations.splice(i, 1)
         }
 

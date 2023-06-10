@@ -1,9 +1,9 @@
 import cliColor from 'cli-color'
 
-import filterForListStyle from './utils/filter-for-list-style.mjs'
-import filterForListStyleType from './utils/filter-for-list-style-type.mjs'
-import filterForListStylePosition from './utils/filter-for-list-style-position.mjs'
-import filterForListStyleImage from './utils/filter-for-list-style-image.mjs'
+import hasPropertyListStyle from './utils/declarations/has-property-list-style.mjs'
+import hasPropertyListStyleType from './utils/declarations/has-property-list-style-type.mjs'
+import hasPropertyListStylePosition from './utils/declarations/has-property-list-style-position.mjs'
+import hasPropertyListStyleImage from './utils/declarations/has-property-list-style-image.mjs'
 
 import hasInherit from './utils/has-inherit.mjs'
 import hasImportant from './utils/has-important.mjs'
@@ -38,7 +38,7 @@ function hasListStyle (array) {
 
 export default function processListStyle ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
   if (declarations.length) {
-    const listStyle = declarations.filter(filterForListStyle)
+    const listStyle = declarations.filter(hasPropertyListStyle)
     if (!listStyle.some(hasInherit)) {
       let listStyleProperties = listStyle.map(toProperty)
       if (hasListStyle(listStyleProperties)) {
@@ -108,8 +108,8 @@ export default function processListStyle ({ declarations = [], selectors = [] },
         }
 
         // add declaration
-        if (declarations.some(filterForListStyle)) {
-          const i = declarations.findIndex(filterForListStyle)
+        if (declarations.some(hasPropertyListStyle)) {
+          const i = declarations.findIndex(hasPropertyListStyle)
           declarations.splice(i, 0, {
             type: 'declaration',
             property: 'list-style',
@@ -119,18 +119,18 @@ export default function processListStyle ({ declarations = [], selectors = [] },
           SUMMARY.stats.summary.noListStylesShortened += 1
         }
 
-        if (declarations.some(filterForListStyleType)) {
-          const i = declarations.findIndex(filterForListStyleType)
+        if (declarations.some(hasPropertyListStyleType)) {
+          const i = declarations.findIndex(hasPropertyListStyleType)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForListStylePosition)) {
-          const i = declarations.findIndex(filterForListStylePosition)
+        if (declarations.some(hasPropertyListStylePosition)) {
+          const i = declarations.findIndex(hasPropertyListStylePosition)
           declarations.splice(i, 1)
         }
 
-        if (declarations.some(filterForListStyleImage)) {
-          const i = declarations.findIndex(filterForListStyleImage)
+        if (declarations.some(hasPropertyListStyleImage)) {
+          const i = declarations.findIndex(hasPropertyListStyleImage)
           declarations.splice(i, 1)
         }
 
