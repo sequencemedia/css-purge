@@ -2,8 +2,7 @@ import path from 'node:path'
 import {
   writeFileSync,
   createReadStream,
-  existsSync,
-  statSync
+  existsSync
 } from 'node:fs'
 import EventEmitter from 'node:events'
 import crypto from 'node:crypto'
@@ -55,6 +54,10 @@ const cool = clc.xterm(105)
 // const appendToFileSync = fs.appendFileSync
 
 let hash
+
+function toTrim (value) {
+  return String(value).trim()
+}
 
 function getSummaryStatsFor (collector) {
   return function getSummaryStats ({ declarations, type }) {
@@ -125,6 +128,45 @@ function toGroups (rules) {
   }, { groups: [], count: 0 })
 
   return groups
+}
+
+function handleCssParseError (e) {
+  console.log(error('CSS parser error'))
+  console.log('Reason: ' + e.reason)
+  console.log('Line: ' + e.line)
+  console.log('Column: ' + e.column)
+  console.log('Filename: ' + e.filename)
+  process.exit(1)
+}
+
+function handleOptionsFileReadError (e, filePath) {
+  console.log(error(`Options file read error at "${filePath}"`))
+  console.log(e)
+  process.exit(1)
+}
+
+function handleOptionsFileWriteError (e, filePath) {
+  console.log(error(`Options file write error at "${filePath}"`))
+  console.log(e)
+  process.exit(1)
+}
+
+function handleCssFileReadError (e, filePath) {
+  console.log(error(`CSS file read error at "${filePath}"`))
+  console.log(e)
+  process.exit(1)
+}
+
+function handleCssFileWriteError (e, filePath) {
+  console.log(error(`CSS file write error at "${filePath}"`))
+  console.log(e)
+  process.exit(1)
+}
+
+function handleHtmlFileReadError (e, filePath) {
+  console.log(error(`HTML file read error at "${filePath}"`))
+  console.log(e)
+  process.exit(1)
 }
 
 class CSSPurgeEmitter extends EventEmitter {}
@@ -205,13 +247,8 @@ class CSSPurge {
 
     let OPTIONS_FILE_LOCATION
 
-    const FILE_DATA = []
-    let dataHTMLIn = []
-    const dataJSIn = []
-
-    let jsDom = null
-    let jsDomWindow = null
-    let jsDomDoc = null
+    let CSS_FILE_DATA = []
+    let HTML_FILE_DATA = []
 
     let DEFAULT_OPTIONS_REPORT_DUPLICATE_CSS_FILE_LOCATION = DEFAULT_OPTIONS.report_duplicate_css_file_location
 
@@ -339,10 +376,10 @@ class CSSPurge {
     ]
     let declarationNamesCount = declarationNames.length
 
-    let fileLocation = 'demo/test1.css'
+    const fileLocation = 'demo/test1.css'
 
     let readCSSFilesCount = 0
-    let readHTMLFileCount = 0
+    let readHTMLFilesCount = 0
     let fileSizeKB = 0
 
     let declarations
@@ -359,13 +396,391 @@ class CSSPurge {
     let results3
     let results4
 
-    let files
-
     let duplicateIds
 
     let DECLARATION_COUNT = 0
 
-    function processOptions (options) {
+    function processSelectorsForHTML (selectors, html = null, options = null) {
+      if (OPTIONS.verbose) { console.log(info('Process - HTML - Determine Rules to Remove')) }
+
+      html = html ?? HTML_FILE_DATA.join('')
+
+      if (options) {
+        for (const key in options) {
+          OPTIONS.html[key] = options[key]
+        }
+      }
+
+      let results = []
+      let matches
+
+      // find values in ids
+      matches = html.match(/\bid\b[=](["'])(?:(?=(\\?))\2.)*?\1/gm)
+      if (matches) {
+        results = results.concat(
+          Array.from(
+            new Set(
+              matches
+                .filter(Boolean)
+                .map((match) => match.split('=')[1].replace(/['"]+/g, ''))
+            )
+          )
+        )
+      }
+
+      // find values in classes
+      matches = html.match(/\bclass\b[=](["'])(?:(?=(\\?))\2.)*?\1/gm)
+      if (matches) {
+        results = results.concat(
+          Array.from(
+            new Set(
+              matches
+                .filter(Boolean)
+                .map((match) => match.split('=')[1].replace(/['"]+/g, ''))
+            )
+          )
+        )
+      }
+
+      // find values in internal selectors
+      matches = html.match(/<style([\S\s]*?)>([\S\s]*?)<\/style>/gi)
+      if (matches) {
+        results = results.concat(
+          Array.from(
+            new Set(
+              matches
+                .filter(Boolean)
+                .map((match) => match.split('</')[0].split('>')[1])
+                .map((match) => match.match(/([#}.])([^0-9])([\S\s]*?){/g))
+                .filter(Boolean)
+                .map((match) => match.replace(/\r?\n|\r|\s/g, '').replace('{', '').replace('}', ''))
+                .map((match) => match.split(',').map(toTrim).filter(Boolean))
+            )
+          )
+        )
+      }
+
+      // find values in the dom
+      const {
+        window: {
+          document
+        }
+      } = new JSDOM(html, { contentType: 'text/html' })
+
+      for (let i = 0, selectorsLength = selectors.length; i < selectorsLength; ++i) {
+        for (let j = 0, resultsLength = results.length; j < resultsLength; ++j) {
+          if (selectors[i] === results[j]) {
+            selectors.splice(i, 1)
+            selectorsLength -= 1
+            i -= 1
+            break
+          }
+        }
+
+        if (document.querySelector(selectors[i]) !== null) {
+          selectors.splice(i, 1)
+          selectorsLength -= 1
+          i -= 1
+        }
+      }
+
+      return selectors
+    } // end of processSelectorsForHTML
+
+    function processHTML (selectors = [], html = null, options = null) {
+      // read html files
+      if (OPTIONS.html && OPTIONS.special_reduce_with_html) {
+        let htmlFiles = OPTIONS.html
+
+        // check for file or files
+        switch (typeof htmlFiles) {
+          case 'object':
+            {
+              const collector = []
+
+              Object
+                .values(htmlFiles)
+                .forEach((htmlFile) => {
+                  getFilePath(htmlFile, ['.html', '.htm'], collector)
+                })
+
+              if (collector.length) {
+                htmlFiles = collector
+              }
+            }
+            break
+          case 'array':
+            {
+              const collector = []
+
+              htmlFiles
+                .forEach((htmlFile) => {
+                  getFilePath(htmlFile, ['.html', '.htm'], collector)
+                })
+
+              if (collector.length) {
+                htmlFiles = collector
+              }
+            }
+            break
+          case 'string': // formats
+            {
+              htmlFiles = htmlFiles.replace(/ /g, '')
+
+              // comma delimited list - filename1.html, filename2.html
+              if (htmlFiles.includes(',')) {
+                htmlFiles = htmlFiles.replace(/^\s+|\s+$/g, '').split(',').map(toTrim).filter(Boolean)
+
+                const collector = []
+
+                htmlFiles
+                  .forEach((htmlFile) => {
+                    getFilePath(htmlFile, ['.html', '.htm'], collector)
+                  })
+
+                if (collector.length) {
+                  htmlFiles = collector
+                }
+              } else {
+                const collector = []
+
+                // string path
+                getFilePath(htmlFiles, ['.html', '.htm'], collector)
+
+                if (collector.length) {
+                  htmlFiles = collector
+                }
+              }
+            }
+            break
+        } // end of switch
+
+        cssPurgeEventEmitter
+          .on('HTML_READ_AGAIN', () => {
+            processSelectorsForHTML(selectors, html, options)
+
+            HTML_FILE_DATA = []
+
+            readHTMLFiles(htmlFiles)
+          })
+          .on('HTML_READ_END', () => {
+            processSelectorsForHTML(selectors, html, options)
+
+            HTML_FILE_DATA = []
+
+            cssPurgeEventEmitter.emit('HTML_RESULTS_END', selectors)
+          })
+
+        readHTMLFiles(htmlFiles)
+      } // end of html files check
+    }
+
+    function readHTMLFiles (files = []) {
+      const file = files[readHTMLFilesCount]
+
+      if (OPTIONS.verbose) { console.log(info('Input - HTML File : ' + file)) }
+
+      if (validUrl.isUri(file)) {
+        request({
+          url: file,
+          method: 'GET'
+        }, (e, head, body) => {
+          let fileSizeKB = 0
+
+          if (head) {
+            const contentLength = head.headers['content-length']
+
+            if (!contentLength) {
+              fileSizeKB = getSizeInKB(body)
+            } else {
+              fileSizeKB = contentLength / 1000
+            }
+          } else {
+            /**
+             * `getSizeInKB(body)` above does not divide by 1000
+             */
+            fileSizeKB = getSizeInKB(body) / 1000
+          }
+
+          STATS.files.html.push({
+            fileName: file,
+            fileSizeKB
+          })
+        })
+      } else {
+        const fileSizeKB = getFileSizeInKB(file)
+
+        STATS.files.html.push({
+          fileName: file,
+          fileSizeKB
+        })
+      }
+
+      SUMMARY.files.input_html.push(file)
+
+      if (validUrl.isUri(file)) {
+        request(file, (e, response, body) => {
+          if (response === undefined) {
+            // try again
+            request(file, (e, response, body) => {
+              if (response.statusCode === 200) {
+                HTML_FILE_DATA.push(body)
+
+                readHTMLFilesCount += 1
+
+                if (readHTMLFilesCount < files.length) {
+                  cssPurgeEventEmitter.emit('HTML_READ_AGAIN')
+                } else {
+                  cssPurgeEventEmitter.emit('HTML_READ_END')
+                }
+              } else {
+                cssPurgeEventEmitter.emit('HTML_READ_ERROR')
+                handleHtmlFileReadError(e, file)
+              }
+            })
+          } else if (response.statusCode === 200) {
+            HTML_FILE_DATA.push(body)
+
+            readHTMLFilesCount += 1
+
+            if (readHTMLFilesCount < files.length) {
+              cssPurgeEventEmitter.emit('HTML_READ_AGAIN')
+            } else {
+              cssPurgeEventEmitter.emit('HTML_READ_END')
+            }
+          } else {
+            cssPurgeEventEmitter.emit('HTML_READ_ERROR')
+            handleHtmlFileReadError(e, file)
+          }
+        })
+      } else {
+        const readHTMLStream = createReadStream(file, 'utf8')
+
+        readHTMLStream
+          .on('data', (chunk) => {
+            HTML_FILE_DATA.push(chunk)
+          })
+          .on('end', () => {
+            readHTMLFilesCount += 1
+            if (readHTMLFilesCount < files.length) {
+              cssPurgeEventEmitter.emit('HTML_READ_AGAIN')
+            } else {
+              cssPurgeEventEmitter.emit('HTML_READ_END')
+            }
+          })
+          .on('error', (e) => {
+            cssPurgeEventEmitter.emit('HTML_READ_ERROR')
+            handleHtmlFileReadError(e, file)
+          })
+      }
+    } // end of readHTMLFiles
+
+    function readReduceDeclarations (reduceDeclarations) {
+      if (reduceDeclarations) {
+        let {
+          declaration_names: declarationNames,
+          selectors
+        } = reduceDeclarations
+
+        switch (typeof selectors) {
+          case 'string':
+            if (selectors.length) {
+              selectors = selectors.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean)
+              selectorsCount = selectors.length
+            }
+            break
+          case 'object':
+            Object
+              .entries(selectors)
+              .forEach(([key, value]) => {
+                SELECTOR_PROPERTY_MAP.set(key, value.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean))
+              })
+
+            selectorsCount = Object.keys(selectors).length
+            break
+        }
+
+        // by name
+        if (declarationNames.length) {
+          if (typeof declarationNames === 'string') {
+            declarationNames = declarationNames.replace(/^\s+|\s+$/g, '').split(',').map(toTrim).filter(Boolean)
+            declarationNamesCount = declarationNames.length
+          } else {
+            if (Array.isArray(declarationNames)) {
+              declarationNames = declarationNames.map(toTrim).filter(Boolean)
+              declarationNamesCount = declarationNames.length
+            }
+          }
+        }
+
+        HAS_READ_REDUCE_DECLARATIONS = true
+        cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
+      }
+    } // end of readReduceDeclarations
+
+    function readReduceDeclarationsFileLocation (fileLocation = DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION) {
+      let reduceDeclarations = ''
+
+      const readStream = createReadStream(fileLocation, 'utf8')
+
+      readStream
+        .on('data', (chunk) => {
+          reduceDeclarations += chunk
+        })
+        .on('end', () => {
+          try {
+            DEFAULT_OPTIONS_REDUCE_DECLARATIONS = JSON.parse(reduceDeclarations)
+          } catch (e) {
+            cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_ERROR')
+            handleOptionsFileReadError(e, fileLocation)
+          }
+
+          let {
+            declaration_names: declarationNames,
+            selectors
+          } = DEFAULT_OPTIONS_REDUCE_DECLARATIONS
+
+          switch (typeof selectors) {
+            case 'string':
+              if (selectors.length) {
+                selectors = selectors.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean)
+                selectorsCount = selectors.length
+              }
+              break
+            case 'object':
+              Object
+                .entries(selectors)
+                .forEach(([key, value]) => {
+                  SELECTOR_PROPERTY_MAP.set(key, value.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean))
+                })
+
+              selectorsCount = Object.keys(selectors).length
+              break
+          }
+
+          // by name
+          if (declarationNames.length) {
+            if (typeof declarationNames === 'string') {
+              declarationNames = declarationNames.replace(/^\s+|\s+$/g, '').split(',').map(toTrim).filter(Boolean)
+              declarationNamesCount = declarationNames.length
+            } else {
+              if (Array.isArray(declarationNames)) {
+                declarationNames = declarationNames.map(toTrim).filter(Boolean)
+                declarationNamesCount = declarationNames.length
+              }
+            }
+          }
+
+          HAS_READ_REDUCE_DECLARATIONS = true
+          cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
+        })
+        .on('error', (e) => {
+          cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_ERROR', OPTIONS)
+          handleOptionsFileReadError(e, DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION)
+        })
+    } // end of readReduceDeclarationsFileLocation
+
+    function readOptions (options) {
       const {
         trim: TRIM,
         shorten: SHORTEN,
@@ -424,409 +839,16 @@ class CSSPurge {
       }
 
       cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_END', OPTIONS)
-    }
+    } // end of readOptions
 
-    function processHTMLSelectors (cssSelectors, htmlDataIn = null, htmlOptionsIn = null) {
-      if (OPTIONS.verbose) { console.log(info('Process - HTML - Determine Rules to Remove')) }
-
-      let htmlData = dataHTMLIn.join('')
-      if (htmlDataIn !== null && htmlDataIn !== undefined) {
-        htmlData = htmlDataIn
-      }
-
-      if (htmlOptionsIn !== null && htmlOptionsIn !== undefined) {
-        for (const key in htmlOptionsIn) {
-          OPTIONS.html[key] = htmlOptionsIn[key]
-        }
-      }
-
-      // find values in ids
-      results = []
-      results1 = htmlData.match(/\bid\b[=](["'])(?:(?=(\\?))\2.)*?\1/gm)
-      if (results1 !== null) {
-        for (let i = 0, ilen = results1.length; i < ilen; ++i) {
-          if (results1[i] !== null) {
-            results1[i] = results1[i].split('=')[1].replace(/['"]+/g, '')
-          }
-        }
-        results1 = Array.from(new Set(results1))
-        results = results.concat(results1)
-      }
-
-      // find values in classes
-      results2 = htmlData.match(/\bclass\b[=](["'])(?:(?=(\\?))\2.)*?\1/gm)
-      if (results2 !== null) {
-        for (let i = 0, ilen = results2.length; i < ilen; ++i) {
-          if (results2[i] !== null) {
-            results2[i] = results2[i].split('=')[1].replace(/['"]+/g, '')
-          }
-        }
-        results2 = Array.from(new Set(results2))
-        results = results.concat(results2)
-      }
-
-      // find values in internal selectors
-      results3 = htmlData.match(/<style([\S\s]*?)>([\S\s]*?)<\/style>/gi)
-      if (results3 !== null) {
-        results4 = []
-        for (let i = 0, ilen = results3.length; i < ilen; ++i) {
-          if (results3[i] !== null) {
-            results3[i] = results3[i].split('</')[0].split('>')[1]
-            results4 = results4.concat(results3[i].match(/([#}.])([^0-9])([\S\s]*?){/g))
-          }
-        }
-        results3 = []
-        for (let i = 0, ilen = results4.length; i < ilen; ++i) {
-          if (results4[i] !== null) {
-            results4[i] = results4[i].replace(/\r?\n|\r|\s/g, '')
-            results4[i] = results4[i].replace('{', '')
-            results4[i] = results4[i].replace('}', '')
-            results3 = results3.concat(results4[i].split(','))
-          }
-        }
-        results3 = Array.from(new Set(results3))
-        results = results.concat(results3)
-      }
-
-      // find values in the dom
-      jsDom = new JSDOM(htmlData, { contentType: 'text/html' })
-      jsDomWindow = jsDom.window
-      jsDomDoc = jsDomWindow.document
-
-      for (let i = 0, cssSelectorsLength = cssSelectors.length; i < cssSelectorsLength; ++i) {
-        for (let j = 0, resultsLength = results.length; j < resultsLength; ++j) {
-          if (cssSelectors[i] === results[j]) {
-            cssSelectors.splice(i, 1)
-            cssSelectorsLength -= 1
-            i -= 1
-            break
-          }
-        }
-
-        if (jsDomDoc.querySelector(cssSelectors[i]) !== null) {
-          cssSelectors.splice(i, 1)
-          cssSelectorsLength -= 1
-          i -= 1
-        }
-      }
-
-      return cssSelectors
-    } // end of processHTMLSelectors
-
-    function processHTML (cssSelectors = [], htmlDataIn = null, htmlOptionsIn = null) {
-      // read html files
-      if (OPTIONS.html !== '' && OPTIONS.html !== undefined && OPTIONS.special_reduce_with_html) {
-        let htmlFiles = OPTIONS.html
-
-        // check for file or files
-        switch (typeof htmlFiles) {
-          case 'object':
-            {
-              const collector = []
-
-              Object
-                .values(htmlFiles)
-                .forEach((htmlFile) => {
-                  getFilePath(htmlFile, ['.html', '.htm'], collector)
-                })
-
-              if (collector.length) {
-                htmlFiles = collector
-              }
-            }
-            break
-          case 'array':
-            {
-              const collector = []
-
-              htmlFiles
-                .forEach((htmlFile) => {
-                  getFilePath(htmlFile, ['.html', '.htm'], collector)
-                })
-
-              if (collector.length) {
-                htmlFiles = collector
-              }
-            }
-            break
-          case 'string': // formats
-            {
-              htmlFiles = htmlFiles.replace(/ /g, '')
-
-              // comma delimited list - filename1.html, filename2.html
-              if (htmlFiles.indexOf(',') > -1) {
-                htmlFiles = htmlFiles.replace(/^\s+|\s+$/g, '').split(',')
-
-                const collector = []
-
-                htmlFiles
-                  .forEach((htmlFile) => {
-                    getFilePath(htmlFile, ['.html', '.htm'], collector)
-                  })
-
-                if (collector.length) {
-                  htmlFiles = collector
-                }
-              } else {
-                const collector = []
-
-                // string path
-                getFilePath(htmlFiles, ['.html', '.htm'], collector)
-
-                if (collector.length) {
-                  htmlFiles = collector
-                }
-              }
-            }
-            break
-        } // end of switch
-
-        readHTMLFile(htmlFiles)
-
-        cssPurgeEventEmitter.on('HTML_READ_AGAIN', () => {
-          // process selectors
-          processHTMLSelectors(cssSelectors, htmlDataIn, htmlOptionsIn)
-
-          // read next file
-          dataHTMLIn = []
-          readHTMLFile(htmlFiles)
-        })
-        cssPurgeEventEmitter.on('HTML_READ_END', () => {
-          // process selectors
-          processHTMLSelectors(cssSelectors, htmlDataIn, htmlOptionsIn)
-
-          dataHTMLIn = []
-          cssPurgeEventEmitter.emit('HTML_RESULTS_END', cssSelectors)
-        })
-      } // end of html files check
-    }
-
-    function readHTMLFile (files = []) {
-      const file = files[readHTMLFileCount]
-
-      if (OPTIONS.verbose) { console.log(info('Input - HTML File : ' + file)) }
-
-      if (validUrl.isUri(file)) {
-        request({
-          url: file,
-          method: 'GET'
-        }, (e, head, body) => {
-          let fileSizeKB = 0
-
-          if (head) {
-            const contentLength = head.headers['content-length']
-
-            if (!contentLength) {
-              fileSizeKB = getSizeInKB(body)
-            } else {
-              fileSizeKB = contentLength / 1000
-            }
-          } else {
-            /**
-             * `getSizeInKB(body)` above does not divide by 1000
-             */
-            fileSizeKB = getSizeInKB(body) / 1000
-          }
-
-          STATS.files.html.push({
-            fileName: file,
-            fileSizeKB
-          })
-        })
-      } else {
-        const fileSizeKB = getFileSizeInKB(file)
-
-        STATS.files.html.push({
-          fileName: file,
-          fileSizeKB
-        })
-      }
-
-      SUMMARY.files.input_html.push(file)
-
-      if (validUrl.isUri(file)) {
-        request(file, (e, response, body) => {
-          if (response === undefined) {
-            // try again
-            request(file, (e, response, body) => {
-              if (response.statusCode === 200) {
-                dataHTMLIn.push(body)
-
-                readHTMLFileCount += 1
-
-                if (readHTMLFileCount < files.length) {
-                  cssPurgeEventEmitter.emit('HTML_READ_AGAIN')
-                } else {
-                  cssPurgeEventEmitter.emit('HTML_READ_END')
-                }
-              } else {
-                cssPurgeEventEmitter.emit('HTML_READ_ERROR')
-                console.log(error('HTML file read error'))
-                console.log(e)
-                process.exit(1)
-              }
-            })
-          } else if (response.statusCode === 200) {
-            dataHTMLIn.push(body)
-
-            readHTMLFileCount += 1
-
-            if (readHTMLFileCount < files.length) {
-              cssPurgeEventEmitter.emit('HTML_READ_AGAIN')
-            } else {
-              cssPurgeEventEmitter.emit('HTML_READ_END')
-            }
-          } else {
-            cssPurgeEventEmitter.emit('HTML_READ_ERROR')
-            console.log(error('HTML file read error'))
-            console.log(e)
-            process.exit(1)
-          }
-        })
-      } else {
-        const readHTMLStream = createReadStream(file, 'utf8')
-
-        readHTMLStream
-          .on('data', (chunk) => {
-            dataHTMLIn.push(chunk)
-          })
-          .on('end', () => {
-            readHTMLFileCount += 1
-            if (readHTMLFileCount < files.length) {
-              cssPurgeEventEmitter.emit('HTML_READ_AGAIN')
-            } else {
-              cssPurgeEventEmitter.emit('HTML_READ_END')
-            }
-          })
-          .on('error', (e) => {
-            cssPurgeEventEmitter.emit('HTML_READ_ERROR')
-            console.log(error('HTML file read error'))
-            console.log(e)
-            process.exit(1)
-          })
-      }
-    } // end of readHTMLFile
-
-    function readReduceDeclarations (reduceDeclarations) {
-      if (reduceDeclarations) {
-        let {
-          declaration_names: declarationNames,
-          selectors
-        } = reduceDeclarations
-
-        switch (typeof selectors) {
-          case 'string':
-            if (selectors.length) {
-              selectors = selectors.replace(/^\s+|\s+$/g, '')
-              selectors = selectors.replace(/\r?\n|\r/g, '')
-              selectors = selectors.split(',')
-              selectorsCount = selectors.length
-            }
-            break
-          case 'object':
-            Object
-              .entries(selectors)
-              .forEach(([key, value]) => {
-                SELECTOR_PROPERTY_MAP.set(key, value.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(','))
-              })
-
-            selectorsCount = Object.keys(selectors).length
-            break
-        }
-
-        // by name
-        if (declarationNames.length) {
-          if (typeof declarationNames === 'string') {
-            declarationNames = declarationNames.replace(/^\s+|\s+$/g, '')
-            declarationNames = declarationNames.split(',').filter((declarationName) => declarationName.trim() !== '')
-            declarationNamesCount = declarationNames.length
-          } else {
-            if (Array.isArray(declarationNames)) {
-              declarationNames = declarationNames.filter((declarationName) => declarationName.trim() !== '')
-              declarationNamesCount = declarationNames.length
-            }
-          }
-        }
-
-        HAS_READ_REDUCE_DECLARATIONS = true
-        cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
-      } else {
-        let defaultOptionsReduceDeclarations = ''
-
-        const readStream = createReadStream(DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION, 'utf8')
-
-        readStream
-          .on('data', (chunk) => {
-            defaultOptionsReduceDeclarations += chunk
-          })
-          .on('end', () => {
-            try {
-              DEFAULT_OPTIONS_REDUCE_DECLARATIONS = JSON.parse(defaultOptionsReduceDeclarations)
-            } catch (e) {
-              console.log(error(`Config file read error in "${DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION}"`))
-              console.log(e)
-              process.exit(1)
-            }
-
-            let {
-              declaration_names: declarationNames,
-              selectors
-            } = DEFAULT_OPTIONS_REDUCE_DECLARATIONS
-
-            switch (typeof selectors) {
-              case 'string':
-                if (selectors.length) {
-                  selectors = selectors.replace(/^\s+|\s+$/g, '')
-                  selectors = selectors.replace(/\r?\n|\r/g, '')
-                  selectors = selectors.split(',')
-                  selectorsCount = selectors.length
-                }
-                break
-              case 'object':
-                Object
-                  .entries(selectors)
-                  .forEach(([key, value]) => {
-                    SELECTOR_PROPERTY_MAP.set(key, value.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(','))
-                  })
-
-                selectorsCount = Object.keys(selectors).length
-                break
-            }
-
-            // by name
-            if (declarationNames.length) {
-              if (typeof declarationNames === 'string') {
-                declarationNames = declarationNames.replace(/^\s+|\s+$/g, '')
-                declarationNames = declarationNames.split(',').filter((declarationName) => declarationName.trim() !== '')
-                declarationNamesCount = declarationNames.length
-              } else {
-                if (Array.isArray(declarationNames)) {
-                  declarationNames = declarationNames.filter((declarationName) => declarationName.trim() !== '')
-                  declarationNamesCount = declarationNames.length
-                }
-              }
-            }
-
-            HAS_READ_REDUCE_DECLARATIONS = true
-            cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
-          })
-          .on('error', (e) => {
-            cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_ERROR', OPTIONS)
-            console.log(error('Default options file read error'))
-            console.log(e)
-            process.exit(1)
-          })
-      }
-    } // end of readReduceDeclarations
-
-    function readOptions (optionsFilePath = '') {
+    function readOptionsFileLocation (fileLocation = DEFAULT_OPTIONS_FILE_LOCATION) {
       let defaultOptions = ''
       let readStream
 
-      if (optionsFilePath === '') {
+      if (fileLocation === '') {
         readStream = createReadStream(DEFAULT_OPTIONS_FILE_LOCATION, 'utf8')
       } else {
-        readStream = createReadStream(optionsFilePath, 'utf8')
+        readStream = createReadStream(fileLocation, 'utf8')
       }
 
       readStream
@@ -838,9 +860,8 @@ class CSSPurge {
             try {
               DEFAULT_OPTIONS = JSON.parse(defaultOptions)
             } catch (e) {
-              console.log(error(`Config file read error in "${DEFAULT_OPTIONS_FILE_LOCATION}"`))
-              console.log(e)
-              process.exit(1)
+              cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_ERROR')
+              handleOptionsFileReadError(e, DEFAULT_OPTIONS_FILE_LOCATION)
             }
 
             const {
@@ -891,16 +912,14 @@ class CSSPurge {
         })
         .on('error', (e) => {
           cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_ERROR')
-          console.log(error(`Config file read error in "${DEFAULT_OPTIONS_FILE_LOCATION}"`))
-          console.log(e)
-          process.exit(1)
+          handleOptionsFileReadError(e, DEFAULT_OPTIONS_FILE_LOCATION)
         })
 
       return readStream
-    } // end of readOptions
+    } // end of readOptionsFileLocation
 
     /* read css input files */
-    function processCSSFiles (options = null, optionsFilePath = '') {
+    function processCSSFiles (options = DEFAULT_OPTIONS, fileLocation = DEFAULT_OPTIONS_FILE_LOCATION, complete) {
       function handleDefaultOptionsReadEnd () {
         cssPurgeEventEmitter.removeListener('DEFAULT_OPTIONS_READ_END', handleDefaultOptionsReadEnd)
 
@@ -914,23 +933,22 @@ class CSSPurge {
           }
         }
 
-        files = OPTIONS.css
+        let cssFiles = OPTIONS.css
 
-        if (files) {
+        if (cssFiles) {
           // check for file or files
-          switch (typeof files) {
-            case 'object':
+          switch (typeof cssFiles) {
             case 'array':
               {
                 const collector = []
 
-                files
+                cssFiles
                   .forEach((file) => {
                     getFilePath(file, ['.css'], collector)
                   })
 
                 if (collector.length) {
-                  files = collector
+                  cssFiles = collector
                 }
               }
 
@@ -938,29 +956,28 @@ class CSSPurge {
             case 'string':
               {
                 // formats
-                files = files.replace(/ /g, '')
-                // comma delimited list - filename1.css, filename2.css
-                if (files.includes(',')) {
-                  files = files.replace(/^\s+|\s+$/g, '').split(',')
+                cssFiles = cssFiles.replace(/ /g, '')
+                if (cssFiles.includes(',')) { // comma delimited list - filename1.css, filename2.css
+                  cssFiles = cssFiles.split(',').map(toTrim).filter(Boolean)
 
                   const collector = []
 
-                  files
+                  cssFiles
                     .forEach((file) => {
                       getFilePath(file, ['.css'], collector)
                     })
 
                   if (collector.length) {
-                    files = collector
+                    cssFiles = collector
                   }
                 } else {
                   const collector = []
 
                   // string path
-                  getFilePath(files, ['.css'], collector)
+                  getFilePath(cssFiles, ['.css'], collector)
 
                   if (collector.length) {
-                    files = collector
+                    cssFiles = collector
                   }
                 }
               }
@@ -968,34 +985,38 @@ class CSSPurge {
               break
           } // end of switch
 
-          fileLocation = files.toString()
+          fileLocation = cssFiles.toString()
 
-          cssPurgeEventEmitter.on('CSS_READ_AGAIN', () => {
-            readCSSFiles(files)
-          })
+          cssPurgeEventEmitter
+            .on('CSS_READ_AGAIN', () => {
+              CSS_FILE_DATA = []
 
-          cssPurgeEventEmitter.on('CSS_READ_END', () => {
-            processCSS(null, OPTIONS)
-          })
+              readCSSFiles(cssFiles)
+            })
+            .on('CSS_READ_END', () => {
+              CSS_FILE_DATA = []
 
-          readCSSFiles(files)
+              processCSS(null, OPTIONS, complete)
+            })
+
+          readCSSFiles(cssFiles)
         }
       }
 
       function handleDefaultOptionsReduceDeclarationsEnd () {
         cssPurgeEventEmitter.removeListener('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionsReduceDeclarationsEnd)
 
-        if (OPTIONS_FILE_LOCATION !== optionsFilePath) { // don't read same config
+        if (OPTIONS_FILE_LOCATION !== fileLocation) { // don't read same config
           cssPurgeEventEmitter.on('DEFAULT_OPTIONS_READ_END', handleDefaultOptionsReadEnd) // end of config read
         }
 
-        OPTIONS_FILE_LOCATION = optionsFilePath
+        OPTIONS_FILE_LOCATION = fileLocation
 
-        if (optionsFilePath !== 'cmd_default') {
-          readOptions(optionsFilePath)
+        if (fileLocation !== 'cmd_default') {
+          readOptionsFileLocation(fileLocation)
         } else {
-          if (optionsFilePath === 'cmd_default') {
-            processOptions(options)
+          if (fileLocation === 'cmd_default') {
+            readOptions(options)
           }
         }
       }
@@ -1003,8 +1024,11 @@ class CSSPurge {
       cssPurgeEventEmitter.on('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionsReduceDeclarationsEnd) // end of reduce config read
 
       if (!HAS_READ_REDUCE_DECLARATIONS) {
-        if (existsSync(OPTIONS.reduce_declarations_file_location)) {
-          readReduceDeclarations()
+        const {
+          reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
+        } = OPTIONS
+        if (existsSync(REDUCE_DECLARATIONS_FILE_LOCATION)) {
+          readReduceDeclarationsFileLocation(REDUCE_DECLARATIONS_FILE_LOCATION)
         } else {
           if (options && !options.reduceDeclarations) {
             const reduceDeclarations = {
@@ -1017,7 +1041,7 @@ class CSSPurge {
 
             readReduceDeclarations(reduceDeclarations)
           } else {
-            readReduceDeclarations()
+            readReduceDeclarationsFileLocation(DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION)
           }
         }
       }
@@ -1071,7 +1095,7 @@ class CSSPurge {
             // try again
             request(file, (e, response, body) => {
               if (response.statusCode === 200) {
-                FILE_DATA.push(body)
+                CSS_FILE_DATA.push(body)
 
                 readCSSFilesCount += 1
 
@@ -1082,13 +1106,11 @@ class CSSPurge {
                 }
               } else {
                 cssPurgeEventEmitter.emit('CSS_READ_ERROR')
-                console.log(error('CSS file read error'))
-                console.log(e)
-                process.exit(1)
+                handleCssFileReadError(e, file)
               }
             })
           } else if (response.statusCode === 200) {
-            FILE_DATA.push(body)
+            CSS_FILE_DATA.push(body)
 
             readCSSFilesCount += 1
 
@@ -1099,9 +1121,7 @@ class CSSPurge {
             }
           } else {
             cssPurgeEventEmitter.emit('CSS_READ_ERROR')
-            console.log(error('CSS file read error'))
-            console.log(e)
-            process.exit(1)
+            handleCssFileReadError(e, file)
           }
         })
       } else {
@@ -1109,7 +1129,7 @@ class CSSPurge {
 
         readStream
           .on('data', (chunk) => {
-            FILE_DATA.push(chunk)
+            CSS_FILE_DATA.push(chunk)
           })
           .on('end', () => {
             readCSSFilesCount += 1
@@ -1121,9 +1141,7 @@ class CSSPurge {
           })
           .on('error', (e) => {
             cssPurgeEventEmitter.emit('CSS_READ_ERROR')
-            console.log(error('CSS file read error'))
-            console.log(e)
-            process.exit(1)
+            handleCssFileReadError(e, file)
           })
       } // end of url check
     } // end of readCSSFiles
@@ -1602,7 +1620,7 @@ class CSSPurge {
 
             for (const key in declarationsValueCounts) {
               if (declarationsValueCounts[key].count > 1) {
-                duplicateIds = declarationsValueCounts[key].id.split(',')
+                duplicateIds = declarationsValueCounts[key].id.split(',').map(toTrim).filter(Boolean)
 
                 amountRemoved = 1 // shift the ids by the amount removed
 
@@ -1639,7 +1657,7 @@ class CSSPurge {
                           duplicateIds = []
                           duplicateIds[0] = declarationsValueCounts[key2].id
                         } else {
-                          duplicateIds = declarationsValueCounts[key2].id.split(',')
+                          duplicateIds = declarationsValueCounts[key2].id.split(',').map(toTrim).filter(Boolean)
                         }
 
                         for (let l = 0; l < duplicateIds.length; ++l) {
@@ -2021,14 +2039,12 @@ class CSSPurge {
       SUMMARY.stats.summary.noReductions.noSupports = SUMMARY.stats.before.noSupports - SUMMARY.stats.after.noSupports
       SUMMARY.stats.summary.noReductions.noNodes = SUMMARY.stats.before.noNodes - SUMMARY.stats.after.noNodes
 
-      const outputCSS = cssTools.stringify({
+      return cssTools.stringify({
         type: 'stylesheet',
         stylesheet: {
           rules: rulesIn
         }
       })
-
-      return outputCSS
     } // end of processHTMLResults
 
     function completeOutput (css = '') {
@@ -2049,12 +2065,7 @@ class CSSPurge {
               try {
                 ast = cssTools.parse(css, { source: CSS_OUTPUT_FILE_LOCATION })
               } catch (e) {
-                console.log(error('CSS parser error'))
-                console.log('Reason: ' + e.reason)
-                console.log('Line: ' + e.line)
-                console.log('Column: ' + e.column)
-                console.log('Filename: ' + e.filename)
-                process.exit(1)
+                handleCssParseError(e)
               }
 
               const {
@@ -2092,9 +2103,7 @@ class CSSPurge {
             fileSizeKB = getFileSizeInKB(fileName)
           }
         } catch (e) {
-          console.log(error('Output file error'))
-          console.log(e)
-          process.exit(1)
+          handleCssFileWriteError(e, CSS_OUTPUT_FILE_LOCATION)
         }
       } else {
         css = trim(css, OPTIONS, SUMMARY)
@@ -2112,9 +2121,7 @@ class CSSPurge {
         try {
           writeFileSync(DEFAULT_OPTIONS_REPORT_DUPLICATE_CSS_FILE_LOCATION, JSON.stringify(SUMMARY, null, 2))
         } catch (e) {
-          console.log(error('Report output file error'))
-          console.log(e)
-          process.exit(1)
+          handleOptionsFileWriteError(e, DEFAULT_OPTIONS_REPORT_DUPLICATE_CSS_FILE_LOCATION)
         }
       }
 
@@ -2152,7 +2159,7 @@ class CSSPurge {
 
         if (OPTIONS.verbose) { console.log(info('Process - CSS')) }
 
-        css = css ?? FILE_DATA.join('')
+        css = css ?? CSS_FILE_DATA.join('')
 
         const {
           _3tokenValues,
@@ -2224,15 +2231,14 @@ class CSSPurge {
         try {
           ast = cssTools.parse(css, { source: fileLocation })
         } catch (e) {
-          console.log(error('CSS parser error'))
-          console.log('Reason: ' + e.reason)
-          console.log('Line: ' + e.line)
-          console.log('Column: ' + e.column)
-          console.log('Filename: ' + e.filename)
-          process.exit(1)
+          handleCssParseError(e)
         }
 
-        const rules = ast.stylesheet.rules
+        const {
+          stylesheet: {
+            rules
+          }
+        } = ast
 
         SUMMARY.stats = STATS
 
@@ -2355,8 +2361,6 @@ class CSSPurge {
             })
         }
 
-        OPTIONS.special_convert_rem = true
-
         const {
           special_convert_rem: SPECIAL_CONVERT_REM
         } = OPTIONS
@@ -2477,9 +2481,18 @@ class CSSPurge {
         if (OPTIONS.special_reduce_with_html && OPTIONS.html) {
           if (OPTIONS.verbose) { console.log(info('Process - HTML')) }
 
-          const ast = cssTools.parse(outputCSS, { source: fileLocation })
+          let ast
+          try {
+            ast = cssTools.parse(outputCSS, { source: fileLocation })
+          } catch (e) {
+            handleCssParseError(e)
+          }
 
-          const rules = ast.stylesheet.rules
+          const {
+            stylesheet: {
+              rules
+            }
+          } = ast
 
           let selectors = []
 
@@ -2525,8 +2538,12 @@ class CSSPurge {
       if (!css) cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END')
 
       if (!HAS_READ_REDUCE_DECLARATIONS) {
-        if (existsSync(OPTIONS.reduce_declarations_file_location)) {
-          readReduceDeclarations()
+        const {
+          reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
+        } = OPTIONS
+
+        if (existsSync(REDUCE_DECLARATIONS_FILE_LOCATION)) {
+          readReduceDeclarationsFileLocation(REDUCE_DECLARATIONS_FILE_LOCATION)
         } else {
           if (options && !options.reduceDeclarations) {
             const reduceDeclarations = {
@@ -2539,7 +2556,7 @@ class CSSPurge {
 
             readReduceDeclarations(reduceDeclarations)
           } else {
-            readReduceDeclarations()
+            readReduceDeclarationsFileLocation(DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION)
           }
         }
       }
@@ -2549,8 +2566,8 @@ class CSSPurge {
       processCSS(css, options, complete)
     }
 
-    this.purgeCSSFiles = function purgeCSSFiles (options, optionsFilePath) {
-      processCSSFiles(options, optionsFilePath)
+    this.purgeCSSFiles = function purgeCSSFiles (options, fileLocation, complete) {
+      processCSSFiles(options, fileLocation, complete)
     }
   }
 } // end of CSSPurge
@@ -2561,9 +2578,9 @@ export default {
 
     cssPurge.purgeCSS(css, options, complete)
   },
-  purgeCSSFiles (options, optionsFilePath) {
+  purgeCSSFiles (options, fileLocation, complete) {
     const cssPurge = new CSSPurge()
 
-    cssPurge.purgeCSSFiles(options, optionsFilePath)
+    cssPurge.purgeCSSFiles(options, fileLocation, complete)
   }
 }
