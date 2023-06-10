@@ -260,7 +260,6 @@ Example config.json:
     "shorten_hexcolor_uppercase": false,
     "shorten_font": false,
     "shorten_background": true,
-    "shorten_background_min": 2,
     "shorten_margin": false,
     "shorten_padding": false,
     "shorten_list_style": false,

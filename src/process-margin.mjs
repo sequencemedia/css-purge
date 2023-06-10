@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyMargin from './utils/declarations/has-property-margin.mjs'
 import hasPropertyMarginTop from './utils/declarations/has-property-margin-top.mjs'
@@ -22,8 +22,6 @@ const DEFAULT_MARGIN_PROPERTIES = [
   'margin-left'
 ]
 
-const success = cliColor.greenBright
-
 function hasMargin (array) {
   return array.includes('margin') || (
     array.includes('margin-top') &&
@@ -33,17 +31,23 @@ function hasMargin (array) {
   )
 }
 
-export default function processMargin ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-margin')
+
+export default function processMargin (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const margin = declarations.filter(hasPropertyMargin)
     if (!margin.some(hasInherit)) {
       let marginProperties = margin.map(toProperty)
       if (hasMargin(marginProperties)) {
         const {
-          verbose: VERBOSE
-        } = OPTIONS
+          selectors = []
+        } = rule
 
-        if (VERBOSE) { console.log(success('Process - Values - Margin : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
         let marginValues = margin.map(toValue)
 

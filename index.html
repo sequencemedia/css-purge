@@ -635,7 +635,6 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
     "shorten_hexcolor_uppercase": false,
     "shorten_font": false,
     "shorten_background": true,
-    "shorten_background_min": 2,
     "shorten_margin": false,
     "shorten_padding": false,
     "shorten_list_style": false,
@@ -791,7 +790,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       <td>
       	A &ldquo;master switch&rdquo; to turn on all the shorten options.
       	<br>- Only when its off can you turn on or off the other shorten options.
-      	<br>- Exceptions: shorten_hexcolor_uppercase, shorten_background_min
+      	<br>- Exceptions: shorten_hexcolor_uppercase
       </td>
     </tr>
     <tr>
@@ -844,14 +843,6 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       </td>
       <td>
       	Groups as many background properties into the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/background" target="_blank">shortened version</a>.
-      </td>
-    </tr>
-    <tr>
-      <td>
-      	shorten_background_min
-      </td>
-      <td>
-      	The minimum amount of properties before it will attempt to group the properties into the shortened version. Default setting is 2.</a>
       </td>
     </tr>
     <tr>

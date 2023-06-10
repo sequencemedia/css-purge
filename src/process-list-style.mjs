@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyListStyle from './utils/declarations/has-property-list-style.mjs'
 import hasPropertyListStyleType from './utils/declarations/has-property-list-style-type.mjs'
@@ -26,8 +26,6 @@ const LIST_STYLE_DEFAULT_VALUES = [
   ''
 ]
 
-const success = cliColor.greenBright
-
 function hasListStyle (array) {
   return array.includes('list-style') || (
     array.includes('list-style-type') ||
@@ -36,17 +34,23 @@ function hasListStyle (array) {
   )
 }
 
-export default function processListStyle ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-list-style')
+
+export default function processListStyle (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const listStyle = declarations.filter(hasPropertyListStyle)
     if (!listStyle.some(hasInherit)) {
       let listStyleProperties = listStyle.map(toProperty)
       if (hasListStyle(listStyleProperties)) {
         const {
-          verbose: VERBOSE
-        } = OPTIONS
+          selectors = []
+        } = rule
 
-        if (VERBOSE) { console.log(success('Process - Values - List-style : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
         let listStyleValues = listStyle.map(toValue)
 

@@ -1138,7 +1138,7 @@ class CSSPurge {
         trim: TRIM,
         shorten: SHORTEN,
         special_reduce_with_html: SPECIAL_REDUCE_WITH_HTML,
-        css_output_file_location: CSS_OUTPUT_FILE_LOCATION,
+        css_file_location: CSS_FILE_LOCATION,
         report_file_location: REPORT_DUPLICATE_CSS_FILE_LOCATION,
         reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION,
         verbose: VERBOSE
@@ -1174,15 +1174,15 @@ class CSSPurge {
         OPTIONS.special_reduce_with_html = SPECIAL_REDUCE_WITH_HTML
       }
 
-      if (CSS_OUTPUT_FILE_LOCATION) {
-        OPTIONS.css_output_file_location = CSS_OUTPUT_FILE_LOCATION
+      if (CSS_FILE_LOCATION) {
+        OPTIONS.css_file_location = CSS_FILE_LOCATION
       }
 
       if (VERBOSE) {
         OPTIONS.verbose = VERBOSE
       }
 
-      SUMMARY.files.output_css.push(CSS_OUTPUT_FILE_LOCATION)
+      SUMMARY.files.output_css.push(CSS_FILE_LOCATION)
       DEFAULT_OPTIONS_REPORT_FILE_LOCATION = REPORT_DUPLICATE_CSS_FILE_LOCATION
       DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = REDUCE_DECLARATIONS_FILE_LOCATION
 
@@ -1220,7 +1220,7 @@ class CSSPurge {
             const {
               trim: TRIM,
               shorten: SHORTEN,
-              css_output_file_location: CSS_OUTPUT_FILE_LOCATION,
+              css_file_location: CSS_FILE_LOCATION,
               report_file_location: REPORT_DUPLICATE_CSS_FILE_LOCATION,
               reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
             } = DEFAULT_OPTIONS
@@ -1251,7 +1251,7 @@ class CSSPurge {
               DEFAULT_OPTIONS.shorten_border_radius = true
             }
 
-            SUMMARY.files.output_css.push(CSS_OUTPUT_FILE_LOCATION)
+            SUMMARY.files.output_css.push(CSS_FILE_LOCATION)
             DEFAULT_OPTIONS_REPORT_FILE_LOCATION = REPORT_DUPLICATE_CSS_FILE_LOCATION
             DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = REDUCE_DECLARATIONS_FILE_LOCATION
 
@@ -1813,7 +1813,7 @@ class CSSPurge {
         }
 
         if (OPTIONS.verbose) {
-          date = (OPTIONS.css_output_file_location) ? OPTIONS.css_output_file_location : new Date()
+          date = (OPTIONS.css_file_location) ? OPTIONS.css_file_location : new Date()
 
           console.time(logoRed('Purged ' + date + ' in'))
         }
@@ -2449,16 +2449,16 @@ class CSSPurge {
 
     function writeCSSFiles (css = '') {
       const {
-        css_output_file_location: CSS_OUTPUT_FILE_LOCATION
+        css_file_location: CSS_FILE_LOCATION
       } = OPTIONS
 
       let fileSizeKB = 0
 
-      if (CSS_OUTPUT_FILE_LOCATION) {
-        const directoryPath = path.dirname(CSS_OUTPUT_FILE_LOCATION)
+      if (CSS_FILE_LOCATION) {
+        const directoryPath = path.dirname(CSS_FILE_LOCATION)
         const {
           name
-        } = path.parse(CSS_OUTPUT_FILE_LOCATION)
+        } = path.parse(CSS_FILE_LOCATION)
 
         try {
           const {
@@ -2469,7 +2469,7 @@ class CSSPurge {
             if (Math.ceil(SUMMARY.stats.after.noRules / 4095) > 1) {
               let ast
               try {
-                ast = cssTools.parse(css, { source: CSS_OUTPUT_FILE_LOCATION })
+                ast = cssTools.parse(css, { source: CSS_FILE_LOCATION })
               } catch (e) {
                 handleCssParseError(e)
               }
@@ -2509,7 +2509,7 @@ class CSSPurge {
             fileSizeKB = getFileSizeInKB(fileName)
           }
         } catch (e) {
-          handleCssFileWriteError(e, CSS_OUTPUT_FILE_LOCATION)
+          handleCssFileWriteError(e, CSS_FILE_LOCATION)
         }
       } else {
         css = trim(css, OPTIONS, SUMMARY)

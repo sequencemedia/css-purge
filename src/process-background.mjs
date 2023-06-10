@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyBackground from './utils/declarations/has-property-background.mjs'
 import hasPropertyBackgroundColor from './utils/declarations/has-property-background-color.mjs'
@@ -24,24 +24,34 @@ const DEFAULT_BACKGROUND_PROPERTIES = [
   'background-position'
 ]
 
-const success = cliColor.greenBright
+const log = debug('@sequencemedia/css-purge/process-background')
 
-export default function processBackground ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+function hasBackground (properties) {
+  return properties.includes('background') || (
+    properties.includes('background-color') ||
+    properties.includes('background-image') ||
+    properties.includes('background-repeat') ||
+    properties.includes('background-attachment') ||
+    properties.includes('background-position')
+  )
+}
+
+export default function processBackground (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const background = declarations.filter(hasPropertyBackground)
     if (!background.some(hasInherit)) {
-      const {
-        shorten_background_min: SHORTEN_BACKGROUND_MIN
-      } = OPTIONS
-
-      if (background.length >= SHORTEN_BACKGROUND_MIN) {
+      let backgroundProperties = background.map(toProperty)
+      if (hasBackground(backgroundProperties)) {
         const {
-          verbose: VERBOSE
-        } = OPTIONS
+          selectors = []
+        } = rule
 
-        if (VERBOSE) { console.log(success('Process - Values - Background : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
-        let backgroundProperties = background.map(toProperty)
         let backgroundValues = background.map(toValue)
 
         const backgroundColorIndex = backgroundProperties.indexOf('background-color')
@@ -189,7 +199,7 @@ export default function processBackground ({ declarations = [], selectors = [] }
             }
           }
         }
-      } // end of inherit check
-    }
+      }
+    } // end of inherit check
   }
 }

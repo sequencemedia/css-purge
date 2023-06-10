@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyBorderLeft from './utils/declarations/has-property-border-left.mjs'
 import hasPropertyBorderLeftWidth from './utils/declarations/has-property-border-left-width.mjs'
@@ -27,8 +27,6 @@ const DEFAULT_BORDER_LEFT_VALUES = [
   ''
 ]
 
-const success = cliColor.greenBright
-
 function hasBorderLeft (array) {
   return array.includes('border-left') || (
     array.includes('border-left-width') ||
@@ -37,17 +35,23 @@ function hasBorderLeft (array) {
   )
 }
 
-export default function processBorderLeft ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-border-left')
+
+export default function processBorderLeft (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const borderLeft = declarations.filter(hasPropertyBorderLeft)
     if (!borderLeft.some(hasInherit)) {
       let borderLeftProperties = borderLeft.map(toProperty)
       if (hasBorderLeft(borderLeftProperties)) {
         const {
-          verbose: VERBOSE
-        } = OPTIONS
+          selectors = []
+        } = rule
 
-        if (VERBOSE) { console.log(success('Process - Values - Border Left : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
         let borderLeftValues = borderLeft.map(toValue)
 

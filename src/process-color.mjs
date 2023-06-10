@@ -1,12 +1,10 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import colors from './colors.mjs'
 import extendedColors from './extended-colors.mjs'
 
 import hslToRgb from './utils/hsl-to-rgb.mjs'
 import componentFromString from './utils/component-from-string.mjs'
-
-const success = cliColor.greenBright
 
 function getReduceColor (declaration, rule, OPTIONS, SUMMARY) {
   const {
@@ -181,15 +179,14 @@ function processHexColorPairs (value, declaration, rule, OPTIONS, SUMMARY) {
   return value
 }
 
+const log = debug('@sequencemedia/css-purge/process-color')
+
 export default function processColor (value, declaration, rule, OPTIONS, SUMMARY) {
   const {
-    verbose: VERBOSE,
     shorten_hexcolor_extended: SHORTEN_HEXCOLOR_EXTENDED,
     shorten_hexcolor: SHORTEN_HEXCOLOR,
     shorten: SHORTEN
   } = OPTIONS
-
-  if (VERBOSE) console.log('Process - Color')
 
   if (value) {
     let hasChanged = false
@@ -226,6 +223,12 @@ export default function processColor (value, declaration, rule, OPTIONS, SUMMARY
       value = processHexColor(value, declaration, rule, OPTIONS, SUMMARY)
 
       value = processHexColorPairs(value, declaration, rule, OPTIONS, SUMMARY)
+
+      const {
+        selectors = []
+      } = rule
+
+      log(selectors) // .join(', ').trim())
     }
   }
 

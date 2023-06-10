@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyFont from './utils/declarations/has-property-font.mjs'
 import hasPropertyFontFace from './utils/declarations/has-property-font-face.mjs'
@@ -87,10 +87,6 @@ function transformFontFamily (declaration) {
   declaration.value = formatFontFamily(declaration.value)
 }
 
-const success = cliColor.greenBright
-const error = cliColor.red
-const errorLine = cliColor.redBright
-
 function hasFont (array) {
   return array.includes('font') || (
     array.includes('font-size') &&
@@ -98,7 +94,27 @@ function hasFont (array) {
   )
 }
 
-export default function processFont ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-font')
+const error = debug('@sequencemedia/css-purge/process-font:error')
+
+function handleError ({ source, start }, required) {
+  error('Error parsing font declaration')
+  error({
+    source,
+    start: {
+      line: start.line,
+      column: start.column
+    },
+    required
+  })
+  process.exit(1)
+}
+
+export default function processFont (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const font = declarations.filter(hasPropertyFont)
 
@@ -139,10 +155,10 @@ export default function processFont ({ declarations = [], selectors = [] }, OPTI
       // reduce to font
       if (hasFont(fontProperties)) {
         const {
-          verbose: VERBOSE
-        } = OPTIONS
+          selectors = []
+        } = rule
 
-        if (VERBOSE) { console.log(success('Process - Values - Font : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
         let fontValues = font.map(toValue)
         const fontPositions = font.map(toPosition)
@@ -187,12 +203,7 @@ export default function processFont ({ declarations = [], selectors = [] }, OPTI
                 FONT_VALUES[4] = fontPropValue
                 fontPropValue = fontPropValue + ' ' + fontFamilyValue
               } else {
-                // report error and exit
-                console.log(error('Error parsing font declaration'))
-                console.log(errorLine('Source: ' + propPosition.source))
-                console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
-                console.log('Required: font-family')
-                process.exit(1)
+                handleError(propPosition, 'font-family')
               }
             } else {
               if (propValue === 'check size') {
@@ -203,12 +214,7 @@ export default function processFont ({ declarations = [], selectors = [] }, OPTI
                   if (fontPropValue === 'inherit') {
                     FONT_VALUES[4] = fontPropValue
                   } else {
-                    // report error and exit
-                    console.log(error('Error parsing font declaration'))
-                    console.log(errorLine('Source: ' + propPosition.source))
-                    console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
-                    console.log('Required: font-size')
-                    process.exit(1)
+                    handleError(propPosition, 'font-size')
                   }
                 }
               }
@@ -230,12 +236,7 @@ export default function processFont ({ declarations = [], selectors = [] }, OPTI
                     FONT_VALUES[6] = ''
                   }
                 } else {
-                  // report error and exit
-                  console.log(error('Error parsing font declaration'))
-                  console.log(errorLine('Source: ' + propPosition.source))
-                  console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
-                  console.log('Required: font-size')
-                  process.exit(1)
+                  handleError(propPosition, 'font-size')
                 }
               }
             } else {
@@ -244,12 +245,7 @@ export default function processFont ({ declarations = [], selectors = [] }, OPTI
                   FONT_VALUES[6] = fontPropValue
                   fontPropValue = fontPropValue + ' ' + fontFamilyValue
                 } else {
-                  // report error and exit
-                  console.log(error('Error parsing font declaration'))
-                  console.log(errorLine('Source: ' + propPosition.source))
-                  console.log(errorLine('Line: ' + propPosition.start.line + ', column: ' + propPosition.start.column))
-                  console.log('Required: font-family')
-                  process.exit(1)
+                  handleError(propPosition, 'font-family')
                 }
               } else {
                 if (FORMAT_FONT_FAMILY || FORMAT) { // ensure multi-worded families have quotes

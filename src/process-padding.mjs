@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyPadding from './utils/declarations/has-property-padding.mjs'
 import hasPropertyPaddingTop from './utils/declarations/has-property-padding-top.mjs'
@@ -22,10 +22,6 @@ const DEFAULT_PADDING_PROPERTIES = [
   'padding-left'
 ]
 
-// const DEFAULT_PADDING_VALUES = []
-
-const success = cliColor.greenBright
-
 function hasPadding (array) {
   return array.includes('padding') || (
     array.includes('padding-top') &&
@@ -35,17 +31,23 @@ function hasPadding (array) {
   )
 }
 
-export default function processPadding ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-padding')
+
+export default function processPadding (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const padding = declarations.filter(hasPropertyPadding)
     if (!padding.some(hasInherit)) {
       let paddingProperties = padding.map(toProperty)
       if (hasPadding(paddingProperties)) {
         const {
-          verbose: VERBOSE
-        } = OPTIONS
+          selectors = []
+        } = rule
 
-        if (VERBOSE) { console.log(success('Process - Values - Padding : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
         let paddingValues = padding.map(toValue)
 

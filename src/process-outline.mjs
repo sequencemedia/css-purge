@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyOutline from './utils/declarations/has-property-outline.mjs'
 import hasPropertyOutlineWidth from './utils/declarations/has-property-outline-width.mjs'
@@ -26,8 +26,6 @@ const DEFAULT_OUTLINE_VALUES = [
   ''
 ]
 
-const success = cliColor.greenBright
-
 function hasOutline (array) {
   return array.includes('outline') || (
     array.includes('outline-width') ||
@@ -36,17 +34,23 @@ function hasOutline (array) {
   )
 }
 
-export default function processOutline ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-outline')
+
+export default function processOutline (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const outline = declarations.filter(hasPropertyOutline)
     if (!outline.some(hasInherit)) {
       let outlineProperties = outline.map(toProperty)
       if (hasOutline(outlineProperties)) {
         const {
-          verbose: VERBOSE
-        } = OPTIONS
+          selectors = []
+        } = rule
 
-        if (VERBOSE) { console.log(success('Process - Values - Outline : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
         let outlineValues = outline.map(toValue)
 

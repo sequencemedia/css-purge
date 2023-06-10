@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyBorderBottom from './utils/declarations/has-property-border-bottom.mjs'
 import hasPropertyBorderBottomWidth from './utils/declarations/has-property-border-bottom-width.mjs'
@@ -27,8 +27,6 @@ const DEFAULT_BORDER_BOTTOM_VALUES = [
   ''
 ]
 
-const success = cliColor.greenBright
-
 function hasBorderBottom (array) {
   return array.includes('border-bottom') || (
     array.includes('border-bottom-width') ||
@@ -37,17 +35,23 @@ function hasBorderBottom (array) {
   )
 }
 
-export default function processBorderBottom ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-border-bottom')
+
+export default function processBorderBottom (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const borderBottom = declarations.filter(hasPropertyBorderBottom)
     if (!borderBottom.some(hasInherit)) {
       let borderBottomProperties = borderBottom.map(toProperty)
       if (hasBorderBottom(borderBottomProperties)) {
         const {
-          verbose: VERBOSE
-        } = OPTIONS
+          selectors = []
+        } = rule
 
-        if (VERBOSE) { console.log(success('Process - Values - Border Bottom : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
         let borderBottomValues = borderBottom.map(toValue)
 

@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyBorderTop from './utils/declarations/has-property-border-top.mjs'
 import hasPropertyBorderTopWidth from './utils/declarations/has-property-border-top-width.mjs'
@@ -27,8 +27,6 @@ const DEFAULT_BORDER_TOP_VALUES = [
   ''
 ]
 
-const success = cliColor.greenBright
-
 function hasBorderTop (array) {
   return array.includes('border-top') || (
     array.includes('border-top-width') ||
@@ -37,17 +35,23 @@ function hasBorderTop (array) {
   )
 }
 
-export default function processBorderTop ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-border-top')
+
+export default function processBorderTop (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const borderTop = declarations.filter(hasPropertyBorderTop)
     if (!borderTop.some(hasInherit)) {
       let borderTopProperties = borderTop.map(toProperty)
       if (hasBorderTop(borderTopProperties)) {
         const {
-          verbose: VERBOSE
-        } = OPTIONS
+          selectors = []
+        } = rule
 
-        if (VERBOSE) { console.log(success('Process - Values - Border Top : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
         let borderTopValues = borderTop.map(toValue)
 

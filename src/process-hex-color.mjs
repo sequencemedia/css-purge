@@ -1,3 +1,5 @@
+import debug from 'debug'
+
 import processColor from './process-color.mjs'
 
 const PROPERTIES = new Set([
@@ -22,20 +24,26 @@ const PROPERTIES = new Set([
   'text-shadow'
 ])
 
+const log = debug('@sequencemedia/css-purge/process-hex-color')
+
 export default function processHexColor (rule, OPTIONS, SUMMARY) {
   const {
-    verbose: VERBOSE
-  } = OPTIONS
+    declarations = []
+  } = rule
 
-  if (VERBOSE) console.log('Process - Hex Color')
-
-  rule.declarations
+  declarations
     .forEach((declaration) => {
       const property = declaration.property
       if (PROPERTIES.has(property)) {
         const value = declaration.value
         if (value && !value.toLowerCase().includes('microsoft')) {
           declaration.value = processColor(value, declaration, rule, OPTIONS, SUMMARY)
+
+          const {
+            selectors = []
+          } = rule
+
+          log(selectors) // .join(', ').trim())
         }
       }
     })

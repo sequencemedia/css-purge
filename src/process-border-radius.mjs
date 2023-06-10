@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyBorderRadius from './utils/declarations/has-property-border-radius.mjs'
 import hasPropertyBorderTopLeftRadius from './utils/declarations/has-property-border-top-left-radius.mjs'
@@ -22,8 +22,6 @@ const DEFAULT_BORDER_RADIUS_PROPERTIES = [
   'border-bottom-right-radius'
 ]
 
-const success = cliColor.greenBright
-
 function hasBorderRadius (array) {
   return array.includes('border-radius') || (
     array.includes('border-top-left-radius') &&
@@ -33,18 +31,24 @@ function hasBorderRadius (array) {
   )
 }
 
-export default function processBorderRadius ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-border-radius')
+
+export default function processBorderRadius (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const borderRadius = declarations.filter(hasPropertyBorderRadius)
-    let borderRadiusProperties = borderRadius.map(toProperty)
-    if (hasBorderRadius(borderRadiusProperties)) {
-      const {
-        verbose: VERBOSE
-      } = OPTIONS
+    if (!borderRadius.some(hasInherit)) {
+      let borderRadiusProperties = borderRadius.map(toProperty)
+      if (hasBorderRadius(borderRadiusProperties)) {
+        const {
+          selectors = []
+        } = rule
 
-      if (VERBOSE) { console.log(success('Process - Values - Border Radius : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
-      if (!borderRadius.some(hasInherit)) {
         let borderRadiusValues = borderRadius.map(toValue)
 
         const borderTopLeftRadiusIndex = borderRadiusProperties.indexOf('border-top-left-radius')

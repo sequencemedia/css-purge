@@ -3,10 +3,10 @@
 
         "css_output": "purged.min.css",
 
-		"trim": true,
+		    "trim": true,
         "trim_keep_non_standard_inline_comments": false,
         "trim_removed_rules_previous_comment": true,
-		"trim_comments": false,
+		    "trim_comments": false,
         "trim_whitespace": false,
         "trim_breaklines": false,
         "trim_last_semicolon": false,
@@ -18,7 +18,6 @@
         "shorten_hexcolor_uppercase": false,
         "shorten_font": false,
         "shorten_background": false,
-        "shorten_background_min": 2,
         "shorten_margin": false,
         "shorten_padding": false,
         "shorten_list_style": false,

@@ -1,3 +1,5 @@
+import debug from 'debug'
+
 import hasPropertyBorder from './utils/declarations/has-property-border.mjs'
 import hasPropertyBorderWidth from './utils/declarations/has-property-border-width.mjs'
 import hasPropertyBorderStyle from './utils/declarations/has-property-border-style.mjs'
@@ -33,12 +35,24 @@ function hasBorder (array) {
   )
 }
 
-export default function processBorder ({ declarations }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-border')
+
+export default function processBorder (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const border = declarations.filter(hasPropertyBorder)
     if (!border.some(hasInherit)) {
       let borderProperties = border.map(toProperty)
       if (hasBorder(borderProperties)) {
+        const {
+          selectors = []
+        } = rule
+
+        log(selectors) // .join(', ').trim())
+
         let borderValues = border.map(toValue)
 
         const borderWidthIndex = borderProperties.indexOf('border-width')

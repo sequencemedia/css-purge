@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyBorderRight from './utils/declarations/has-property-border-right.mjs'
 import hasPropertyBorderRightWidth from './utils/declarations/has-property-border-right-width.mjs'
@@ -27,8 +27,6 @@ const DEFAULT_BORDER_RIGHT_VALUES = [
   ''
 ]
 
-const success = cliColor.greenBright
-
 function hasBorderRight (array) {
   return array.includes('border-right') || (
     array.includes('border-right-width') ||
@@ -37,17 +35,23 @@ function hasBorderRight (array) {
   )
 }
 
-export default function processBorderRight ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-border-right')
+
+export default function processBorderRight (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const borderRight = declarations.filter(hasPropertyBorderRight)
     if (!borderRight.some(hasInherit)) {
       let borderRightProperties = borderRight.map(toProperty)
       if (hasBorderRight(borderRightProperties)) {
         const {
-          verbose: VERBOSE
-        } = OPTIONS
+          selectors = []
+        } = rule
 
-        if (VERBOSE) { console.log(success('Process - Values - Border Right : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
         let borderRightValues = borderRight.map(toValue)
 

@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasDeclarations from './utils/declarations/has-declarations.mjs'
 import hasTypeRule from './utils/declarations/has-type-rule.mjs'
@@ -19,9 +19,11 @@ import processOutline from './process-outline.mjs'
 import processPadding from './process-padding.mjs'
 import processZero from './process-zero.mjs'
 
-const info = cliColor.xterm(123)
+const log = debug('@sequencemedia/css-purge/process-values')
 
 export default function processValues (rules, OPTIONS, SUMMARY) {
+  log('processValues')
+
   const {
     shorten_font: SHORTEN_FONT = false,
     shorten_background: SHORTEN_BACKGROUND = false,
@@ -37,11 +39,8 @@ export default function processValues (rules, OPTIONS, SUMMARY) {
     shorten_padding: SHORTEN_PADDING = false,
     shorten_zero: SHORTEN_ZERO = false,
     shorten_hexcolor: SHORTEN_HEXCOLOR = false,
-    shorten: SHORTEN = false,
-    verbose: VERBOSE = false
+    shorten: SHORTEN = false
   } = OPTIONS
-
-  if (VERBOSE) { console.log(info('Process - Values')) }
 
   rules
     .filter(Boolean)

@@ -1,4 +1,4 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
 import hasPropertyBorderTopRightBottomLeft from './utils/declarations/has-property-border-top-right-bottom-left.mjs'
 import hasPropertyBorderTop from './utils/declarations/has-property-border-top.mjs'
@@ -21,8 +21,6 @@ const DEFAULT_BORDER_PROPERTIES = [
   'border-color'
 ]
 
-const success = cliColor.greenBright
-
 function hasBorderTopRightBottomLeft (array) {
   return (
     array.includes('border-top') &&
@@ -32,17 +30,23 @@ function hasBorderTopRightBottomLeft (array) {
   )
 }
 
-export default function processBorderTopRightBottomLeft ({ declarations = [], selectors = [] }, OPTIONS, SUMMARY) {
+const log = debug('@sequencemedia/css-purge/process-border-top-right-bottom-left')
+
+export default function processBorderTopRightBottomLeft (rule, OPTIONS, SUMMARY) {
+  const {
+    declarations = []
+  } = rule
+
   if (declarations.length) {
     const borderTopRightBottomLeft = declarations.filter(hasPropertyBorderTopRightBottomLeft)
     if (!borderTopRightBottomLeft.some(hasInherit)) {
       let borderTopRightBottomLeftProperties = borderTopRightBottomLeft.map(toProperty)
       if (hasBorderTopRightBottomLeft(borderTopRightBottomLeftProperties)) {
         const {
-          verbose: VERBOSE
-        } = OPTIONS
+          selectors = []
+        } = rule
 
-        if (VERBOSE) { console.log(success('Process - Values - Border : ' + selectors.join(', '))) }
+        log(selectors) // .join(', ').trim())
 
         let borderTopRightBottomLeftValues = borderTopRightBottomLeft.map(toValue)
 

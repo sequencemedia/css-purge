@@ -1,17 +1,22 @@
-import cliColor from 'cli-color'
+import debug from 'debug'
 
-const success = cliColor.greenBright
+const log = debug('@sequencemedia/css-purge/process-zero')
+
+function getUnit (value) {
+  return value.substring(1)
+}
 
 export default function processZero (rule, OPTIONS, SUMMARY) {
   const {
+    declarations = []
+  } = rule
+
+  const {
     zero_ignore_declaration: ZERO_IGNORE_DECLARATION,
-    zero_units: ZERO_UNITS,
-    verbose: VERBOSE
+    zero_units: ZERO_UNITS
   } = OPTIONS
 
-  if (VERBOSE) console.log('Process - Zero')
-
-  rule.declarations
+  declarations
     .forEach((declaration) => {
       if (!ZERO_IGNORE_DECLARATION.includes(declaration.property)) {
         let value = declaration.value
@@ -22,16 +27,24 @@ export default function processZero (rule, OPTIONS, SUMMARY) {
 
           SUMMARY.stats.summary.noZerosShortened += 1
 
-          if (VERBOSE) { console.log(success('Process - Values - Zero : ' + rule.selectors.join(', '))) }
+          const {
+            selectors = []
+          } = rule
+
+          log(selectors) // .join(', ').trim())
         }
 
         // 0px, 0em, etc.
-        if (value.startsWith('0') && (ZERO_UNITS.includes(value.substring(1, value.length)))) {
+        if (value.startsWith('0') && ZERO_UNITS.includes(getUnit(value))) {
           value = '0'
 
           SUMMARY.stats.summary.noZerosShortened += 1
 
-          if (VERBOSE) { console.log(success('Process - Values - Zero : ' + rule.selectors.join(', '))) }
+          const {
+            selectors = []
+          } = rule
+
+          log(selectors) // .join(', ').trim())
         }
 
         declaration.value = value
