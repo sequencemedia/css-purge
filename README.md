@@ -256,7 +256,7 @@ Example config.json:
     "shorten": true,
     "shorten_zero": false,
     "shorten_hexcolor": false,
-    "shorten_hexcolor_extended_names": false,
+    "shorten_hexcolor_extended": false,
     "shorten_hexcolor_uppercase": false,
     "shorten_font": false,
     "shorten_background": true,

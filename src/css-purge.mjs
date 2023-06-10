@@ -169,13 +169,11 @@ function handleHtmlFileReadError (e, filePath) {
   process.exit(1)
 }
 
-class CSSPurgeEmitter extends EventEmitter {}
-
 class CSSPurge {
   constructor () {
     let date = new Date()
 
-    const cssPurgeEventEmitter = new CSSPurgeEmitter()
+    const eventEmitter = new EventEmitter()
 
     let DEFAULT_OPTIONS = {
       css: ['demo/test1.css'],
@@ -197,7 +195,7 @@ class CSSPurge {
       shorten: true,
       shorten_zero: false,
       shorten_hexcolor: false,
-      shorten_hexcolor_extended_names: false,
+      shorten_hexcolor_extended: false,
       shorten_hexcolor_uppercase: false,
       shorten_font: false,
       shorten_background: false,
@@ -231,7 +229,7 @@ class CSSPurge {
       ],
 
       report: false,
-      report_duplicate_css_file_location: 'default_options_report_duplicate_css.json',
+      report_file_location: 'default_options_report.json',
       verbose: false,
 
       zero_units: 'em, ex, %, px, cm, mm, in, pt, pc, ch, rem, vh, vw, vmin, vmax',
@@ -250,7 +248,7 @@ class CSSPurge {
     let CSS_FILE_DATA = []
     let HTML_FILE_DATA = []
 
-    let DEFAULT_OPTIONS_REPORT_FILE_LOCATION = DEFAULT_OPTIONS.report_duplicate_css_file_location
+    let DEFAULT_OPTIONS_REPORT_FILE_LOCATION = DEFAULT_OPTIONS.report_file_location
 
     // summary
     const SUMMARY = {
@@ -1141,7 +1139,7 @@ class CSSPurge {
         shorten: SHORTEN,
         special_reduce_with_html: SPECIAL_REDUCE_WITH_HTML,
         css_output_file_location: CSS_OUTPUT_FILE_LOCATION,
-        report_duplicate_css_file_location: REPORT_DUPLICATE_CSS_FILE_LOCATION,
+        report_file_location: REPORT_DUPLICATE_CSS_FILE_LOCATION,
         reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION,
         verbose: VERBOSE
       } = options
@@ -1157,7 +1155,7 @@ class CSSPurge {
       if (SHORTEN) {
         OPTIONS.shorten_zero = true
         OPTIONS.shorten_hexcolor = true
-        OPTIONS.shorten_hexcolor_extended_names = true
+        OPTIONS.shorten_hexcolor_extended = true
         OPTIONS.shorten_font = true
         OPTIONS.shorten_background = true
         OPTIONS.shorten_margin = true
@@ -1193,7 +1191,7 @@ class CSSPurge {
         ...OPTIONS
       }
 
-      cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_END', OPTIONS)
+      eventEmitter.emit('DEFAULT_OPTIONS_READ_END', OPTIONS)
     } // end of readOptions
 
     function readOptionsFileLocation (fileLocation = DEFAULT_OPTIONS_FILE_LOCATION) {
@@ -1215,7 +1213,7 @@ class CSSPurge {
             try {
               DEFAULT_OPTIONS = JSON.parse(defaultOptions)
             } catch (e) {
-              cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_ERROR')
+              eventEmitter.emit('DEFAULT_OPTIONS_READ_ERROR')
               handleOptionsFileReadError(e, DEFAULT_OPTIONS_FILE_LOCATION)
             }
 
@@ -1223,7 +1221,7 @@ class CSSPurge {
               trim: TRIM,
               shorten: SHORTEN,
               css_output_file_location: CSS_OUTPUT_FILE_LOCATION,
-              report_duplicate_css_file_location: REPORT_DUPLICATE_CSS_FILE_LOCATION,
+              report_file_location: REPORT_DUPLICATE_CSS_FILE_LOCATION,
               reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
             } = DEFAULT_OPTIONS
 
@@ -1238,7 +1236,7 @@ class CSSPurge {
             if (SHORTEN) {
               DEFAULT_OPTIONS.shorten_zero = true
               DEFAULT_OPTIONS.shorten_hexcolor = true
-              DEFAULT_OPTIONS.shorten_hexcolor_extended_names = true
+              DEFAULT_OPTIONS.shorten_hexcolor_extended = true
               DEFAULT_OPTIONS.shorten_font = true
               DEFAULT_OPTIONS.shorten_background = true
               DEFAULT_OPTIONS.shorten_margin = true
@@ -1263,10 +1261,10 @@ class CSSPurge {
             }
           }
 
-          cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_END', OPTIONS)
+          eventEmitter.emit('DEFAULT_OPTIONS_READ_END', OPTIONS)
         })
         .on('error', (e) => {
-          cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_READ_ERROR')
+          eventEmitter.emit('DEFAULT_OPTIONS_READ_ERROR')
           handleOptionsFileReadError(e, DEFAULT_OPTIONS_FILE_LOCATION)
         })
 
@@ -1309,7 +1307,7 @@ class CSSPurge {
         }
 
         HAS_READ_REDUCE_DECLARATIONS = true
-        cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
+        eventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
       }
     } // end of readReduceDeclarations
 
@@ -1326,7 +1324,7 @@ class CSSPurge {
           try {
             DEFAULT_OPTIONS_REDUCE_DECLARATIONS = JSON.parse(reduceDeclarations)
           } catch (e) {
-            cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_ERROR')
+            eventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_ERROR')
             handleOptionsFileReadError(e, fileLocation)
           }
 
@@ -1364,10 +1362,10 @@ class CSSPurge {
           }
 
           HAS_READ_REDUCE_DECLARATIONS = true
-          cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
+          eventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
         })
         .on('error', (e) => {
-          cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_ERROR', OPTIONS)
+          eventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_ERROR', OPTIONS)
           handleOptionsFileReadError(e, DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION)
         })
     } // end of readReduceDeclarationsFileLocation
@@ -1685,7 +1683,7 @@ class CSSPurge {
             break
         } // end of switch
 
-        cssPurgeEventEmitter
+        eventEmitter
           .on('HTML_READ_AGAIN', () => {
             processSelectorsForHTMLStart(selectors, html, options)
 
@@ -1698,7 +1696,7 @@ class CSSPurge {
 
             HTML_FILE_DATA = []
 
-            cssPurgeEventEmitter.emit('HTML_RESULTS_END', selectors)
+            eventEmitter.emit('HTML_RESULTS_END', selectors)
           })
 
         readHTMLFiles(htmlFiles)
@@ -1752,12 +1750,12 @@ class CSSPurge {
                 readHTMLFilesCount += 1
 
                 if (readHTMLFilesCount < files.length) {
-                  cssPurgeEventEmitter.emit('HTML_READ_AGAIN')
+                  eventEmitter.emit('HTML_READ_AGAIN')
                 } else {
-                  cssPurgeEventEmitter.emit('HTML_READ_END')
+                  eventEmitter.emit('HTML_READ_END')
                 }
               } else {
-                cssPurgeEventEmitter.emit('HTML_READ_ERROR')
+                eventEmitter.emit('HTML_READ_ERROR')
                 handleHtmlFileReadError(e, file)
               }
             })
@@ -1767,12 +1765,12 @@ class CSSPurge {
             readHTMLFilesCount += 1
 
             if (readHTMLFilesCount < files.length) {
-              cssPurgeEventEmitter.emit('HTML_READ_AGAIN')
+              eventEmitter.emit('HTML_READ_AGAIN')
             } else {
-              cssPurgeEventEmitter.emit('HTML_READ_END')
+              eventEmitter.emit('HTML_READ_END')
             }
           } else {
-            cssPurgeEventEmitter.emit('HTML_READ_ERROR')
+            eventEmitter.emit('HTML_READ_ERROR')
             handleHtmlFileReadError(e, file)
           }
         })
@@ -1786,13 +1784,13 @@ class CSSPurge {
           .on('end', () => {
             readHTMLFilesCount += 1
             if (readHTMLFilesCount < files.length) {
-              cssPurgeEventEmitter.emit('HTML_READ_AGAIN')
+              eventEmitter.emit('HTML_READ_AGAIN')
             } else {
-              cssPurgeEventEmitter.emit('HTML_READ_END')
+              eventEmitter.emit('HTML_READ_END')
             }
           })
           .on('error', (e) => {
-            cssPurgeEventEmitter.emit('HTML_READ_ERROR')
+            eventEmitter.emit('HTML_READ_ERROR')
             handleHtmlFileReadError(e, file)
           })
       }
@@ -1800,7 +1798,7 @@ class CSSPurge {
 
     function processCSS (css = null, options = null, complete = () => {}) {
       function handleDefaultOptionReduceDeclarationsEnd () {
-        cssPurgeEventEmitter.removeListener('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionReduceDeclarationsEnd)
+        eventEmitter.removeListener('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionReduceDeclarationsEnd)
 
         if (css) {
           const fileSizeKB = getSizeInKB(css)
@@ -2182,7 +2180,7 @@ class CSSPurge {
           selectors = Array.from(new Set(selectors))
 
           // process selectors returned from processing HTML
-          cssPurgeEventEmitter
+          eventEmitter
             .on('HTML_RESULTS_END', (selectorsRemoved) => {
               SUMMARY.selectors_removed = selectorsRemoved
 
@@ -2197,9 +2195,9 @@ class CSSPurge {
         } // end of special_reduce_with_html
       }
 
-      cssPurgeEventEmitter.on('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionReduceDeclarationsEnd) // end of event
+      eventEmitter.on('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionReduceDeclarationsEnd) // end of event
 
-      if (!css) cssPurgeEventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END')
+      if (!css) eventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END')
 
       if (!HAS_READ_REDUCE_DECLARATIONS) {
         const {
@@ -2228,7 +2226,7 @@ class CSSPurge {
 
     function processCSSFiles (options = DEFAULT_OPTIONS, fileLocation = DEFAULT_OPTIONS_FILE_LOCATION, complete) {
       function handleDefaultOptionsReadEnd () {
-        cssPurgeEventEmitter.removeListener('DEFAULT_OPTIONS_READ_END', handleDefaultOptionsReadEnd)
+        eventEmitter.removeListener('DEFAULT_OPTIONS_READ_END', handleDefaultOptionsReadEnd)
 
         // config
         if (!OPTIONS.css) OPTIONS.css = DEFAULT_OPTIONS.css
@@ -2294,7 +2292,7 @@ class CSSPurge {
 
           fileLocation = cssFiles.toString()
 
-          cssPurgeEventEmitter
+          eventEmitter
             .on('CSS_READ_AGAIN', () => {
               CSS_FILE_DATA = []
 
@@ -2311,10 +2309,10 @@ class CSSPurge {
       }
 
       function handleDefaultOptionsReduceDeclarationsEnd () {
-        cssPurgeEventEmitter.removeListener('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionsReduceDeclarationsEnd)
+        eventEmitter.removeListener('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionsReduceDeclarationsEnd)
 
         if (OPTIONS_FILE_LOCATION !== fileLocation) { // don't read same config
-          cssPurgeEventEmitter.on('DEFAULT_OPTIONS_READ_END', handleDefaultOptionsReadEnd) // end of config read
+          eventEmitter.on('DEFAULT_OPTIONS_READ_END', handleDefaultOptionsReadEnd) // end of config read
         }
 
         OPTIONS_FILE_LOCATION = fileLocation
@@ -2328,7 +2326,7 @@ class CSSPurge {
         }
       }
 
-      cssPurgeEventEmitter.on('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionsReduceDeclarationsEnd) // end of reduce config read
+      eventEmitter.on('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionsReduceDeclarationsEnd) // end of reduce config read
 
       if (!HAS_READ_REDUCE_DECLARATIONS) {
         const {
@@ -2403,12 +2401,12 @@ class CSSPurge {
                 readCSSFilesCount += 1
 
                 if (readCSSFilesCount < files.length) {
-                  cssPurgeEventEmitter.emit('CSS_READ_AGAIN')
+                  eventEmitter.emit('CSS_READ_AGAIN')
                 } else {
-                  cssPurgeEventEmitter.emit('CSS_READ_END')
+                  eventEmitter.emit('CSS_READ_END')
                 }
               } else {
-                cssPurgeEventEmitter.emit('CSS_READ_ERROR')
+                eventEmitter.emit('CSS_READ_ERROR')
                 handleCssFileReadError(e, file)
               }
             })
@@ -2418,12 +2416,12 @@ class CSSPurge {
             readCSSFilesCount += 1
 
             if (readCSSFilesCount < files.length) {
-              cssPurgeEventEmitter.emit('CSS_READ_AGAIN')
+              eventEmitter.emit('CSS_READ_AGAIN')
             } else {
-              cssPurgeEventEmitter.emit('CSS_READ_END')
+              eventEmitter.emit('CSS_READ_END')
             }
           } else {
-            cssPurgeEventEmitter.emit('CSS_READ_ERROR')
+            eventEmitter.emit('CSS_READ_ERROR')
             handleCssFileReadError(e, file)
           }
         })
@@ -2437,13 +2435,13 @@ class CSSPurge {
           .on('end', () => {
             readCSSFilesCount += 1
             if (readCSSFilesCount < files.length) {
-              cssPurgeEventEmitter.emit('CSS_READ_AGAIN')
+              eventEmitter.emit('CSS_READ_AGAIN')
             } else {
-              cssPurgeEventEmitter.emit('CSS_READ_END')
+              eventEmitter.emit('CSS_READ_END')
             }
           })
           .on('error', (e) => {
-            cssPurgeEventEmitter.emit('CSS_READ_ERROR')
+            eventEmitter.emit('CSS_READ_ERROR')
             handleCssFileReadError(e, file)
           })
       } // end of url check
@@ -2552,15 +2550,4 @@ class CSSPurge {
   }
 } // end of CSSPurge
 
-export default {
-  purgeCSS (css, options, complete) {
-    const cssPurge = new CSSPurge()
-
-    cssPurge.purgeCSS(css, options, complete)
-  },
-  purgeCSSFiles (options, fileLocation, complete) {
-    const cssPurge = new CSSPurge()
-
-    cssPurge.purgeCSSFiles(options, fileLocation, complete)
-  }
-}
+export default new CSSPurge()
