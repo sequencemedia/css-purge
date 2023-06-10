@@ -27,11 +27,11 @@ const DEFAULT_BORDER_TOP_VALUES = [
   ''
 ]
 
-function hasBorderTop (array) {
-  return array.includes('border-top') || (
-    array.includes('border-top-width') ||
-    array.includes('border-top-style') ||
-    array.includes('border-top-color')
+function hasBorderTop (properties) {
+  return properties.includes('border-top') || (
+    properties.includes('border-top-width') ||
+    properties.includes('border-top-style') ||
+    properties.includes('border-top-color')
   )
 }
 

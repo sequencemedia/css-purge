@@ -21,12 +21,12 @@ const DEFAULT_BORDER_PROPERTIES = [
   'border-color'
 ]
 
-function hasBorderTopRightBottomLeft (array) {
+function hasBorderTopRightBottomLeft (properties) {
   return (
-    array.includes('border-top') &&
-    array.includes('border-right') &&
-    array.includes('border-bottom') &&
-    array.includes('border-left')
+    properties.includes('border-top') &&
+    properties.includes('border-right') &&
+    properties.includes('border-bottom') &&
+    properties.includes('border-left')
   )
 }
 

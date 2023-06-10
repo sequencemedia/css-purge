@@ -22,12 +22,12 @@ const DEFAULT_BORDER_RADIUS_PROPERTIES = [
   'border-bottom-right-radius'
 ]
 
-function hasBorderRadius (array) {
-  return array.includes('border-radius') || (
-    array.includes('border-top-left-radius') &&
-    array.includes('border-top-right-radius') &&
-    array.includes('border-bottom-left-radius') &&
-    array.includes('border-bottom-right-radius')
+function hasBorderRadius (properties) {
+  return properties.includes('border-radius') || (
+    properties.includes('border-top-left-radius') &&
+    properties.includes('border-top-right-radius') &&
+    properties.includes('border-bottom-left-radius') &&
+    properties.includes('border-bottom-right-radius')
   )
 }
 

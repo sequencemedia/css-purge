@@ -87,10 +87,10 @@ function transformFontFamily (declaration) {
   declaration.value = formatFontFamily(declaration.value)
 }
 
-function hasFont (array) {
-  return array.includes('font') || (
-    array.includes('font-size') &&
-    array.includes('font-family')
+function hasFont (properties) {
+  return properties.includes('font') || (
+    properties.includes('font-size') &&
+    properties.includes('font-family')
   )
 }
 

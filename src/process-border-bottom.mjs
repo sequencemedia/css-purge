@@ -27,11 +27,11 @@ const DEFAULT_BORDER_BOTTOM_VALUES = [
   ''
 ]
 
-function hasBorderBottom (array) {
-  return array.includes('border-bottom') || (
-    array.includes('border-bottom-width') ||
-    array.includes('border-bottom-style') ||
-    array.includes('border-bottom-color')
+function hasBorderBottom (properties) {
+  return properties.includes('border-bottom') || (
+    properties.includes('border-bottom-width') ||
+    properties.includes('border-bottom-style') ||
+    properties.includes('border-bottom-color')
   )
 }
 

@@ -27,11 +27,11 @@ const DEFAULT_BORDER_RIGHT_VALUES = [
   ''
 ]
 
-function hasBorderRight (array) {
-  return array.includes('border-right') || (
-    array.includes('border-right-width') ||
-    array.includes('border-right-style') ||
-    array.includes('border-right-color')
+function hasBorderRight (properties) {
+  return properties.includes('border-right') || (
+    properties.includes('border-right-width') ||
+    properties.includes('border-right-style') ||
+    properties.includes('border-right-color')
   )
 }
 

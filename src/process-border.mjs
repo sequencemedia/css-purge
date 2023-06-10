@@ -27,11 +27,11 @@ const DEFAULT_BORDER_VALUES = [
   ''
 ]
 
-function hasBorder (array) {
-  return array.includes('border') || (
-    array.includes('border-width') &&
-    array.includes('border-style') &&
-    array.includes('border-color')
+function hasBorder (properties) {
+  return properties.includes('border') || (
+    properties.includes('border-width') &&
+    properties.includes('border-style') &&
+    properties.includes('border-color')
   )
 }
 

@@ -22,12 +22,12 @@ const DEFAULT_PADDING_PROPERTIES = [
   'padding-left'
 ]
 
-function hasPadding (array) {
-  return array.includes('padding') || (
-    array.includes('padding-top') &&
-    array.includes('padding-right') &&
-    array.includes('padding-bottom') &&
-    array.includes('padding-left')
+function hasPadding (properties) {
+  return properties.includes('padding') || (
+    properties.includes('padding-top') &&
+    properties.includes('padding-right') &&
+    properties.includes('padding-bottom') &&
+    properties.includes('padding-left')
   )
 }
 

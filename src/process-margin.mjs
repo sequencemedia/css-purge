@@ -22,12 +22,12 @@ const DEFAULT_MARGIN_PROPERTIES = [
   'margin-left'
 ]
 
-function hasMargin (array) {
-  return array.includes('margin') || (
-    array.includes('margin-top') &&
-    array.includes('margin-right') &&
-    array.includes('margin-bottom') &&
-    array.includes('margin-left')
+function hasMargin (properties) {
+  return properties.includes('margin') || (
+    properties.includes('margin-top') &&
+    properties.includes('margin-right') &&
+    properties.includes('margin-bottom') &&
+    properties.includes('margin-left')
   )
 }
 

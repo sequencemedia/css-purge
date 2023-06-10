@@ -26,11 +26,11 @@ const LIST_STYLE_DEFAULT_VALUES = [
   ''
 ]
 
-function hasListStyle (array) {
-  return array.includes('list-style') || (
-    array.includes('list-style-type') ||
-    array.includes('list-style-position') ||
-    array.includes('list-style-image')
+function hasListStyle (properties) {
+  return properties.includes('list-style') || (
+    properties.includes('list-style-type') ||
+    properties.includes('list-style-position') ||
+    properties.includes('list-style-image')
   )
 }
 

@@ -26,11 +26,11 @@ const DEFAULT_OUTLINE_VALUES = [
   ''
 ]
 
-function hasOutline (array) {
-  return array.includes('outline') || (
-    array.includes('outline-width') ||
-    array.includes('outline-style') ||
-    array.includes('outline-color')
+function hasOutline (properties) {
+  return properties.includes('outline') || (
+    properties.includes('outline-width') ||
+    properties.includes('outline-style') ||
+    properties.includes('outline-color')
   )
 }
 

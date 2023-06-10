@@ -27,11 +27,11 @@ const DEFAULT_BORDER_LEFT_VALUES = [
   ''
 ]
 
-function hasBorderLeft (array) {
-  return array.includes('border-left') || (
-    array.includes('border-left-width') ||
-    array.includes('border-left-style') ||
-    array.includes('border-left-color')
+function hasBorderLeft (properties) {
+  return properties.includes('border-left') || (
+    properties.includes('border-left-width') ||
+    properties.includes('border-left-style') ||
+    properties.includes('border-left-color')
   )
 }
 
