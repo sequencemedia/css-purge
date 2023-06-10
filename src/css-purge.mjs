@@ -23,12 +23,14 @@ import processValues from './process-values.mjs'
 import trim from './css/trim.mjs'
 import hack from './css/hack.mjs'
 
+import hasHtml from './utils/selectors/has-html.mjs'
+
 import filterForMedia from './utils/filter-for-media.mjs'
 import filterForDocument from './utils/filter-for-document.mjs'
 import filterForSupports from './utils/filter-for-supports.mjs'
+import filterForComment from './utils/filter-for-comment.mjs'
 
 import getTokens from './utils/get-tokens.mjs'
-
 import getSelectors from './utils/get-selectors.mjs'
 import getFilePath from './utils/get-file-path.mjs'
 import getFileSizeInKB from './utils/get-file-size-in-kilo-bytes.mjs'
@@ -57,20 +59,18 @@ let hash
 function getSummaryStatsFor (collector) {
   return function getSummaryStats ({ declarations, type }) {
     if (Array.isArray(declarations)) {
-      collector.noComments = declarations.filter(({ type }) => type === 'comment').length
-    }
-
-    if (type === 'comment') {
-      collector.noComments += 1
-    }
-
-    if (type === 'rule') {
-      collector.noRules += 1
-
-      collector.noDeclarations += declarations.length
+      collector.noComments = declarations.filter(filterForComment).length
     }
 
     switch (type) {
+      case 'rule':
+        collector.noRules += 1
+
+        collector.noDeclarations += declarations.length
+        break
+      case 'comment':
+        collector.noComments += 1
+        break
       case 'charset':
         collector.noCharset += 1
         break
@@ -331,7 +331,6 @@ class CSSPurge {
 
     const selectors = ''
     let selectorsCount = 0
-    const selectorPropertyValues = []
 
     const SELECTOR_PROPERTY_MAP = new Map()
 
@@ -2287,119 +2286,116 @@ class CSSPurge {
 
         // charset rules
         if (!OPTIONS.bypass_charset) {
-          for (let alpha = 0, j = rules.length; alpha < j; alpha = alpha + 1) {
-            const rule = rules[alpha]
+          rules
+            .forEach((rule, i) => {
+              if (rule) {
+                if (rule.type === 'charset') {
+                  const ALPHA = rule.charset
 
-            if (rule) {
-              if (rule.type === 'charset') {
-                const ALPHA = rule.charset
+                  rules.slice(i)
+                    .forEach((rule, j) => {
+                      if (rule) {
+                        if (rule.type === 'charset') {
+                          const OMEGA = rule.charset
 
-                for (let omega = alpha + 1; omega < j; omega = omega + 1) {
-                  const rule = rules[omega]
+                          if (ALPHA === OMEGA) {
+                            rules.splice(j, 1) // remove charset
 
-                  if (rule) {
-                    if (rule.type === 'charset') {
-                      const OMEGA = rule.charset
-
-                      if (ALPHA === OMEGA) {
-                        rules.splice(omega, 1) // remove charset
-                        alpha -= 1
-                        omega -= 1
-                        j -= 1
-
-                        // remove side comment
-                        let delta = omega + 1
-                        const nextSiblingRule = rules[delta]
-                        if (nextSiblingRule) {
-                          if (
-                            nextSiblingRule.type === 'comment' &&
-                            nextSiblingRule.comment.includes('_cssp_sc')
-                          ) {
-                            rules.splice(delta, 1)
-                            omega -= 1
-                            delta -= 1
-                            j -= 1
+                            const nextSiblingRule = rules.slice(j).shift()
+                            if (nextSiblingRule) {
+                              if (
+                                nextSiblingRule.type === 'comment' &&
+                                nextSiblingRule.comment.includes('_cssp_sc')
+                              ) {
+                                rules.splice(j, 1) // remove comment
+                              }
+                            }
                           }
                         }
                       }
-                    }
-                  }
-                } // end of omega
+                    })
 
-                if (!ALPHA.startsWith('"') || !ALPHA.endsWith('"')) {
-                  const rule = rules[alpha]
-                  if (rule) {
-                    if (rule.type === 'charset') {
-                      rules.splice(alpha, 1) // remove charset
-                      alpha -= 1
-                      j -= 1
+                  if (!ALPHA.startsWith('"') || !ALPHA.endsWith('"')) {
+                    rules.splice(i, 1) // remove charset
 
-                      // remove side comment
-                      const delta = alpha + 1
-                      const nextSiblingRule = rules[delta]
-                      if (nextSiblingRule) {
-                        if (
-                          nextSiblingRule.type === 'comment' &&
-                          nextSiblingRule.comment.includes('_cssp_sc')
-                        ) {
-                          rules.splice(delta, 1)
-                          alpha -= 1
-                          j -= 1
-                        }
+                    const nextSiblingRule = rules.slice(i).shift()
+                    if (nextSiblingRule) {
+                      if (
+                        nextSiblingRule.type === 'comment' &&
+                        nextSiblingRule.comment.includes('_cssp_sc')
+                      ) {
+                        rules.splice(i, 1) // remove comment
                       }
                     }
                   }
                 }
               }
-            }
-          } // end of alpha
+            })
         }
 
+        OPTIONS.special_convert_rem = true
+
+        const {
+          special_convert_rem: SPECIAL_CONVERT_REM
+        } = OPTIONS
+
         // rems - html check
-        if (OPTIONS.special_convert_rem) {
-          let hasHTML = false
-          let htmlHasFontSize = false
-          const rulesLength = rules.length
-          for (let i = 0; i < rulesLength; ++i) {
-            if (rules[i] !== undefined &&
-              rules[i].selectors !== undefined &&
-              rules[i].selectors.toString().includes('html')) {
-              hasHTML = true
-              for (let j = 0; j < rules[i].declarations.length; ++j) {
-                if (rules[i].declarations !== undefined) {
-                  if (rules[i].declarations[j].property === 'font-size') {
-                    htmlHasFontSize = true
-                    break
+        if (SPECIAL_CONVERT_REM) {
+          const {
+            special_convert_rem_px: SPECIAL_CONVERT_REM_PX,
+            special_convert_rem_default_px: SPECIAL_CONVERT_REM_DEFAULT_PX
+          } = OPTIONS
+
+          const remPx = Number(SPECIAL_CONVERT_REM_PX)
+          const remDefaultPx = Number(SPECIAL_CONVERT_REM_DEFAULT_PX)
+          const FONT_SIZE = ((remPx / remDefaultPx) * 100) + '%'
+
+          if (rules.some(hasHtml)) {
+            rules
+              .forEach((rule, i, rules) => {
+                const {
+                  selectors = []
+                } = rule
+
+                /**
+                 *  Has
+                 */
+                if (selectors.some((selector) => selector.includes('html'))) {
+                  const {
+                    declarations = []
+                  } = rule
+
+                  /**
+                   *  Has not
+                   */
+                  if (!declarations.some(({ property }) => property === 'font-size')) {
+                    /**
+                     *  Add to the start
+                     */
+                    declarations.unshift({
+                      type: 'declaration',
+                      property: 'font-size',
+                      value: FONT_SIZE
+                    })
+
+                    /**
+                     *  Put at the start
+                     */
+                    rules.unshift(rules.splice(i, 1).shift())
                   }
                 }
-              }
-
-              if (htmlHasFontSize === false) { // create font-size
-                rules[i].declarations.unshift({
-                  type: 'declaration',
-                  property: 'font-size',
-                  value: ((parseInt(OPTIONS.special_convert_rem_px) / parseInt(OPTIONS.special_convert_rem_default_px)) * 100) + '%'
-                })
-              }
-
-              // move to top
-              const value = rules[i]
-              rules.splice(i, 1)
-              rules.unshift(value)
-
-              break
-            }
-          } // end of for
-
-          if (hasHTML === false) { // create html with font-size
+              })
+          } else {
             rules.unshift({
               type: 'rule',
               selectors: ['html'],
-              declarations: [{
-                type: 'declaration',
-                property: 'font-size',
-                value: ((parseInt(OPTIONS.special_convert_rem_px) / parseInt(OPTIONS.special_convert_rem_default_px)) * 100) + '%'
-              }]
+              declarations: [
+                {
+                  type: 'declaration',
+                  property: 'font-size',
+                  value: FONT_SIZE
+                }
+              ]
             })
           }
         } // end of rems - html check
