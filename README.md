@@ -177,7 +177,7 @@ Some example usage:
 
   //purging a CSS file with HTML and options
   cssPurge.purgeCSSFiles({
-    css_output: 'test1.min.css',
+    css_file_location: 'test1.min.css',
     css: 'demo/test1.css',
     html: 'demo/html/test1.html',
     trim : true,
@@ -187,7 +187,7 @@ Some example usage:
 
   //purging a CSS file with HTML, options and config
   cssPurge.purgeCSSFiles({
-      css_output: 'test1.min.css',
+      css_file_location: 'test1.min.css',
       css: 'demo/test1.css',
       html: 'demo/html/test1.html',
       trim : true,
@@ -238,7 +238,7 @@ Example config.json:
 ```json
 {
   "options": {
-    "css_output": "purged.min.css",
+    "css_file_location": "purged.min.css",
     "css": "demo/html/static-jekyll/_siteassets/main.css",
 
     "html": "demo/html/static-jekyll/_site",
@@ -258,6 +258,7 @@ Example config.json:
     "shorten_hexcolor": false,
     "shorten_hexcolor_extended": false,
     "shorten_hexcolor_uppercase": false,
+    "shorten_hexcolor_lowercase": true,
     "shorten_font": false,
     "shorten_background": true,
     "shorten_margin": false,

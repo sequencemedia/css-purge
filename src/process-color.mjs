@@ -6,6 +6,8 @@ import extendedColors from './extended-colors.mjs'
 import hslToRgb from './utils/hsl-to-rgb.mjs'
 import componentFromString from './utils/component-from-string.mjs'
 
+const log = debug('@sequencemedia/css-purge/process-color')
+
 function getReduceColor (declaration, rule, OPTIONS, SUMMARY) {
   const {
     value: VALUE
@@ -13,7 +15,7 @@ function getReduceColor (declaration, rule, OPTIONS, SUMMARY) {
 
   const {
     shorten_hexcolor_uppercase: SHORTEN_HEXCOLOR_UPPERCASE,
-    verbose: VERBOSE
+    shorten_hexcolor_lowercase: SHORTEN_HEXCOLOR_LOWERCASE
   } = OPTIONS
 
   const {
@@ -33,7 +35,7 @@ function getReduceColor (declaration, rule, OPTIONS, SUMMARY) {
         capture = capture.trim()
         return (
           (capture.startsWith('(') ? '(' : '') +
-          (SHORTEN_HEXCOLOR_UPPERCASE ? colorValue.toUpperCase() : colorValue) +
+          (SHORTEN_HEXCOLOR_UPPERCASE ? colorValue.toUpperCase() : SHORTEN_HEXCOLOR_LOWERCASE ? colorValue.toLowerCase() : colorValue) +
           (capture.endsWith(',') ? ',' : capture.endsWith(')') ? ')' : '')
         )
       }).trim()
@@ -44,7 +46,11 @@ function getReduceColor (declaration, rule, OPTIONS, SUMMARY) {
       if (was !== now) {
         collector.noNamedColorsShortened += 1
 
-        if (VERBOSE) { console.log(success('Process - Values - Named Color : ' + (rule.selectors.join(', ')))) }
+        const {
+          selectors = []
+        } = rule
+
+        log(selectors) // .join(', ').trim())
       }
     }
 
@@ -61,7 +67,7 @@ function processRgbColor (value, declaration, rule, OPTIONS, SUMMARY) {
   if (rgb) {
     const {
       shorten_hexcolor_uppercase: SHORTEN_HEXCOLOR_UPPERCASE,
-      verbose: VERBOSE
+      shorten_hexcolor_lowercase: SHORTEN_HEXCOLOR_LOWERCASE
     } = OPTIONS
 
     const {
@@ -75,11 +81,14 @@ function processRgbColor (value, declaration, rule, OPTIONS, SUMMARY) {
     const cb = componentFromString(rgb[4], 255)
 
     value = '#' + ((1 << 24) + (cr << 16) + (cg << 8) + cb).toString(16).slice(1)
+    value = SHORTEN_HEXCOLOR_UPPERCASE ? value.toUpperCase() : SHORTEN_HEXCOLOR_LOWERCASE ? value.toLowerCase() : value
     collector.noRGBColorsShortened += 1
 
-    if (SHORTEN_HEXCOLOR_UPPERCASE) value = value.toUpperCase()
+    const {
+      selectors = []
+    } = rule
 
-    if (VERBOSE) { console.log(success('Process - Values - RGB Color : ' + (rule.selectors.join(', ')))) }
+    log(selectors) // .join(', ').trim())
   }
 
   return value
@@ -91,7 +100,7 @@ function processHslColor (value, declaration, rule, OPTIONS, SUMMARY) {
   if (hsl) {
     const {
       shorten_hexcolor_uppercase: SHORTEN_HEXCOLOR_UPPERCASE,
-      verbose: VERBOSE
+      shorten_hexcolor_lowercase: SHORTEN_HEXCOLOR_LOWERCASE
     } = OPTIONS
 
     const {
@@ -111,11 +120,14 @@ function processHslColor (value, declaration, rule, OPTIONS, SUMMARY) {
     ] = hslToRgb(ch / 360, cs / 100, cl / 100)
 
     value = '#' + ((1 << 24) + (cr << 16) + (cg << 8) + cb).toString(16).slice(1)
+    value = SHORTEN_HEXCOLOR_UPPERCASE ? value.toUpperCase() : SHORTEN_HEXCOLOR_LOWERCASE ? value.toLowerCase() : value
     collector.noHSLColorsShortened += 1
 
-    if (SHORTEN_HEXCOLOR_UPPERCASE) value = value.toUpperCase()
+    const {
+      selectors = []
+    } = rule
 
-    if (VERBOSE) { console.log(success('Process - Values - HSL Color : ' + (rule.selectors.join(', ')))) }
+    log(selectors) // .join(', ').trim())
   }
 
   return value
@@ -127,7 +139,7 @@ function processHexColor (value, declaration, rule, OPTIONS, SUMMARY) {
   if (hex) { // #aaaaaa
     const {
       shorten_hexcolor_uppercase: SHORTEN_HEXCOLOR_UPPERCASE,
-      verbose: VERBOSE
+      shorten_hexcolor_lowercase: SHORTEN_HEXCOLOR_LOWERCASE
     } = OPTIONS
 
     const {
@@ -137,11 +149,14 @@ function processHexColor (value, declaration, rule, OPTIONS, SUMMARY) {
     } = SUMMARY
 
     value = value.replace(hex[0], hex[0].substring(0, 4)) // #aaa
+    value = SHORTEN_HEXCOLOR_UPPERCASE ? value.toUpperCase() : SHORTEN_HEXCOLOR_LOWERCASE ? value.toLowerCase() : value
     collector.noHexColorsShortened += 1
 
-    if (SHORTEN_HEXCOLOR_UPPERCASE) value = value.toUpperCase()
+    const {
+      selectors = []
+    } = rule
 
-    if (VERBOSE) { console.log(success('Process - Values - Hex Color : ' + (rule.selectors.join(', ')))) }
+    log(selectors) // .join(', ').trim())
   }
 
   return value
@@ -158,7 +173,7 @@ function processHexColorPairs (value, declaration, rule, OPTIONS, SUMMARY) {
     ) {
       const {
         shorten_hexcolor_uppercase: SHORTEN_HEXCOLOR_UPPERCASE,
-        verbose: VERBOSE
+        shorten_hexcolor_lowercase: SHORTEN_HEXCOLOR_LOWERCASE
       } = OPTIONS
 
       const {
@@ -168,30 +183,31 @@ function processHexColorPairs (value, declaration, rule, OPTIONS, SUMMARY) {
       } = SUMMARY
 
       value = value.replace(hexPairs[0], '#' + hexPairs[2][0] + hexPairs[3][0] + hexPairs[4][0]) // #aaa
+      value = SHORTEN_HEXCOLOR_UPPERCASE ? value.toUpperCase() : SHORTEN_HEXCOLOR_LOWERCASE ? value.toLowerCase() : value
       collector.noHexColorsShortened += 1
 
-      if (SHORTEN_HEXCOLOR_UPPERCASE) value = value.toUpperCase()
+      const {
+        selectors = []
+      } = rule
 
-      if (VERBOSE) { console.log(success('Process - Values - Hex Color : ' + (rule.selectors.join(', ')))) }
+      log(selectors) // .join(', ').trim())
     }
   }
 
   return value
 }
 
-const log = debug('@sequencemedia/css-purge/process-color')
-
 export default function processColor (value, declaration, rule, OPTIONS, SUMMARY) {
   const {
+    shorten: SHORTEN,
     shorten_hexcolor_extended: SHORTEN_HEXCOLOR_EXTENDED,
-    shorten_hexcolor: SHORTEN_HEXCOLOR,
-    shorten: SHORTEN
+    shorten_hexcolor: SHORTEN_HEXCOLOR
   } = OPTIONS
 
   if (value) {
     let hasChanged = false
 
-    if (SHORTEN_HEXCOLOR_EXTENDED || SHORTEN) {
+    if (SHORTEN || SHORTEN_HEXCOLOR_EXTENDED) {
       ({
         hasChanged,
         value
@@ -203,7 +219,7 @@ export default function processColor (value, declaration, rule, OPTIONS, SUMMARY
         }))
     }
 
-    if (SHORTEN_HEXCOLOR || SHORTEN) {
+    if (SHORTEN || SHORTEN_HEXCOLOR) {
       ({
         hasChanged,
         value

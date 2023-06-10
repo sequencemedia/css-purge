@@ -1,18 +1,9 @@
 #!/usr/bin/env node
-// const through2 = require('through2')
-// const clc = require('cli-color')
-
 import {
   Command
 } from 'commander'
 
-// const pkg = require('./package.json')
 import cssPurge from '#css-purge'
-
-// const error = clc.red.bold
-// const info = clc.xterm(123)
-// const warn = clc.yellow
-// const logoRed = clc.xterm(197)
 
 const {
   argv,
@@ -31,7 +22,6 @@ program
   .option('-o, --output - CSS file <output filename>', 'The new css filename to output as')
   .option('-f, --customconfig - <config filename> - run with custom config filename', 'Global Workflow - All options must be defined in a json file')
   .option('-d, --defaultconfig - run with default config file', 'Local Workflow - All options are defined in a config_css.json')
-  .option('-v, --verbose - displays internal messages', 'Outputs CSS-PURGE activity')
   .parse(argv)
 
 let options = {}
@@ -39,8 +29,7 @@ let options = {}
 if (program.cssinput) {
   if (program.output) {
     options = {
-      css_output: program.output,
-      verbose: !!(program.verbose)
+      css_file_location: program.output
     }
 
     if (program.customconfig === undefined) {
@@ -52,9 +41,7 @@ if (program.cssinput) {
       if (error) { console.log(error) } else { console.log(result) }
     })
   } else {
-    options = {
-      verbose: !!(program.verbose)
-    }
+    options = {}
 
     if (program.customconfig === undefined) {
       options.trim = true
@@ -68,10 +55,9 @@ if (program.cssinput) {
 } else if (program.input && program.inputhtml && program.output) {
   options = {
     css: program.input,
-    css_output: program.output,
+    css_file_location: program.output,
     special_reduce_with_html: true,
-    html: program.inputhtml,
-    verbose: !!(program.verbose)
+    html: program.inputhtml
   }
 
   if (program.customconfig === undefined) {
@@ -86,10 +72,9 @@ if (program.cssinput) {
 } else if (program.input && program.inputhtml) {
   options = {
     css: program.input,
-    css_output: program.input.substr(0, program.input.lastIndexOf('.')) + '.min.css',
+    css_file_location: program.input.substr(0, program.input.lastIndexOf('.')) + '.min.css',
     special_reduce_with_html: true,
-    html: program.inputhtml,
-    verbose: !!(program.verbose)
+    html: program.inputhtml
   }
 
   if (program.customconfig === undefined) {
@@ -104,8 +89,7 @@ if (program.cssinput) {
 } else if (program.input && program.output) {
   options = {
     css: program.input,
-    css_output: program.output,
-    verbose: !!(program.verbose)
+    css_file_location: program.output
   }
 
   if (program.customconfig === undefined) {
@@ -120,8 +104,7 @@ if (program.cssinput) {
 } else if (program.input) {
   options = {
     css: program.input,
-    css_output: program.input.substr(0, program.input.lastIndexOf('.')) + '.min.css',
-    verbose: !!(program.verbose)
+    css_file_location: program.input.substr(0, program.input.lastIndexOf('.')) + '.min.css'
   }
 
   if (program.customconfig === undefined) {

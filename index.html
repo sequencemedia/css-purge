@@ -505,7 +505,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
 
   //purging a CSS file with HTML and options
   cssPurge.purgeCSSFiles({
-    css_output: 'test1.min.css',
+    css_file_location: 'test1.min.css',
     css: 'demo/test1.css',
     html: 'demo/html/test1.html',
     trim : true,
@@ -515,7 +515,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
 
   //purging a CSS file with HTML, options and config
   cssPurge.purgeCSSFiles({
-      css_output: 'test1.min.css',
+      css_file_location: 'test1.min.css',
       css: 'demo/test1.css',
       html: 'demo/html/test1.html',
       trim : true,
@@ -613,7 +613,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
 							<pre><code class="hljs json">
 {
   "options": {
-    "css_output": "purged.min.css",
+    "css_file_location": "purged.min.css",
     "css": "demo/html/static-jekyll/_siteassets/main.css",
 
     "html": "demo/html/static-jekyll/_site",
@@ -633,6 +633,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
     "shorten_hexcolor": false,
     "shorten_hexcolor_extended": false,
     "shorten_hexcolor_uppercase": false,
+    "shorten_hexcolor_lowercase": true,
     "shorten_font": false,
     "shorten_background": true,
     "shorten_margin": false,
@@ -699,7 +700,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
   <tbody>
     <tr>
       <td>
-	      css_output
+	      css_file_location
 	    </td>
       <td>
 	      The name of the CSS file to output as.
@@ -790,7 +791,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       <td>
       	A &ldquo;master switch&rdquo; to turn on all the shorten options.
       	<br>- Only when its off can you turn on or off the other shorten options.
-      	<br>- Exceptions: shorten_hexcolor_uppercase
+      	<br>- Exceptions: shorten_hexcolor_uppercase, shorten_hexcolor_lowercase
       </td>
     </tr>
     <tr>
@@ -827,6 +828,14 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       </td>
       <td>
       	Converts all hex colors to uppercase e.g. #ae1122 to #AE1122
+      </td>
+    </tr>
+    <tr>
+      <td>
+      	shorten_hexcolor_lowercase
+      </td>
+      <td>
+      	Converts all hex colors to lowercase e.g. #AE1122 to #ae1122
       </td>
     </tr>
     <tr>

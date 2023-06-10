@@ -1,4 +1,7 @@
+import debug from 'debug'
+
 import path from 'node:path'
+
 import {
   writeFileSync,
   createReadStream,
@@ -36,6 +39,8 @@ import getFileSizeInKB from './utils/get-file-size-in-kilo-bytes.mjs'
 import getSizeInKB from './utils/get-size-in-kilo-bytes.mjs'
 import roundTo from './utils/round-to.mjs'
 import escape from './utils/escape.mjs'
+
+const log = debug('@sequencemedia/css-purge')
 
 const { JSDOM } = jsdom
 
@@ -171,7 +176,7 @@ function handleHtmlFileReadError (e, filePath) {
 
 class CSSPurge {
   constructor () {
-    let date = new Date()
+    let timeKey = new Date()
 
     const eventEmitter = new EventEmitter()
 
@@ -197,9 +202,9 @@ class CSSPurge {
       shorten_hexcolor: false,
       shorten_hexcolor_extended: false,
       shorten_hexcolor_uppercase: false,
+      shorten_hexcolor_lowercase: true,
       shorten_font: false,
       shorten_background: false,
-      shorten_background_min: 2,
       shorten_margin: false,
       shorten_padding: false,
       shorten_list_style: false,
@@ -1140,8 +1145,7 @@ class CSSPurge {
         special_reduce_with_html: SPECIAL_REDUCE_WITH_HTML,
         css_file_location: CSS_FILE_LOCATION,
         report_file_location: REPORT_DUPLICATE_CSS_FILE_LOCATION,
-        reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION,
-        verbose: VERBOSE
+        reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
       } = options
 
       if (TRIM) {
@@ -1176,10 +1180,6 @@ class CSSPurge {
 
       if (CSS_FILE_LOCATION) {
         OPTIONS.css_file_location = CSS_FILE_LOCATION
-      }
-
-      if (VERBOSE) {
-        OPTIONS.verbose = VERBOSE
       }
 
       SUMMARY.files.output_css.push(CSS_FILE_LOCATION)
@@ -1813,9 +1813,9 @@ class CSSPurge {
         }
 
         if (OPTIONS.verbose) {
-          date = (OPTIONS.css_file_location) ? OPTIONS.css_file_location : new Date()
+          timeKey = (OPTIONS.css_file_location) ? OPTIONS.css_file_location : new Date()
 
-          console.time(logoRed('Purged ' + date + ' in'))
+          console.time(logoRed(`Purged "${timeKey}" in`))
         }
 
         if (OPTIONS.verbose) { console.log(info('Process - CSS')) }
@@ -1919,7 +1919,7 @@ class CSSPurge {
           .filter(Boolean)
           .filter(hasTypeMedia)
           .forEach(({ rules, media }) => {
-            console.log(info('Process - Rules - @media ' + media)) // if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + rule.media)) }
+            log('@media', media)
 
             processRules(rules)
             processValues(rules, OPTIONS, SUMMARY)
@@ -1931,7 +1931,7 @@ class CSSPurge {
             .filter(Boolean)
             .filter(hasTypeDocument)
             .forEach(({ rules, document }) => {
-              console.log(info('Process - Rules - @document ' + document)) // if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + rule.media)) }
+              log('@document', document)
 
               processRules(rules)
               processValues(rules, OPTIONS, SUMMARY)
@@ -1944,7 +1944,7 @@ class CSSPurge {
             .filter(Boolean)
             .filter(hasTypeSupports)
             .forEach(({ rules, supports }) => {
-              console.log(info('Process - Rules - @supports ' + supports)) // if (OPTIONS.verbose) { console.log(info('Process - Rules - @media ' + rule.media)) }
+              log('@supports', supports)
 
               processRules(rules)
               processValues(rules, OPTIONS, SUMMARY)
@@ -2534,7 +2534,7 @@ class CSSPurge {
         console.log(cool('Before: ' + SUMMARY.stats.before.totalFileSizeKB + 'KB'))
         console.log(cool('After: ' + SUMMARY.stats.after.totalFileSizeKB + 'KB'))
         console.log(cool('Saved: ' + SUMMARY.stats.summary.savingsKB + 'KB (' + SUMMARY.stats.summary.savingsPercentage + '%)'))
-        console.timeEnd(logoRed('Purged ' + date + ' in'))
+        console.timeEnd(logoRed(`Purged "${timeKey}" in`))
       }
 
       return css

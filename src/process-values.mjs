@@ -71,6 +71,7 @@ export default function processValues (rules, OPTIONS, SUMMARY) {
       // borderLeft
       if (SHORTEN || SHORTEN_BORDER_LEFT) processBorderLeft(rule, OPTIONS, SUMMARY)
 
+      // borderTopRightBottomLeft & border
       if (SHORTEN || SHORTEN_BORDER) {
         processBorderTopRightBottomLeft(rule, OPTIONS, SUMMARY)
 

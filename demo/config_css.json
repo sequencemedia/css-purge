@@ -1,7 +1,7 @@
 {
 	"options": {
 
-        "css_output": "purged.min.css",
+        "css_file_location": "purged.min.css",
 
 		    "trim": true,
         "trim_keep_non_standard_inline_comments": false,
@@ -16,6 +16,7 @@
         "shorten_hexcolor": false,
         "shorten_hexcolor_extended": false,
         "shorten_hexcolor_uppercase": false,
+        "shorten_hexcolor_lowercase": true,
         "shorten_font": false,
         "shorten_background": false,
         "shorten_margin": false,
