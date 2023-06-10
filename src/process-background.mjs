@@ -134,7 +134,7 @@ export default function processBackground (rule, OPTIONS, SUMMARY) {
             }, [])
 
           backgroundPropertyValue = backgroundPropertyValue.trim()
-          backgroundPropertyValue += ', ' + backgroundPropertyValue.trim()
+          if (backgroundPropertyValue) backgroundPropertyValue += ', ' + backgroundPropertyValue
           BACKGROUND_VALUES[0] = backgroundPropertyValue
         }
 
