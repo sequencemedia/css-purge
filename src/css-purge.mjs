@@ -115,19 +115,14 @@ function toGroups (rules) {
   const {
     groups
   } = rules.reduce(({ groups, count }, rule) => {
-    const group = groups[count]
+    const group = groups[count] ?? (groups[count] = [])
+
     group.push(rule)
 
-    if (group.length === 4095) {
-      groups.push([])
-      count += 1
-    }
+    if (group.length === 2) count += 1
 
-    return {
-      groups,
-      count
-    }
-  }, { groups: [[]], count: 0 })
+    return { groups, count }
+  }, { groups: [], count: 0 })
 
   return groups
 }
@@ -2461,7 +2456,7 @@ class CSSPurge {
 
         // Detect via JS
         // Detect via HTML
-        if (OPTIONS.special_reduce_with_html && (OPTIONS.html !== undefined && OPTIONS.html !== '')) {
+        if (OPTIONS.special_reduce_with_html && OPTIONS.html) {
           if (OPTIONS.verbose) { console.log(info('Process - HTML')) }
 
           const ast = cssTools.parse(outputCSS, { source: fileLocation })
@@ -2484,9 +2479,6 @@ class CSSPurge {
                       .forEach((rule) => {
                         getSelectors(rule, selectors, OPTIONS.special_reduce_with_html_ignore_selectors)
                       })
-
-                    break
-                  case 'charset':
                     break
                 }
               }
