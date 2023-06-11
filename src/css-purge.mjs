@@ -1137,7 +1137,7 @@ class CSSPurge {
       } // end of undefined
     } // end of processRules
 
-    function readOptions (options) {
+    function readOptions (options = {}) {
       const {
         trim: TRIM,
         shorten: SHORTEN,
@@ -1292,44 +1292,42 @@ class CSSPurge {
       return readStream
     } // end of readOptionsFileLocation
 
-    function readReduceDeclarations (reduceDeclarations) {
-      if (reduceDeclarations) {
-        let {
-          declaration_names: declarationNames = [],
-          selectors
-        } = reduceDeclarations
+    function readReduceDeclarations (reduceDeclarations = {}) {
+      let {
+        declaration_names: declarationNames = [],
+        selectors = {}
+      } = reduceDeclarations
 
-        switch (typeof selectors) {
-          case 'string':
-            if (selectors.length) {
-              selectors = selectors.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean)
-              SELECTORS_COUNT = selectors.length
-            }
-
-            break
-          case 'object':
-            Object
-              .entries(selectors)
-              .forEach(([key, value]) => {
-                SELECTOR_PROPERTY_MAP.set(key, value.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean))
-              })
-
-            SELECTORS_COUNT = Object.keys(selectors).length
-            break
-        }
-
-        // by name
-        if (typeof declarationNames === 'string') {
-          DECLARATION_NAMES = declarationNames.replace(/^\s+|\s+$/g, '').split(',').map(toTrim).filter(Boolean)
-        } else {
-          if (Array.isArray(declarationNames)) {
-            DECLARATION_NAMES = declarationNames.map(toTrim).filter(Boolean)
+      switch (typeof selectors) {
+        case 'string':
+          if (selectors.length) {
+            selectors = selectors.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean)
+            SELECTORS_COUNT = selectors.length
           }
-        }
 
-        HAS_READ_REDUCE_DECLARATIONS = true
-        eventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
+          break
+        case 'object':
+          Object
+            .entries(selectors)
+            .forEach(([key, value]) => {
+              SELECTOR_PROPERTY_MAP.set(key, value.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean))
+            })
+
+          SELECTORS_COUNT = Object.keys(selectors).length
+          break
       }
+
+      // by name
+      if (typeof declarationNames === 'string') {
+        DECLARATION_NAMES = declarationNames.replace(/^\s+|\s+$/g, '').split(',').map(toTrim).filter(Boolean)
+      } else {
+        if (Array.isArray(declarationNames)) {
+          DECLARATION_NAMES = declarationNames.map(toTrim).filter(Boolean)
+        }
+      }
+
+      HAS_READ_REDUCE_DECLARATIONS = true
+      eventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
     } // end of readReduceDeclarations
 
     function readReduceDeclarationsFileLocation (fileLocation = DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION) {
@@ -1351,7 +1349,7 @@ class CSSPurge {
 
           let {
             declaration_names: declarationNames = [],
-            selectors
+            selectors = {}
           } = DEFAULT_OPTIONS_REDUCE_DECLARATIONS
 
           switch (typeof selectors) {
@@ -1836,10 +1834,10 @@ class CSSPurge {
 
         if (!OPTIONS.css) {
           const {
-            file_name: FILE_NAME = DEFAULT_FILE_LOCATION
+            file_path: FILE_PATH = DEFAULT_FILE_LOCATION
           } = OPTIONS
 
-          OPTIONS.css = [FILE_NAME]
+          OPTIONS.css = [FILE_PATH]
         }
 
         if (OPTIONS.verbose) {
@@ -1919,12 +1917,12 @@ class CSSPurge {
         }
 
         const {
-          file_name: FILE_NAME = DEFAULT_FILE_LOCATION
+          file_path: FILE_PATH = DEFAULT_FILE_LOCATION
         } = OPTIONS
 
         let ast
         try {
-          ast = cssTools.parse(css, { source: FILE_NAME })
+          ast = cssTools.parse(css, { source: FILE_PATH })
         } catch (e) {
           handleCssParseError(e)
         }
@@ -2177,12 +2175,12 @@ class CSSPurge {
           if (OPTIONS.verbose) { console.log(info('Process - HTML')) }
 
           const {
-            file_name: FILE_NAME = DEFAULT_FILE_LOCATION
+            file_path: FILE_PATH = DEFAULT_FILE_LOCATION
           } = OPTIONS
 
           let ast
           try {
-            ast = cssTools.parse(outputCSS, { source: FILE_NAME })
+            ast = cssTools.parse(outputCSS, { source: FILE_PATH })
           } catch (e) {
             handleCssParseError(e)
           }
@@ -2236,7 +2234,12 @@ class CSSPurge {
                 } = OPTIONS
 
                 try {
-                  Object.assign(SUMMARY.options, Object.keys(OPTIONS).sort().reduce((options, key) => Object.assign(options, {[key]: OPTIONS[key]}), {}))
+                  SUMMARY.options = (
+                    Object
+                      .keys(OPTIONS)
+                      .sort()
+                      .reduce((options, key) => Object.assign(options, { [key]: OPTIONS[key] }), {})
+                  )
 
                   writeFileSync(REPORT_FILE_LOCATION, JSON.stringify(SUMMARY, null, 2))
                 } catch (e) {
@@ -2278,7 +2281,12 @@ class CSSPurge {
             } = OPTIONS
 
             try {
-              Object.assign(SUMMARY.options, Object.keys(OPTIONS).sort().reduce((options, key) => Object.assign(options, {[key]: OPTIONS[key]}), {}))
+              SUMMARY.options = (
+                Object
+                  .keys(OPTIONS)
+                  .sort()
+                  .reduce((options, key) => Object.assign(options, { [key]: OPTIONS[key] }), {})
+              )
 
               writeFileSync(REPORT_FILE_LOCATION, JSON.stringify(SUMMARY, null, 2))
             } catch (e) {
@@ -2312,14 +2320,14 @@ class CSSPurge {
         if (existsSync(REDUCE_DECLARATIONS_FILE_LOCATION)) {
           readReduceDeclarationsFileLocation(REDUCE_DECLARATIONS_FILE_LOCATION)
         } else {
-          if (options && !options.reduceDeclarations) {
+          if (options && !options.reduce_declarations) {
             const reduceDeclarations = {
               declaration_names: [
                 ...DEFAULT_DECLARATION_NAMES
               ]
             }
 
-            options.reduceDeclarations = reduceDeclarations
+            options.reduce_declarations = reduceDeclarations
 
             readReduceDeclarations(reduceDeclarations)
           } else {
@@ -2441,14 +2449,14 @@ class CSSPurge {
         if (existsSync(REDUCE_DECLARATIONS_FILE_LOCATION)) {
           readReduceDeclarationsFileLocation(REDUCE_DECLARATIONS_FILE_LOCATION)
         } else {
-          if (options && !options.reduceDeclarations) {
+          if (options && !options.reduce_declarations) {
             const reduceDeclarations = {
               declaration_names: [
                 ...DEFAULT_DECLARATION_NAMES
               ]
             }
 
-            options.reduceDeclarations = reduceDeclarations
+            options.reduce_declarations = reduceDeclarations
 
             readReduceDeclarations(reduceDeclarations)
           } else {
