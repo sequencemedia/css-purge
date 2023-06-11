@@ -1,4 +1,4 @@
-export default function getSizeInKiloBytes (string) {
+export default function getSizeInKB (string) {
   let i = string.length - 1
   let j = string.length
 

@@ -2,7 +2,7 @@ import {
   statSync
 } from 'node:fs'
 
-export default function getFileSizeInKiloBytes (filePath) {
+export default function getFileSizeInKB (filePath) {
   const {
     size
   } = statSync(filePath)

@@ -35,8 +35,8 @@ import hasTypeComment from './utils/declarations/has-type-comment.mjs'
 import getTokens from './utils/get-tokens.mjs'
 import getSelectors from './utils/get-selectors.mjs'
 import getFilePath from './utils/get-file-path.mjs'
-import getFileSizeInKB from './utils/get-file-size-in-kilo-bytes.mjs'
-import getSizeInKB from './utils/get-size-in-kilo-bytes.mjs'
+import getFileSizeInKB from './utils/get-file-size-in-kb.mjs'
+import getSizeInKB from './utils/get-size-in-kb.mjs'
 import roundTo from './utils/round-to.mjs'
 import escape from './utils/escape.mjs'
 
@@ -2346,11 +2346,7 @@ class CSSPurge {
         if (!OPTIONS.css) OPTIONS.css = DEFAULT_OPTIONS.css
 
         // Options
-        if (options) {
-          for (const key in options) {
-            OPTIONS[key] = options[key]
-          }
-        }
+        if (options) Object.assign(OPTIONS, options)
 
         let cssFiles = OPTIONS.css
 
