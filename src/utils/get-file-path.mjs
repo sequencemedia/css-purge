@@ -15,6 +15,24 @@ import cliColor from 'cli-color'
 const error = cliColor.red
 // const errorLine = cliColor.redBright
 
+function handleStatsReadError (e, value) {
+  console.log(error(`Stats read error at "${value}"`))
+  console.log(e)
+  process.exit(1)
+}
+
+function handleFileReadError (e, value) {
+  console.log(error(`File read error at "${value}"`))
+  console.log(e)
+  process.exit(1)
+}
+
+function handleDirectoryReadError (e, value) {
+  console.log(error(`Directory read error at "${value}"`))
+  console.log(e)
+  process.exit(1)
+}
+
 export default function getFilePath (value = '', exts = ['.css'], collector) {
   if (validUrl.isUri(value)) {
     collector.push(value)
@@ -24,37 +42,36 @@ export default function getFilePath (value = '', exts = ['.css'], collector) {
     try {
       stats = lstatSync(value)
     } catch (e) {
-      console.log(error(`Read error: Error while reading "${value}"`))
-      console.log(e)
-      process.exit(1)
+      handleStatsReadError(e, value)
     }
 
-    if (stats.isDirectory()) { // `value` is a directory path
-      // traverse directory
+    if (stats.isFile()) { // `value` is a file path
       try {
-        readdirSync(value)
-          .forEach((fileName) => {
-            if (exts.some((ext) => extname(fileName) === ext)) {
-              collector.push(join(value, fileName))
-            } else {
-              if (extname(fileName) === '') {
-                getFilePath(join(value, fileName), exts, collector)
-              }
-            }
-          })
-      } catch (e) {
-        console.log(error(`Directory read error: Error while reading the directory "${value}"`))
-        console.log(e)
-        process.exit(1)
-      }
-    } else {
-      if (stats.isFile()) { // `value` is a file path
         if (exts.some((ext) => extname(value) === ext)) {
           collector.push(value)
         } else {
           if (extname(value) === '') {
             getFilePath(value, exts, collector)
           }
+        }
+      } catch (e) {
+        handleFileReadError(e, value)
+      }
+    } else {
+      if (stats.isDirectory()) { // `value` is a directory path
+        try {
+          readdirSync(value)
+            .forEach((fileName) => {
+              if (exts.some((ext) => extname(fileName) === ext)) {
+                collector.push(join(value, fileName))
+              } else {
+                if (extname(fileName) === '') {
+                  getFilePath(join(value, fileName), exts, collector)
+                }
+              }
+            })
+        } catch (e) {
+          handleDirectoryReadError(e, value)
         }
       }
     }

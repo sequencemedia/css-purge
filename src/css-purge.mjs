@@ -136,7 +136,7 @@ function toGroups (rules, groupSize = 4095) {
 }
 
 function handleCssParseError (e) {
-  console.log(error('CSS parser error'))
+  console.log(error('Error parsing CSS'))
   console.log('Reason: ' + e.reason)
   console.log('Line: ' + e.line)
   console.log('Column: ' + e.column)
