@@ -25,6 +25,7 @@ export default function processValues (rules, OPTIONS, SUMMARY) {
   log('processValues')
 
   const {
+    shorten: SHORTEN = false,
     shorten_font: SHORTEN_FONT = false,
     shorten_background: SHORTEN_BACKGROUND = false,
     shorten_list_style: SHORTEN_LIST_STYLE = false,
@@ -38,8 +39,7 @@ export default function processValues (rules, OPTIONS, SUMMARY) {
     shorten_margin: SHORTEN_MARGIN = false,
     shorten_padding: SHORTEN_PADDING = false,
     shorten_zero: SHORTEN_ZERO = false,
-    shorten_hexcolor: SHORTEN_HEXCOLOR = false,
-    shorten: SHORTEN = false
+    shorten_hexcolor: SHORTEN_HEXCOLOR = false
   } = OPTIONS
 
   rules

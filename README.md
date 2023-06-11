@@ -273,12 +273,11 @@ Example config.json:
     "shorten_border_radius": false,
 
     "format": true,
-    "format_4095_rules_legacy_limit": false,
-    "format_font_family": true,
+    "format_font_family": false,
 
     "special_convert_rem": false,
-    "special_convert_rem_default_px": "16",
-    "special_convert_rem_px": "10",
+    "special_convert_rem_default_px": 16,
+    "special_convert_rem_px": 10,
     "special_convert_rem_font_size": true,
 
     "special_reduce_with_html" : false,
@@ -301,12 +300,12 @@ Example config.json:
     "bypass_page_rules": false,
     "bypass_charset": false,
 
-    "zero_units": "em, ex, %, px, cm, mm, in, pt, pc, ch, rem, vh, vw, vmin, vmax",
     "zero_ignore_declaration": [],
+    "zero_units": ["em", "ex", "%", "px", "cm", "mm", "in", "pt", "pc", "ch", "rem", "vh", "vw", "vmin", "vmax"],
 
-    "report_file_location": "report/purged_css_report_data.json",
+    "report_file_location": "default_options_report.json",
 
-    "reduce_declarations_file_location": "config_reduce_declarations.json"
+    "reduce_declarations_file_location": "default_options_reduce_declarations.json"
   }
 }
 ```

@@ -6,12 +6,11 @@
   "bypass_supports_rules": false,
   "css_file_location": "css_purged.css",
   "format": true,
-  "format_4095_rules_legacy_limit": false,
-  "format_font_family": true,
+  "format_font_family": false,
   "generate_report": true,
   "new_reduce_common_into_parent": false,
   "reduce_declarations_file_location": "default_options_reduce_declarations.json",
-  "report_file_location": "purged_css_report_data.json",
+  "report_file_location": "default_options_report.json",
   "shorten": true,
   "shorten_background": false,
   "shorten_border": false,
@@ -31,8 +30,8 @@
   "shorten_padding": false,
   "shorten_zero": false,
   "special_convert_rem": false,
-  "special_convert_rem_default_px": "16",
-  "special_convert_rem_px": "10",
+  "special_convert_rem_default_px": 16,
+  "special_convert_rem_px": 10,
   "special_convert_rem_font_size": true,
   "special_reduce_with_html": false,
   "special_reduce_with_html_ignore_selectors": [
@@ -53,5 +52,5 @@
   "trim_whitespace": false,
   "verbose": true,
   "zero_ignore_declaration": [],
-  "zero_units": "em, ex, %, px, cm, mm, in, pt, pc, ch, rem, vh, vw, vmin, vmax"
+  "zero_units": ["em", "ex", "%", "px", "cm", "mm", "in", "pt", "pc", "ch", "rem", "vh", "vw", "vmin", "vmax"]
 }

@@ -52,7 +52,7 @@ const error = clc.red
 // const warning = clc.yellow
 // const awesome = clc.magentaBright
 const logoRed = clc.xterm(197)
-const cool = clc.xterm(105)
+// const cool = clc.xterm(105)
 
 // const read = fs.readFileSync
 // const write = fs.writeFileSync
@@ -119,7 +119,7 @@ function getSummaryStatsFor (collector) {
   }
 }
 
-function toGroups (rules) {
+function toGroups (rules, groupSize = 4095) {
   const {
     groups
   } = rules.reduce(({ groups, count }, rule) => {
@@ -127,7 +127,7 @@ function toGroups (rules) {
 
     group.push(rule)
 
-    if (group.length === 2) count += 1
+    if (group.length === groupSize) count += 1
 
     return { groups, count }
   }, { groups: [], count: 0 })
@@ -217,10 +217,9 @@ class CSSPurge {
       shorten_border_radius: false,
       format: true,
       format_font_family: false,
-      format_4095_rules_legacy_limit: false,
       special_convert_rem: false,
-      special_convert_rem_default_px: '16',
-      special_convert_rem_px: '10',
+      special_convert_rem_default_px: 16,
+      special_convert_rem_px: 10,
       special_convert_rem_font_size: true,
       special_reduce_with_html: false,
       special_reduce_with_html_ignore_selectors: [
@@ -234,11 +233,12 @@ class CSSPurge {
       ],
 
       report: false,
-      report_file_location: 'default_options_report.json',
       verbose: false,
 
-      zero_units: 'em, ex, %, px, cm, mm, in, pt, pc, ch, rem, vh, vw, vmin, vmax',
       zero_ignore_declaration: ['filter'],
+      zero_units: ['em', 'ex', '%', 'px', 'cm', 'mm', 'in', 'pt', 'pc', 'ch', 'rem', 'vh', 'vw', 'vmin', 'vmax'],
+
+      report_file_location: 'default_options_report.json',
       reduce_declarations_file_location: 'default_options_reduce_declarations.json'
     }
 
@@ -249,7 +249,7 @@ class CSSPurge {
       ...DEFAULT_OPTIONS
     }
 
-    let FILE_LOCATION
+    // let FILE_LOCATION
     let OPTIONS_FILE_LOCATION
 
     let CSS_FILE_DATA = []
@@ -380,7 +380,7 @@ class CSSPurge {
       ...DEFAULT_DECLARATION_NAMES
     ]
 
-    const fileLocation = 'demo/test1.css'
+    // const fileLocation = 'demo/test1.css'
 
     function processRules (rules) {
       if (rules) {
@@ -1181,7 +1181,6 @@ class CSSPurge {
       if (FORMAT) {
         OPTIONS.format = true
         OPTIONS.format_font_family = true
-        OPTIONS.format_4095_rules_legacy_limit = true
       }
 
       if (REPORT) {
@@ -2235,10 +2234,11 @@ class CSSPurge {
 
                 try {
                   SUMMARY.options = (
-                    Object
-                      .keys(OPTIONS)
-                      .sort()
-                      .reduce((options, key) => Object.assign(options, { [key]: OPTIONS[key] }), {})
+                    Object.fromEntries(
+                      Object
+                        .entries(OPTIONS)
+                        .sort(([alpha], [omega]) => alpha.localeCompare(omega))
+                    )
                   )
 
                   writeFileSync(REPORT_FILE_LOCATION, JSON.stringify(SUMMARY, null, 2))
@@ -2282,10 +2282,11 @@ class CSSPurge {
 
             try {
               SUMMARY.options = (
-                Object
-                  .keys(OPTIONS)
-                  .sort()
-                  .reduce((options, key) => Object.assign(options, { [key]: OPTIONS[key] }), {})
+                Object.fromEntries(
+                  Object
+                    .entries(OPTIONS)
+                    .sort(([alpha], [omega]) => alpha.localeCompare(omega))
+                )
               )
 
               writeFileSync(REPORT_FILE_LOCATION, JSON.stringify(SUMMARY, null, 2))
@@ -2577,11 +2578,11 @@ class CSSPurge {
 
         try {
           const {
-            format_4095_rules_legacy_limit: FORMAT_4095_RULES_LEGACY_LIMIT
+            format_group_size: FORMAT_GROUP_SIZE
           } = OPTIONS
 
-          if (FORMAT_4095_RULES_LEGACY_LIMIT) {
-            if (Math.ceil(SUMMARY.stats.after.noRules / 4095) > 1) {
+          if (FORMAT_GROUP_SIZE) {
+            if (Math.ceil(SUMMARY.stats.after.noRules / FORMAT_GROUP_SIZE) > 1) {
               let ast
               try {
                 ast = cssTools.parse(css, { source: CSS_FILE_LOCATION })
@@ -2595,9 +2596,12 @@ class CSSPurge {
                 }
               } = ast
 
-              toGroups(rules)
+              toGroups(rules, FORMAT_GROUP_SIZE)
                 .forEach((rules, i) => {
-                  css = cssTools.stringify({
+                  /**
+                   *  Redeclared so as not to modify `css` in scope
+                   */
+                  let css = cssTools.stringify({
                     type: 'stylesheet',
                     stylesheet: {
                       rules

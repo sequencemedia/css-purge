@@ -2,8 +2,6 @@ import extendedColors from '../extended-colors.mjs'
 import colors from '../colors.mjs'
 
 export default function getBackgroundProp (background, prop) {
-  console.log({ prop })
-
   switch (prop) {
     case 'image':
     {
@@ -37,21 +35,15 @@ export default function getBackgroundProp (background, prop) {
 
     case 'position':
     {
-      let value1 = null
-      let value2 = ''
+      let value1
+      let value2
 
       if (background.includes('#')) {
         value1 = background.match(/(\bleft\b|\bcenter\b|\bright\b|\btop\b|\bbottom\b|\b0\b|((([0-9][.]?)+(pt|pc|px|in|cm|mm|q|cap|em|ex|rem|ic|lh|rlh|vh|vw|vi|vb|vmin|vmax))|(([0-9][.]?)+%)))|((\bleft\b|\bcenter\b|\bright\b|\b0\b|((([0-9][.]?)+(pt|pc|px|in|cm|mm|q|cap|em|ex|rem|ic|lh|rlh|vh|vw|vi|vb|vmin|vmax))|(([0-9][.]?)+%))) (\btop\b|\bcenter\b|\bbottom\b|\b0\b|((([0-9][.]?)+(pt|pc|px|in|cm|mm|q|cap|em|ex|rem|ic|lh|rlh|vh|vw|vi|vb|vmin|vmax))|(([0-9][.]?)+%))))|(\bcenter\b|(\bleft\b|\bright\b \b0\b|((([0-9][.]?)+(pt|pc|px|in|cm|mm|q|cap|em|ex|rem|ic|lh|rlh|vh|vw|vi|vb|vmin|vmax))|(([0-9][.]?)+%))))(\bcenter\b|(\btop\b|\bbottom\b \b0\b|((([0-9][.]?)+(pt|pc|px|in|cm|mm|q|cap|em|ex|rem|ic|lh|rlh|vh|vw|vi|vb|vmin|vmax))|(([0-9][.]?)+%))))/g)
       }
 
-      console.log({ value1 })
-
-      if (value1 !== null) { // Array.isArray(value1) ?
-        for (const key in value1) {
-          if (value1[key] === '0') {
-            value2 += value1[key] + ' '
-          }
-        }
+      if (Array.isArray(value1)) {
+        value2 = value1.reduce((accumulator, value) => value === '0' ? accumulator += value + ' ' : accumulator, '')
 
         if (value2 !== '') {
           return value2.trim()
@@ -62,6 +54,7 @@ export default function getBackgroundProp (background, prop) {
 
       return ''
     }
+
     case 'color':
     {
       // check for hex, rgb, hsl
@@ -88,7 +81,7 @@ export default function getBackgroundProp (background, prop) {
 
       return ''
     }
-    default:
-      return ''
   }
+
+  return ''
 }

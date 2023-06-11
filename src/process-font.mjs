@@ -139,11 +139,11 @@ export default function processFont (rule, OPTIONS, SUMMARY) {
     }
 
     const {
-      format_font_family: FORMAT_FONT_FAMILY,
-      format: FORMAT
+      format: FORMAT,
+      format_font_family: FORMAT_FONT_FAMILY
     } = OPTIONS
 
-    if (FORMAT_FONT_FAMILY || FORMAT) {
+    if (FORMAT || FORMAT_FONT_FAMILY) {
       font // ensure multi-worded families have quotes
         .filter(hasPropertyFontFamily)
         .forEach(transformFontFamily)
@@ -248,7 +248,7 @@ export default function processFont (rule, OPTIONS, SUMMARY) {
                   handleError(propPosition, 'font-family')
                 }
               } else {
-                if (FORMAT_FONT_FAMILY || FORMAT) { // ensure multi-worded families have quotes
+                if (FORMAT || FORMAT_FONT_FAMILY) { // ensure multi-worded families have quotes
                   FONT_VALUES[6] = formatFontFamily(FONT_VALUES[6])
                 } // end of format
               } // end of font-family checks
