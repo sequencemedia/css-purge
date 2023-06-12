@@ -435,6 +435,7 @@ class CSSPurge {
           }
         }
 
+        /*
         function getCommonSelectorsFor (selectorLineage, commonSelectors) {
           return function getCommonSelectors (s, i) {
             if (i) {
@@ -456,6 +457,7 @@ class CSSPurge {
             }
           }
         }
+        */
 
         function reduceCommonSelectorsForSelectorLineage (commonSelectors, selectorLineage) {
           return (
@@ -464,12 +466,14 @@ class CSSPurge {
           )
         }
 
+        /*
         function getCommonSelectorsForSelectorLineage (commonSelectors) {
           return function getCommonSelectors (selectorLineage) {
             selectorLineage
               .forEach(getCommonSelectorsFor(selectorLineage, commonSelectors))
           }
         }
+        */
 
         const hasSelectorLineage = (selector) => selector.includes(' ')
 
@@ -492,6 +496,7 @@ class CSSPurge {
           )
         }
 
+        /*
         function getCommonSelectorsForRule (commonSelectors) {
           return function getCommonSelectors ({ selectors }, i) {
             selectors
@@ -500,6 +505,7 @@ class CSSPurge {
               .forEach(getCommonSelectorsForSelectorLineage(commonSelectors))
           }
         }
+        */
 
         function getReduceChildRulesForParentSelector (index) {
           return function reduceChildRulesForParentSelector (parentRules, selector) {
@@ -518,14 +524,15 @@ class CSSPurge {
           }
         }
 
-        function reduceParentRulesForRule (parentRules, { selectors }, index) {
+        function reduceParentRulesForRule (parentRules, { selectors }, i) {
           return (
             selectors
               .filter(hasParentSelector)
-              .reduce(getReduceChildRulesForParentSelector(index), parentRules)
+              .reduce(getReduceChildRulesForParentSelector(i), parentRules)
           )
         }
 
+        /*
         function getChildRulesForParentSelector (parentRules, index) {
           return function getChildRulesFor (selector) {
             const parentSelector = getParentSelector(selector)
@@ -547,8 +554,9 @@ class CSSPurge {
               .forEach(getChildRulesForParentSelector(parentRules, index))
           }
         }
+        */
 
-        function reduceCommonSelectors (rules) {
+        function getCommonSelectors (rules) {
           return (
             rules
               .filter(hasSelectors)
@@ -556,6 +564,7 @@ class CSSPurge {
           )
         }
 
+        /*
         function getCommonSelectors (rules) {
           const commonSelectors = {}
 
@@ -565,8 +574,9 @@ class CSSPurge {
 
           return commonSelectors
         }
+        */
 
-        function reduceParentRules (rules) {
+        function getParentRules (rules) {
           return (
             rules
               .filter(hasSelectors)
@@ -574,6 +584,7 @@ class CSSPurge {
           )
         }
 
+        /*
         function getParentRules (rules) {
           const parentRules = {}
 
@@ -583,6 +594,7 @@ class CSSPurge {
 
           return parentRules
         }
+        */
 
         // reduce common declarations amongst children into parent
         if (OPTIONS.reduce_common_into_parent) {
@@ -717,10 +729,6 @@ class CSSPurge {
             const parentRules = getParentRules(rules)
 
             const commonParentRules = getCommonParentRules(commonSelectors, parentRules)
-
-            console.log(1, isDeepStrictEqual(reduceCommonSelectors(rules), commonSelectors))
-
-            console.log(2, isDeepStrictEqual(reduceParentRules(rules), parentRules))
 
             /*
             commonParentRules = commonParentRules
