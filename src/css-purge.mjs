@@ -411,7 +411,7 @@ class CSSPurge {
           )
         }
 
-        function getReduceCommonSelectorsFor (selectorLineage) {
+        function getCommonSelectorsFor (selectorLineage) {
           return function reduceCommonSelectorsFor (commonSelectors, s, i) {
             if (i) {
               let p = ''
@@ -435,45 +435,12 @@ class CSSPurge {
           }
         }
 
-        /*
-        function getCommonSelectorsFor (selectorLineage, commonSelectors) {
-          return function getCommonSelectors (s, i) {
-            if (i) {
-              let p = ''
-
-              let n = i
-              do {
-                const j = i - n
-                p += selectorLineage[j] + ' '
-              } while (--n) // n = n - 1
-
-              p += s
-
-              if (!commonSelectors[p]) commonSelectors[p] = 0
-              commonSelectors[p] += 1
-            } else {
-              if (!commonSelectors[s]) commonSelectors[s] = 0
-              commonSelectors[s] += 1
-            }
-          }
-        }
-        */
-
-        function reduceCommonSelectorsForSelectorLineage (commonSelectors, selectorLineage) {
+        function getCommonSelectorsForSelectorLineage (commonSelectors, selectorLineage) {
           return (
             selectorLineage
-              .reduce(getReduceCommonSelectorsFor(selectorLineage), commonSelectors)
+              .reduce(getCommonSelectorsFor(selectorLineage), commonSelectors)
           )
         }
-
-        /*
-        function getCommonSelectorsForSelectorLineage (commonSelectors) {
-          return function getCommonSelectors (selectorLineage) {
-            selectorLineage
-              .forEach(getCommonSelectorsFor(selectorLineage, commonSelectors))
-          }
-        }
-        */
 
         const hasSelectorLineage = (selector) => selector.includes(' ')
 
@@ -487,27 +454,16 @@ class CSSPurge {
           return getParentSelector(selector)
         }
 
-        function reduceCommonSelectorsForRule (commonSelectors, { selectors }, i) {
+        function getCommonSelectorsForRule (commonSelectors, { selectors }, i) {
           return (
             selectors
               .filter(hasSelectorLineage)
               .map(toSelectorLineage)
-              .reduce(reduceCommonSelectorsForSelectorLineage, commonSelectors)
+              .reduce(getCommonSelectorsForSelectorLineage, commonSelectors)
           )
         }
 
-        /*
-        function getCommonSelectorsForRule (commonSelectors) {
-          return function getCommonSelectors ({ selectors }, i) {
-            selectors
-              .filter(hasSelectorLineage)
-              .map(toSelectorLineage)
-              .forEach(getCommonSelectorsForSelectorLineage(commonSelectors))
-          }
-        }
-        */
-
-        function getReduceChildRulesForParentSelector (index) {
+        function getChildRulesForParentSelector (index) {
           return function reduceChildRulesForParentSelector (parentRules, selector) {
             const parentSelector = getParentSelector(selector)
 
@@ -524,77 +480,29 @@ class CSSPurge {
           }
         }
 
-        function reduceParentRulesForRule (parentRules, { selectors }, i) {
+        function getParentRulesForRule (parentRules, { selectors }, i) {
           return (
             selectors
               .filter(hasParentSelector)
-              .reduce(getReduceChildRulesForParentSelector(i), parentRules)
+              .reduce(getChildRulesForParentSelector(i), parentRules)
           )
         }
-
-        /*
-        function getChildRulesForParentSelector (parentRules, index) {
-          return function getChildRulesFor (selector) {
-            const parentSelector = getParentSelector(selector)
-            if (parentSelector) {
-              if (!parentRules[parentSelector]) parentRules[parentSelector] = []
-              const childRules = parentRules[parentSelector]
-              childRules.push({
-                selector,
-                index
-              })
-            }
-          }
-        }
-
-        function getParentRulesForRule (parentRules) {
-          return function getParentRules ({ selectors }, index) {
-            selectors
-              .filter(hasParentSelector)
-              .forEach(getChildRulesForParentSelector(parentRules, index))
-          }
-        }
-        */
 
         function getCommonSelectors (rules) {
           return (
             rules
               .filter(hasSelectors)
-              .reduce(reduceCommonSelectorsForRule, {})
+              .reduce(getCommonSelectorsForRule, {})
           )
         }
-
-        /*
-        function getCommonSelectors (rules) {
-          const commonSelectors = {}
-
-          rules
-            .filter(hasSelectors)
-            .forEach(getCommonSelectorsForRule(commonSelectors))
-
-          return commonSelectors
-        }
-        */
 
         function getParentRules (rules) {
           return (
             rules
               .filter(hasSelectors)
-              .reduce(reduceParentRulesForRule, {})
+              .reduce(getParentRulesForRule, {})
           )
         }
-
-        /*
-        function getParentRules (rules) {
-          const parentRules = {}
-
-          rules
-            .filter(hasSelectors)
-            .forEach(getParentRulesForRule(parentRules))
-
-          return parentRules
-        }
-        */
 
         // reduce common declarations amongst children into parent
         if (OPTIONS.reduce_common_into_parent) {
@@ -702,7 +610,7 @@ class CSSPurge {
               }
             }
 
-            function getHasCommonParentDeclarationFor (parentRules) {
+            function hasCommonParentDeclarationFor (parentRules) {
               return function hasCommonParentDeclaration (commonParentDeclaration) {
                 const {
                   count,
@@ -718,7 +626,7 @@ class CSSPurge {
 
               Object
                 .values(commonParentDeclarations)
-                .filter(getHasCommonParentDeclarationFor(parentRules))
+                .filter(hasCommonParentDeclarationFor(parentRules))
                 .forEach(getParentDeclarationsForCommonParentDeclaration(parentDeclarations))
 
               return parentDeclarations
