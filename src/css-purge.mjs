@@ -563,6 +563,7 @@ class CSSPurge {
               }
             }
 
+            /*
             function getCommonParentDeclarationsForRule (commonParentDeclarations, commonParentRule, rule) {
               return function getCommonParentDeclarations (declaration) {
                 const {
@@ -589,6 +590,7 @@ class CSSPurge {
                 }
               }
             }
+            */
 
             function reduceCommonParentDeclarations (commonParentRules, rules) {
               // get declarations
@@ -614,6 +616,7 @@ class CSSPurge {
               )
             }
 
+            /*
             function getCommonParentDeclarations (commonParentRules, rules) {
               const commonParentDeclarations = {}
 
@@ -634,6 +637,7 @@ class CSSPurge {
 
               return commonParentDeclarations
             }
+            */
 
             function reduceParentDeclarationsForCommonParentDeclaration (parentDeclarations, commonParentDeclaration) {
               const {
@@ -667,6 +671,7 @@ class CSSPurge {
               return parentDeclarations
             }
 
+            /*
             function getParentDeclarationsForCommonParentDeclaration (parentDeclarations) {
               return function getParentDeclarations (commonParentDeclaration) {
                 const {
@@ -698,6 +703,7 @@ class CSSPurge {
                 }
               }
             }
+            */
 
             function hasCommonParentDeclarationFor (parentRules) {
               return function hasCommonParentDeclaration (commonParentDeclaration) {
@@ -719,6 +725,7 @@ class CSSPurge {
               )
             }
 
+            /*
             function getParentDeclarations (commonParentDeclarations, parentRules) {
               const parentDeclarations = {}
 
@@ -729,6 +736,7 @@ class CSSPurge {
 
               return parentDeclarations
             }
+            */
 
             const commonSelectors = getCommonSelectors(rules)
 
@@ -754,11 +762,15 @@ class CSSPurge {
                   : accumulator.concat(commonParent)
                 }, []) */
 
-            const commonParentDeclarations = getCommonParentDeclarations(commonParentRules, rules)
+            // const commonParentDeclarations = getCommonParentDeclarations(commonParentRules, rules)
 
-            const parentDeclarations = getParentDeclarations(commonParentDeclarations, parentRules)
+            // const parentDeclarations = getParentDeclarations(commonParentDeclarations, parentRules)
 
-            console.log(isDeepStrictEqual(commonParentDeclarations, reduceCommonParentDeclarations(commonParentRules, rules)))
+            const commonParentDeclarations = reduceCommonParentDeclarations(commonParentRules, rules)
+
+            const parentDeclarations = reduceParentDeclarations(commonParentDeclarations, parentRules)
+
+            // console.log(isDeepStrictEqual(commonParentDeclarations, reduceCommonParentDeclarations(commonParentRules, rules)))
             // console.log(isDeepStrictEqual(parentDeclarations, reduceParentDeclarations(commonParentDeclarations, parentRules)))
 
             function getHasFor ({ property, value }) {
