@@ -401,146 +401,208 @@ class CSSPurge {
         let amountRemoved
         let selectorPropertiesList
 
+        function getParentSelector (selector) {
+          const parentSelector = [
+            ...selector.trim().split(' ')
+          ]
+          parentSelector.pop() // remove last item
+          return (
+            parentSelector.join(' ').trim()
+          )
+        }
+
+        function getReduceCommonSelectorsFor (selectorLineage) {
+          return function reduceCommonSelectorsFor (commonSelectors, s, i) {
+            if (i) {
+              let p = ''
+
+              let n = i
+              do {
+                const j = i - n
+                p += selectorLineage[j] + ' '
+              } while (--n) // n = n - 1
+
+              p += s
+
+              if (!commonSelectors[p]) commonSelectors[p] = 0
+              commonSelectors[p] += 1
+            } else {
+              if (!commonSelectors[s]) commonSelectors[s] = 0
+              commonSelectors[s] += 1
+            }
+
+            return commonSelectors
+          }
+        }
+
+        function getCommonSelectorsFor (selectorLineage, commonSelectors) {
+          return function getCommonSelectors (s, i) {
+            if (i) {
+              let p = ''
+
+              let n = i
+              do {
+                const j = i - n
+                p += selectorLineage[j] + ' '
+              } while (--n) // n = n - 1
+
+              p += s
+
+              if (!commonSelectors[p]) commonSelectors[p] = 0
+              commonSelectors[p] += 1
+            } else {
+              if (!commonSelectors[s]) commonSelectors[s] = 0
+              commonSelectors[s] += 1
+            }
+          }
+        }
+
+        function reduceCommonSelectorsForSelectorLineage (commonSelectors, selectorLineage) {
+          return (
+            selectorLineage
+              .reduce(getReduceCommonSelectorsFor(selectorLineage), commonSelectors)
+          )
+        }
+
+        function getCommonSelectorsForSelectorLineage (commonSelectors) {
+          return function getCommonSelectors (selectorLineage) {
+            selectorLineage
+              .forEach(getCommonSelectorsFor(selectorLineage, commonSelectors))
+          }
+        }
+
+        const hasSelectorLineage = (selector) => selector.includes(' ')
+
+        function toSelectorLineage (selector) {
+          return selector.split(' ')
+        }
+
+        const hasParentSelector = (selector) => selector.includes(' ')
+
+        function toParentSelector (selector) {
+          return getParentSelector(selector)
+        }
+
+        function reduceCommonSelectorsForRule (commonSelectors, { selectors }, i) {
+          return (
+            selectors
+              .filter(hasSelectorLineage)
+              .map(toSelectorLineage)
+              .reduce(reduceCommonSelectorsForSelectorLineage, commonSelectors)
+          )
+        }
+
+        function getCommonSelectorsForRule (commonSelectors) {
+          return function getCommonSelectors ({ selectors }, i) {
+            selectors
+              .filter(hasSelectorLineage)
+              .map(toSelectorLineage)
+              .forEach(getCommonSelectorsForSelectorLineage(commonSelectors))
+          }
+        }
+
+        function getReduceChildRulesForParentSelector (index) {
+          return function reduceChildRulesForParentSelector (parentRules, selector) {
+            const parentSelector = getParentSelector(selector)
+
+            if (parentSelector) {
+              if (!parentRules[parentSelector]) parentRules[parentSelector] = []
+              const childRules = parentRules[parentSelector]
+              childRules.push({
+                selector,
+                index
+              })
+            }
+
+            return parentRules
+          }
+        }
+
+        function reduceParentRulesForRule (parentRules, { selectors }, index) {
+          return (
+            selectors
+              .filter(hasParentSelector)
+              .reduce(getReduceChildRulesForParentSelector(index), parentRules)
+          )
+        }
+
+        function getChildRulesForParentSelector (parentRules, index) {
+          return function getChildRulesFor (selector) {
+            const parentSelector = getParentSelector(selector)
+            if (parentSelector) {
+              if (!parentRules[parentSelector]) parentRules[parentSelector] = []
+              const childRules = parentRules[parentSelector]
+              childRules.push({
+                selector,
+                index
+              })
+            }
+          }
+        }
+
+        function getParentRulesForRule (parentRules) {
+          return function getParentRules ({ selectors }, index) {
+            selectors
+              .filter(hasParentSelector)
+              .forEach(getChildRulesForParentSelector(parentRules, index))
+          }
+        }
+
+        function reduceCommonSelectors (rules) {
+          return (
+            rules
+              .filter(hasSelectors)
+              .reduce(reduceCommonSelectorsForRule, {})
+          )
+        }
+
+        function getCommonSelectors (rules) {
+          const commonSelectors = {}
+
+          rules
+            .filter(hasSelectors)
+            .forEach(getCommonSelectorsForRule(commonSelectors))
+
+          return commonSelectors
+        }
+
+        function reduceParentRules (rules) {
+          return (
+            rules
+              .filter(hasSelectors)
+              .reduce(reduceParentRulesForRule, {})
+          )
+        }
+
+        function getParentRules (rules) {
+          const parentRules = {}
+
+          rules
+            .filter(hasSelectors)
+            .forEach(getParentRulesForRule(parentRules))
+
+          return parentRules
+        }
+
         // reduce common declarations amongst children into parent
         if (OPTIONS.reduce_common_into_parent) {
           try {
-            const directParents1 = {}
-            const directParents2 = {}
-            const hierarchy1 = {}
-            const hierarchy2 = {}
-            const commonParentKeys1 = []
-            const commonParentKeys2 = []
-            const commonParents1 = []
-            const commonParents2 = []
-            let commonParentsLen = 0
-            const commonParentDeclarations1 = {}
-            const commonParentDeclarations2 = {}
-            const newParentDeclarations1 = {}
-            const newParentDeclarations2 = {}
-            let classLineage = ''
-            let parentClassLineage = ''
-            let lineageLabel = ''
-            const declarations = []
+            function getCommonParentRules (commonSelectors, parentRules) {
+              const commonEntries = Object.entries(commonSelectors).sort(([alpha], [omega]) => omega.localeCompare(alpha)) // "omega - alpha" not "alpha - omega"
+              const parentEntries = Object.entries(parentRules)
 
-            rules
-              .filter(hasSelectors)
-              .forEach(({ selectors }, i) => {
-                selectors
-                  .forEach((selector) => {
-                    if (selector.includes('.')) {
-                      const lineage = selector.split(' ')
+              const commonParentRules = []
 
-                      let parentLineage = [...lineage] // clone
-                      parentLineage.pop() // remove last item
-                      parentLineage = parentLineage.join(' ').trim()
-
-                      if (parentLineage) {
-                        if (!directParents2[parentLineage]) directParents2[parentLineage] = []
-                        const directParent = directParents2[parentLineage]
-                        directParent.push({
-                          selector,
-                          index: i
-                        })
-                      }
-
-                      lineage
-                        .forEach((v, j) => {
-                          if (j) {
-                            let p = ''
-
-                            let n = j
-                            do {
-                              p += lineage[j - n] + ' '
-                            } while (--n) // n = n - 1
-
-                            p += v
-
-                            if (!hierarchy2[p]) hierarchy2[p] = 0
-                            hierarchy2[p] += 1
-                          } else {
-                            if (!hierarchy2[v]) hierarchy2[v] = 0
-                            hierarchy2[v] += 1
-                          }
-                        })
-                    }
-                  })
-              })
-
-            // console.log(hierarchy1)
-
-            for (let i = 0; i < RULES_COUNT; ++i) {
-              /// rules
-              // group classes - create hierarchy1
-              if (rules[i].selectors !== undefined) {
-                for (let j = 0; j < rules[i].selectors.length; j++) { // each comma delimited
-                  if (rules[i].selectors[j].includes('.')) {
-                    classLineage = rules[i].selectors[j].split(' ')
-                    parentClassLineage = classLineage.slice(0) // clone
-                    parentClassLineage.pop()
-                    parentClassLineage = parentClassLineage.join(' ')
-
-                    if (parentClassLineage !== undefined && parentClassLineage !== '') {
-                      if (directParents1[parentClassLineage] !== undefined) {
-                        directParents1[parentClassLineage].push({
-                          selector: rules[i].selectors[j],
-                          index: i
-                        })
-                      } else {
-                        directParents1[parentClassLineage] = [{
-                          selector: rules[i].selectors[j],
-                          index: i
-                        }]
-                      }
-                    }
-
-                    for (let k = 0; k < classLineage.length; k++) { // depth of hierarchy1
-                      if (k > 0) {
-                        lineageLabel = ''
-
-                        for (let l = k; l > 0; l--) {
-                          lineageLabel += classLineage[k - l] + ' '
-                        }
-                        lineageLabel += classLineage[k]
-
-                        // console.log({ lineageLabel })
-
-                        if (hierarchy1[lineageLabel] === undefined) {
-                          hierarchy1[lineageLabel] = 0
-                        }
-
-                        hierarchy1[lineageLabel] += 1
-                      } else {
-                        if (hierarchy1[classLineage[k]] === undefined) {
-                          hierarchy1[classLineage[k]] = 0
-                        }
-
-                        hierarchy1[classLineage[k]] += 1
-                      }
-                    } // end of for
-                  } // end of if
-                } // end of for
-              }
-            }
-
-            // console.log({ directParents2 })
-            // console.log({ directParents1 })
-
-            console.log(isDeepStrictEqual(directParents1, directParents2))
-
-            function sortHierarchy2 (source, parent, parentKeys) {
-              const sourceEntries = Object.entries(source).sort(([alpha], [omega]) => omega.localeCompare(alpha)) // "omega - alpha" not "alpha - omega"
-              const parentEntries = Object.entries(parent)
-
-              sourceEntries
+              commonEntries
                 .forEach(([sourceKey]) => {
                   parentEntries
-                    .forEach(([parentKey, parentValue]) => {
-                      if (parentValue.length > 1) {
-                        parentValue
+                    .forEach(([parentSelector, childRules]) => {
+                      if (childRules.length > 1) {
+                        childRules
                           .filter(({ selector }) => sourceKey === selector)
                           .forEach(({ selector, index }) => {
-                            parentKeys.push({
-                              selector: parentKey,
+                            commonParentRules.push({
+                              selector: parentSelector,
                               index,
                               childSelector: selector
                             })
@@ -549,78 +611,119 @@ class CSSPurge {
                     })
                 })
 
-              return (
-                Object
-                  .fromEntries(
-                    sourceEntries
-                  )
-              )
+              return commonParentRules
             }
 
-            function sortHierarchy1 (obj) {
-              const keys = Object.keys(obj)
-              keys.sort(function (a, b) { return b.length - a.length })
-              const hierarchy = {}
-              for (let i = 0; i < keys.length; i++) {
-                hierarchy[keys[i]] = obj[keys[i]]
+            function getCommonParentDeclarations (commonParentRules, rules) {
+              const commonParentDeclarations = {}
 
-                Object
-                  .entries(directParents1).forEach(function ([key, directParent], index, val) {
-                    if (directParent.length > 1) {
-                      for (let j = 0; j < directParent.length; j++) {
-                        if (keys[i] === directParent[j].selector) {
-                          if (OPTIONS.verbose) { console.log(success('Process - Rules - Group Common Parent Rule : ' + keys[i])) }
-                          commonParentKeys1.push({
-                            selector: key,
-                            index: directParent[j].index,
-                            childSelector: keys[i]
-                          })
+              // get declarations
+              commonParentRules
+                .forEach((commonParentRule) => {
+                  const {
+                    index
+                  } = commonParentRule
+
+                  const rule = rules[index]
+
+                  if (Array.isArray(rule.declarations)) {
+                    rule.declarations
+                      .forEach((declaration) => {
+                        const {
+                          property,
+                          value
+                        } = declaration
+
+                        const key = property + '_' + value
+                        let commonParentDeclaration = commonParentDeclarations[key]
+
+                        if (commonParentDeclaration) {
+                          commonParentDeclaration.count += 1
+                        } else {
+                          commonParentDeclaration = {
+                            property,
+                            value,
+                            count: 1,
+                            selector: rule.selectors,
+                            selectorIndex: index,
+                            parentSelector: commonParentRule.selector
+                          }
+
+                          commonParentDeclarations[key] = commonParentDeclaration
                         }
-                      }
-                    }
-                  }, directParents1)
-              }
+                      })
+                  }
+                })
 
-              return hierarchy
+              return commonParentDeclarations
             }
 
-            const HIERARCHY2 = sortHierarchy2(hierarchy2, directParents2, commonParentKeys2)
-            const HIERARCHY1 = sortHierarchy1(hierarchy1)
+            function getParentDeclarationsForCommonParentDeclaration (parentDeclarations) {
+              return function getParentDeclarations (commonParentDeclaration) {
+                const {
+                  parentSelector,
+                  property,
+                  value,
+                  selectorIndex
+                } = commonParentDeclaration
 
-            console.log(isDeepStrictEqual(HIERARCHY1, HIERARCHY2))
+                let parentDeclaration = parentDeclarations[parentSelector]
 
-            // console.log({ HIERARCHY2 })
-            // console.log({ HIERARCHY1 })
+                const declaration = {
+                  type: 'declaration',
+                  property,
+                  value
+                }
 
-            // console.log(1, HIERARCHY1)
-            // console.log(2, HIERARCHY2)
-            // console.log(3, isDeepStrictEqual(HIERARCHY1, HIERARCHY2))
-            // console.log(4, isDeepStrictEqual(directParents1, directParents2))
+                if (parentDeclaration) {
+                  parentDeclaration.declarations.push(declaration)
+                } else {
+                  parentDeclaration = {
+                    declarations: [
+                      declaration
+                    ],
+                    selectorIndex
+                  }
 
-            // console.log(1, JSON.stringify(HIERARCHY1, null, 2))
-            // console.log(2, JSON.stringify(HIERARCHY2, null, 2))
-            // console.log(3, JSON.stringify(directParents1, null, 2))
-            // console.log(4, JSON.stringify(directParents2, null, 2))
+                  parentDeclarations[parentSelector] = parentDeclaration
+                }
+              }
+            }
+
+            function getHasCommonParentDeclarationFor (parentRules) {
+              return function hasCommonParentDeclaration (commonParentDeclaration) {
+                const {
+                  count,
+                  parentSelector
+                } = commonParentDeclaration
+
+                return (count === parentRules[parentSelector].length)
+              }
+            }
+
+            function getParentDeclarations (commonParentDeclarations, parentRules) {
+              const parentDeclarations = {}
+
+              Object
+                .values(commonParentDeclarations)
+                .filter(getHasCommonParentDeclarationFor(parentRules))
+                .forEach(getParentDeclarationsForCommonParentDeclaration(parentDeclarations))
+
+              return parentDeclarations
+            }
+
+            const commonSelectors = getCommonSelectors(rules)
+
+            const parentRules = getParentRules(rules)
+
+            const commonParentRules = getCommonParentRules(commonSelectors, parentRules)
+
+            console.log(1, isDeepStrictEqual(reduceCommonSelectors(rules), commonSelectors))
+
+            console.log(2, isDeepStrictEqual(reduceParentRules(rules), parentRules))
 
             /*
-            commonParentKeys1 = commonParentKeys1
-              .reduce((accumulator, commonParent) => {
-                const {
-                  selector,
-                  index,
-                  childSelector
-                } = commonParent
-
-                return accumulator.some(({
-                  selector: s,
-                  index: i,
-                  childSelector: c
-                }) => (selector === s && index === i && childSelector === c))
-                  ? accumulator
-                  : accumulator.concat(commonParent)
-                }, [])
-
-            commonParentKeys2 = commonParentKeys2
+            commonParentRules = commonParentRules
               .reduce((accumulator, commonParent) => {
                 const {
                   selector,
@@ -637,195 +740,9 @@ class CSSPurge {
                   : accumulator.concat(commonParent)
                 }, []) */
 
-            // console.log(commonParentKeys1)
-            // console.log(commonParentKeys2)
+            const commonParentDeclarations = getCommonParentDeclarations(commonParentRules, rules)
 
-            // hierarchyKeys = Object.keys(HIERARCHY1)
-            // hierarchyLength = hierarchyKeys.length
-
-            // selectedHierarchyLevel = 0
-
-            commonParentsLen = commonParentKeys1.length
-
-            // get declarations
-            for (let i = 0; i < commonParentKeys1.length; i++) {
-              if (rules[commonParentKeys1[i].index].declarations !== undefined) {
-                for (let j = 0; j < rules[commonParentKeys1[i].index].declarations.length; j++) {
-                  if (commonParentDeclarations1[rules[commonParentKeys1[i].index].declarations[j].property + '_' + rules[commonParentKeys1[i].index].declarations[j].value] !== undefined) {
-                    commonParentDeclarations1[rules[commonParentKeys1[i].index].declarations[j].property + '_' + rules[commonParentKeys1[i].index].declarations[j].value].count += 1
-                  } else {
-                    commonParentDeclarations1[rules[commonParentKeys1[i].index].declarations[j].property + '_' + rules[commonParentKeys1[i].index].declarations[j].value] = {
-                      property: rules[commonParentKeys1[i].index].declarations[j].property,
-                      value: rules[commonParentKeys1[i].index].declarations[j].value,
-                      count: 1,
-                      selector: rules[commonParentKeys1[i].index].selectors,
-                      selectorIndex: commonParentKeys1[i].index,
-                      commonParent: commonParentKeys1[i].selector
-                    }
-                  }
-                }
-              }
-            }
-
-            // console.log({ commonParentKeys1 })
-
-            // get declarations
-            commonParentKeys2
-              .forEach((commonParentKey) => {
-                const {
-                  index
-                } = commonParentKey
-
-                const rule = rules[index]
-
-                if (Array.isArray(rule.declarations)) {
-                  rule.declarations
-                    .forEach((declaration) => {
-                      const {
-                        property,
-                        value
-                      } = declaration
-
-                      const key = property + '_' + value
-                      let commonParentDeclaration = commonParentDeclarations2[key]
-
-                      if (commonParentDeclaration) {
-                        commonParentDeclaration.count += 1
-                      } else {
-                        commonParentDeclaration = {
-                          property,
-                          value,
-                          count: 1,
-                          selector: rule.selectors,
-                          selectorIndex: index,
-                          commonParent: commonParentKey.selector
-                        }
-
-                        commonParentDeclarations2[key] = commonParentDeclaration
-                      }
-                    })
-                }
-              })
-
-            // console.log({ commonParentKeys2 })
-
-            // console.log(commonParentDeclarations1)
-            console.log(commonParentDeclarations2)
-
-            console.log(isDeepStrictEqual(commonParentDeclarations1, commonParentDeclarations2))
-
-            Object
-              .entries(commonParentDeclarations1)
-              .forEach(function ([key, commonParentDeclaration]) {
-                if (commonParentDeclaration.count === directParents1[commonParentDeclaration.commonParent].length) {
-                  if (newParentDeclarations1[commonParentDeclaration.commonParent] !== undefined) {
-                    newParentDeclarations1[commonParentDeclaration.commonParent].declarations.push({
-                      type: 'declaration',
-                      property: commonParentDeclaration.property,
-                      value: commonParentDeclaration.value
-                    })
-                  } else {
-                    newParentDeclarations1[commonParentDeclaration.commonParent] = {
-                      declarations: [{
-                        type: 'declaration',
-                        property: commonParentDeclaration.property,
-                        value: commonParentDeclaration.value
-                      }],
-                      selectorIndex: commonParentDeclaration.selectorIndex
-                    }
-                  }
-
-                  commonParents1.push(commonParentDeclaration.commonParent)
-                }
-              })
-
-            Object
-              .values(commonParentDeclarations2)
-              .forEach((parentDeclaration) => {
-                const {
-                  count,
-                  commonParent,
-                  property,
-                  value,
-                  selectorIndex
-                } = parentDeclaration
-
-                if (count === directParents1[commonParent].length) {
-                  let newParentDeclaration = newParentDeclarations2[commonParent]
-
-                  if (newParentDeclaration) {
-                    newParentDeclaration.declarations.push({
-                      type: 'declaration',
-                      property,
-                      value
-                    })
-                  } else {
-                    newParentDeclaration = {
-                      declarations: [{
-                        type: 'declaration',
-                        property,
-                        value
-                      }],
-                      selectorIndex
-                    }
-                    newParentDeclarations2[commonParent] = newParentDeclaration
-                  }
-
-                  commonParents2.push(commonParent)
-                }
-              })
-
-            console.log(commonParents1.length)
-            console.log(commonParents2.length)
-
-            console.log(isDeepStrictEqual(commonParents1, commonParents2))
-
-            commonParentsLen = commonParentKeys1.length
-
-            const rules1 = [...rules]
-            const rules2 = [...rules]
-
-            for (let i = 0; i < commonParentsLen; i++) {
-              Object
-                .entries(newParentDeclarations1)
-                .forEach(function ([key, newParentDeclaration], index) {
-                  if (commonParentKeys1[i] !== undefined && commonParentKeys1[i].selector === key) {
-                    if (rules1[commonParentKeys1[i].index] !== undefined && rules1[commonParentKeys1[i].index].declarations !== undefined) {
-                      // clone declarations
-                      const declarations = rules1[commonParentKeys1[i].index].declarations.slice(0) // clone
-                      DECLARATION_COUNT = declarations.length
-
-                      if (newParentDeclaration && newParentDeclaration.declarations) {
-                        for (let j = 0; j < newParentDeclaration.declarations.length; j++) { // each parent declaration
-                          console.log(`(1) ${j} of ${newParentDeclaration.declarations.length}`)
-                          // remove declarations
-                          for (let k = 0; k < DECLARATION_COUNT; k++) { // each child declaration
-                            if (newParentDeclaration.declarations[j] !== undefined &&
-                              newParentDeclaration.declarations[j].type === 'declaration' &&
-                              newParentDeclaration.declarations[j].property === declarations[k].property &&
-                              newParentDeclaration.declarations[j].value === declarations[k].value) {
-                              console.log('(1) remove', k)
-                              declarations.splice(k, 1)
-                              k -= 1
-                              DECLARATION_COUNT -= 1
-                            }
-                          } // end of k loop
-                        } // end of j loop
-                      }
-
-                      if (declarations.length === 0) {
-                        // remove whole rule
-                        rules1.splice(commonParentKeys1[i].index, 1)
-                        i -= 1
-                        commonParentsLen -= 1
-                      } else {
-                        // update declarations
-                        rules1[commonParentKeys1[i].index].declarations = declarations
-                      }
-                    }
-                  }
-                })
-            } // end of i loop
+            const parentDeclarations = getParentDeclarations(commonParentDeclarations, parentRules)
 
             function getHasFor ({ property, value }) {
               return function has ({ property: p, value: v }) {
@@ -836,31 +753,28 @@ class CSSPurge {
               }
             }
 
-            commonParentKeys2
+            commonParentRules
               .forEach((commonParent) => {
                 const {
                   index
                 } = commonParent
 
-                const rule = rules2[index]
+                const rule = rules[index]
                 if (rule) {
-                  const {
-                    selector
-                  } = commonParent
+                  if (Array.isArray(rule.declarations)) {
+                    const {
+                      selector
+                    } = commonParent
 
-                  Object
-                    .entries(newParentDeclarations2)
-                    .filter(([key]) => selector === key)
-                    .forEach(([key, newParentDeclaration]) => {
-                      if (Array.isArray(rule.declarations)) {
+                    Object
+                      .entries(parentDeclarations)
+                      .filter(([key]) => selector === key)
+                      .forEach(([key, parentDeclaration]) => {
                         const declarations = [...rule.declarations] // .slice(0) // clone
 
-                        newParentDeclaration.declarations
+                        parentDeclaration.declarations
                           .forEach((declaration, i) => {
                             const has = getHasFor(declaration)
-
-                            console.log(`(2) ${i} of ${newParentDeclaration.declarations.length}`)
-
                             if (declarations.some(has)) {
                               const n = declarations.findIndex(has)
                               declarations.splice(n, 1)
@@ -868,65 +782,26 @@ class CSSPurge {
                           })
 
                         if (declarations.length) {
-                          // update declarations
-                          rule.declarations = declarations
+                          rule.declarations = declarations // update declarations
                         } else {
-                          // remove whole rule
-                          rules2.splice(index, 1)
+                          rules.splice(index, 1) // remove whole rule
                         }
-                      }
-                    })
+                      })
+                  }
                 }
               })
 
             // Create Common Parents
             Object
-              .entries(newParentDeclarations1)
-              .forEach(function ([key, newParentDeclaration], index) {
-                // console.log(1, { selectorIndex: newParentDeclaration.selectorIndex }, (newParentDeclaration.selectorIndex - 1 < 0) ? newParentDeclaration.selectorIndex : newParentDeclaration.selectorIndex - 1)
-
-                rules1.splice(((newParentDeclaration.selectorIndex - 1 < 0) ? newParentDeclaration.selectorIndex : newParentDeclaration.selectorIndex - 1), 0, {
+              .entries(parentDeclarations)
+              .forEach(([selector, { selectorIndex, declarations }]) => {
+                const i = (selectorIndex ? selectorIndex - 1 : 0)
+                rules.splice(i, 0, {
                   type: 'rule',
-                  selectors: [key],
-                  declarations: newParentDeclaration.declarations
-                })
-              })
-
-            // Create Common Parents
-            Object
-              .entries(newParentDeclarations2)
-              .forEach(([key, { selectorIndex, declarations }]) => {
-                // console.log(2, { selectorIndex }, (selectorIndex - 1 < 0) ? selectorIndex : selectorIndex - 1)
-
-                rules2.splice(((selectorIndex - 1 < 0) ? selectorIndex : selectorIndex - 1), 0, {
-                  type: 'rule',
-                  selectors: [key],
+                  selectors: [selector],
                   declarations
                 })
               })
-
-            console.log('FINAL', rules1.length, rules2.length, isDeepStrictEqual(rules1, rules2))
-
-            // some cleanup
-
-            /*
-            directParents1 = {}
-            directParents2 = {}
-            hierarchy1 = {}
-            hierarchy2 = {}
-            // hierarchyKeys = []
-            // hierarchyLength = 0
-            commonParentKeys1 = []
-            commonParentKeys2 = []
-            commonParents1 = []
-            commonParents2 = []
-            commonParentDeclarations1 = {}
-            commonParentDeclarations2 = {}
-            newParentDeclarations1 = []
-            newParentDeclarations2 = []
-            // processedCommonParentsChildren = []
-            declarations = []
-            */
           } catch (e) {
             console.log(1, e)
           }
