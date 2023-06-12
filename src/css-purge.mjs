@@ -504,138 +504,138 @@ class CSSPurge {
           )
         }
 
-        // reduce common declarations amongst children into parent
-        if (OPTIONS.reduce_common_into_parent) {
-          try {
-            function getCommonParentRules (commonSelectors, parentRules) {
-              const commonEntries = Object.entries(commonSelectors).sort(([alpha], [omega]) => omega.localeCompare(alpha)) // "omega - alpha" not "alpha - omega"
-              const parentEntries = Object.entries(parentRules)
+        function getCommonParentRules (commonSelectors, parentRules) {
+          const commonEntries = Object.entries(commonSelectors).sort(([alpha], [omega]) => omega.localeCompare(alpha)) // "omega - alpha" not "alpha - omega"
+          const parentEntries = Object.entries(parentRules)
 
-              const commonParentRules = []
+          const commonParentRules = []
 
-              commonEntries
-                .forEach(([sourceKey]) => {
-                  parentEntries
-                    .forEach(([parentSelector, childRules]) => {
-                      if (childRules.length > 1) {
-                        childRules
-                          .filter(({ selector }) => sourceKey === selector)
-                          .forEach(({ selector, index }) => {
-                            commonParentRules.push({
-                              selector: parentSelector,
-                              index,
-                              childSelector: selector
-                            })
-                          })
-                      }
-                    })
+          commonEntries
+            .forEach(([sourceKey]) => {
+              parentEntries
+                .forEach(([parentSelector, childRules]) => {
+                  if (childRules.length > 1) {
+                    childRules
+                      .filter(({ selector }) => sourceKey === selector)
+                      .forEach(({ selector, index }) => {
+                        commonParentRules.push({
+                          selector: parentSelector,
+                          index,
+                          childSelector: selector
+                        })
+                      })
+                  }
                 })
+            })
 
-              return commonParentRules
+          return commonParentRules
+        }
+
+        function getCommonParentDeclarationsFor (commonParentRule, rule) {
+          return function getCommonParentDeclarations (commonParentDeclarations, declaration) {
+            const {
+              property,
+              value
+            } = declaration
+
+            const key = property + '_' + value
+            let commonParentDeclaration = commonParentDeclarations[key]
+
+            if (commonParentDeclaration) {
+              commonParentDeclaration.count += 1
+            } else {
+              commonParentDeclaration = {
+                property,
+                value,
+                count: 1,
+                selector: rule.selectors,
+                selectorIndex: commonParentRule.index,
+                parentSelector: commonParentRule.selector
+              }
+
+              commonParentDeclarations[key] = commonParentDeclaration
             }
 
-            function getCommonParentDeclarationsFor (commonParentRule, rule) {
-              return function getCommonParentDeclarations (commonParentDeclarations, declaration) {
+            return commonParentDeclarations
+          }
+        }
+
+        function getCommonParentDeclarations (commonParentRules, rules) {
+          // get declarations
+          return (
+            commonParentRules
+              .reduce((commonParentDeclarations, commonParentRule) => {
                 const {
-                  property,
-                  value
-                } = declaration
+                  index
+                } = commonParentRule
 
-                const key = property + '_' + value
-                let commonParentDeclaration = commonParentDeclarations[key]
+                const rule = rules[index]
 
-                if (commonParentDeclaration) {
-                  commonParentDeclaration.count += 1
-                } else {
-                  commonParentDeclaration = {
-                    property,
-                    value,
-                    count: 1,
-                    selector: rule.selectors,
-                    selectorIndex: commonParentRule.index,
-                    parentSelector: commonParentRule.selector
-                  }
-
-                  commonParentDeclarations[key] = commonParentDeclaration
+                if (Array.isArray(rule.declarations)) {
+                  return (
+                    rule.declarations
+                      .reduce(getCommonParentDeclarationsFor(commonParentRule, rule), commonParentDeclarations)
+                  )
                 }
 
                 return commonParentDeclarations
-              }
+              }, {})
+          )
+        }
+
+        function getParentDeclarationsForCommonParentDeclaration (parentDeclarations, commonParentDeclaration) {
+          const {
+            parentSelector,
+            property,
+            value
+          } = commonParentDeclaration
+
+          let parentDeclaration = parentDeclarations[parentSelector]
+
+          const declaration = {
+            type: 'declaration',
+            property,
+            value
+          }
+
+          if (parentDeclaration) {
+            parentDeclaration.declarations.push(declaration)
+          } else {
+            const {
+              selectorIndex
+            } = commonParentDeclaration
+
+            parentDeclaration = {
+              declarations: [
+                declaration
+              ],
+              selectorIndex
             }
 
-            function getCommonParentDeclarations (commonParentRules, rules) {
-              // get declarations
-              return (
-                commonParentRules
-                  .reduce((commonParentDeclarations, commonParentRule) => {
-                    const {
-                      index
-                    } = commonParentRule
+            parentDeclarations[parentSelector] = parentDeclaration
+          }
 
-                    const rule = rules[index]
+          return parentDeclarations
+        }
 
-                    if (Array.isArray(rule.declarations)) {
-                      return (
-                        rule.declarations
-                          .reduce(getCommonParentDeclarationsFor(commonParentRule, rule), commonParentDeclarations)
-                      )
-                    }
+        function hasCommonParentDeclarationFor (parentRules) {
+          return function hasCommonParentDeclaration ({ count, parentSelector }) {
+            return (count === parentRules[parentSelector].length)
+          }
+        }
 
-                    return commonParentDeclarations
-                  }, {})
-              )
-            }
+        function getParentDeclarations (commonParentDeclarations, parentRules) {
+          return (
+            Object
+              .values(commonParentDeclarations)
+              .filter(hasCommonParentDeclarationFor(parentRules))
+              .reduce(getParentDeclarationsForCommonParentDeclaration, {})
+          )
+        }
 
-            function getParentDeclarationsForCommonParentDeclaration (parentDeclarations, commonParentDeclaration) {
-              const {
-                parentSelector,
-                property,
-                value
-              } = commonParentDeclaration
-
-              let parentDeclaration = parentDeclarations[parentSelector]
-
-              const declaration = {
-                type: 'declaration',
-                property,
-                value
-              }
-
-              if (parentDeclaration) {
-                parentDeclaration.declarations.push(declaration)
-              } else {
-                const {
-                  selectorIndex
-                } = commonParentDeclaration
-
-                parentDeclaration = {
-                  declarations: [
-                    declaration
-                  ],
-                  selectorIndex
-                }
-
-                parentDeclarations[parentSelector] = parentDeclaration
-              }
-
-              return parentDeclarations
-            }
-
-            function hasCommonParentDeclarationFor (parentRules) {
-              return function hasCommonParentDeclaration ({ count, parentSelector }) {
-                return (count === parentRules[parentSelector].length)
-              }
-            }
-
-            function getParentDeclarations (commonParentDeclarations, parentRules) {
-              return (
-                Object
-                  .values(commonParentDeclarations)
-                  .filter(hasCommonParentDeclarationFor(parentRules))
-                  .reduce(getParentDeclarationsForCommonParentDeclaration, {})
-              )
-            }
-
+        // reduce common declarations amongst children into parent
+        if (OPTIONS.reduce_common_into_parent) {
+          try {
             const commonSelectors = getCommonSelectors(rules)
 
             const parentRules = getParentRules(rules)
