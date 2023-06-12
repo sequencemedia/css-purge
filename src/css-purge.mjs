@@ -571,9 +571,13 @@ class CSSPurge {
 
                 const rule = rules[index]
 
-                if (Array.isArray(rule.declarations)) {
+                const {
+                  declarations
+                } = rule
+
+                if (Array.isArray(declarations)) {
                   return (
-                    rule.declarations
+                    declarations
                       .reduce(getCommonParentDeclarationsFor(commonParentRule, rule), commonParentDeclarations)
                   )
                 }
