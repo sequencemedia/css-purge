@@ -534,7 +534,7 @@ class CSSPurge {
               return commonParentRules
             }
 
-            function reduceCommonParentDeclarationsForRule (commonParentRule, rule) {
+            function getCommonParentDeclarationsFor (commonParentRule, rule) {
               return function getCommonParentDeclarations (commonParentDeclarations, declaration) {
                 const {
                   property,
@@ -563,38 +563,8 @@ class CSSPurge {
               }
             }
 
-            /*
-            function getCommonParentDeclarationsForRule (commonParentDeclarations, commonParentRule, rule) {
-              return function getCommonParentDeclarations (declaration) {
-                const {
-                  property,
-                  value
-                } = declaration
-
-                const key = property + '_' + value
-                let commonParentDeclaration = commonParentDeclarations[key]
-
-                if (commonParentDeclaration) {
-                  commonParentDeclaration.count += 1
-                } else {
-                  commonParentDeclaration = {
-                    property,
-                    value,
-                    count: 1,
-                    selector: rule.selectors,
-                    selectorIndex: commonParentRule.index,
-                    parentSelector: commonParentRule.selector
-                  }
-
-                  commonParentDeclarations[key] = commonParentDeclaration
-                }
-              }
-            }
-            */
-
-            function reduceCommonParentDeclarations (commonParentRules, rules) {
+            function getCommonParentDeclarations (commonParentRules, rules) {
               // get declarations
-
               return (
                 commonParentRules
                   .reduce((commonParentDeclarations, commonParentRule) => {
@@ -607,7 +577,7 @@ class CSSPurge {
                     if (Array.isArray(rule.declarations)) {
                       return (
                         rule.declarations
-                          .reduce(reduceCommonParentDeclarationsForRule(commonParentRule, rule), commonParentDeclarations)
+                          .reduce(getCommonParentDeclarationsFor(commonParentRule, rule), commonParentDeclarations)
                       )
                     }
 
@@ -616,35 +586,11 @@ class CSSPurge {
               )
             }
 
-            /*
-            function getCommonParentDeclarations (commonParentRules, rules) {
-              const commonParentDeclarations = {}
-
-              // get declarations
-              commonParentRules
-                .forEach((commonParentRule) => {
-                  const {
-                    index
-                  } = commonParentRule
-
-                  const rule = rules[index]
-
-                  if (Array.isArray(rule.declarations)) {
-                    rule.declarations
-                      .forEach(getCommonParentDeclarationsForRule(commonParentDeclarations, commonParentRule, rule))
-                  }
-                })
-
-              return commonParentDeclarations
-            }
-            */
-
-            function reduceParentDeclarationsForCommonParentDeclaration (parentDeclarations, commonParentDeclaration) {
+            function getParentDeclarationsForCommonParentDeclaration (parentDeclarations, commonParentDeclaration) {
               const {
                 parentSelector,
                 property,
-                value,
-                selectorIndex
+                value
               } = commonParentDeclaration
 
               let parentDeclaration = parentDeclarations[parentSelector]
@@ -658,6 +604,10 @@ class CSSPurge {
               if (parentDeclaration) {
                 parentDeclaration.declarations.push(declaration)
               } else {
+                const {
+                  selectorIndex
+                } = commonParentDeclaration
+
                 parentDeclaration = {
                   declarations: [
                     declaration
@@ -671,72 +621,20 @@ class CSSPurge {
               return parentDeclarations
             }
 
-            /*
-            function getParentDeclarationsForCommonParentDeclaration (parentDeclarations) {
-              return function getParentDeclarations (commonParentDeclaration) {
-                const {
-                  parentSelector,
-                  property,
-                  value,
-                  selectorIndex
-                } = commonParentDeclaration
-
-                let parentDeclaration = parentDeclarations[parentSelector]
-
-                const declaration = {
-                  type: 'declaration',
-                  property,
-                  value
-                }
-
-                if (parentDeclaration) {
-                  parentDeclaration.declarations.push(declaration)
-                } else {
-                  parentDeclaration = {
-                    declarations: [
-                      declaration
-                    ],
-                    selectorIndex
-                  }
-
-                  parentDeclarations[parentSelector] = parentDeclaration
-                }
-              }
-            }
-            */
-
             function hasCommonParentDeclarationFor (parentRules) {
-              return function hasCommonParentDeclaration (commonParentDeclaration) {
-                const {
-                  count,
-                  parentSelector
-                } = commonParentDeclaration
-
+              return function hasCommonParentDeclaration ({ count, parentSelector }) {
                 return (count === parentRules[parentSelector].length)
               }
             }
 
-            function reduceParentDeclarations (commonParentDeclarations, parentRules) {
+            function getParentDeclarations (commonParentDeclarations, parentRules) {
               return (
                 Object
                   .values(commonParentDeclarations)
                   .filter(hasCommonParentDeclarationFor(parentRules))
-                  .reduce(reduceParentDeclarationsForCommonParentDeclaration, {})
+                  .reduce(getParentDeclarationsForCommonParentDeclaration, {})
               )
             }
-
-            /*
-            function getParentDeclarations (commonParentDeclarations, parentRules) {
-              const parentDeclarations = {}
-
-              Object
-                .values(commonParentDeclarations)
-                .filter(hasCommonParentDeclarationFor(parentRules))
-                .forEach(getParentDeclarationsForCommonParentDeclaration(parentDeclarations))
-
-              return parentDeclarations
-            }
-            */
 
             const commonSelectors = getCommonSelectors(rules)
 
@@ -762,16 +660,12 @@ class CSSPurge {
                   : accumulator.concat(commonParent)
                 }, []) */
 
-            // const commonParentDeclarations = getCommonParentDeclarations(commonParentRules, rules)
+            const commonParentDeclarations = getCommonParentDeclarations(commonParentRules, rules)
 
-            // const parentDeclarations = getParentDeclarations(commonParentDeclarations, parentRules)
+            const parentDeclarations = getParentDeclarations(commonParentDeclarations, parentRules)
 
-            const commonParentDeclarations = reduceCommonParentDeclarations(commonParentRules, rules)
-
-            const parentDeclarations = reduceParentDeclarations(commonParentDeclarations, parentRules)
-
-            // console.log(isDeepStrictEqual(commonParentDeclarations, reduceCommonParentDeclarations(commonParentRules, rules)))
-            // console.log(isDeepStrictEqual(parentDeclarations, reduceParentDeclarations(commonParentDeclarations, parentRules)))
+            // console.log(isDeepStrictEqual(commonParentDeclarations, getCommonParentDeclarations(commonParentRules, rules)))
+            // console.log(isDeepStrictEqual(parentDeclarations, getParentDeclarations(commonParentDeclarations, parentRules)))
 
             function getHasFor ({ property, value }) {
               return function has ({ property: p, value: v }) {
