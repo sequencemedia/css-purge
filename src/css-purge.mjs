@@ -230,9 +230,9 @@ const hasParentSelector = (selector) => selector.trim().includes(' ')
 const toParentSelector = (selector) => getParentSelector(selector)
 */
 
-function getCommonParentRulesForParentSelector (commonParentRules, parentSelector) {
-  return function getCommonParentRulesFor ({ selector, index }) {
-    commonParentRules.push({
+function getCommonParentRulesFor (parentSelector) {
+  return function reduceCommonParentRulesFor (commonParentRules, { selector, index }) {
+    return commonParentRules.concat({
       selector: parentSelector,
       index,
       childSelector: selector
@@ -242,7 +242,7 @@ function getCommonParentRulesForParentSelector (commonParentRules, parentSelecto
 
 function hasCommonSelectorFor (commonSelector) {
   return function hasCommonSelector ({ selector }) {
-    return commonSelector === selector
+    return selector === commonSelector
   }
 }
 
@@ -262,10 +262,11 @@ function getChildRules (index) {
     if (parentSelector) {
       if (!parentRules[parentSelector]) parentRules[parentSelector] = []
       const childRules = parentRules[parentSelector]
-      childRules.push({
-        selector,
-        index
-      })
+      childRules
+        .push({
+          selector,
+          index
+        })
     }
 
     return parentRules
@@ -296,37 +297,51 @@ function getParentRules (rules) {
   )
 }
 
-function executeChildRules (parentSelector, childRules, commonSelector, commonParentRules) {
+function getCommonParentRulesFromChildRules (commonSelector, parentSelector, childRules, commonParentRules) {
   if (childRules.length > 1) {
-    childRules
-      .filter(hasCommonSelectorFor(commonSelector))
-      .forEach(getCommonParentRulesForParentSelector(commonParentRules, parentSelector))
+    return (
+      childRules
+        .filter(hasCommonSelectorFor(commonSelector))
+        .reduce(getCommonParentRulesFor(parentSelector), commonParentRules)
+    )
+  }
+
+  return commonParentRules
+}
+
+function getCommonParentRulesForParentSelector (commonSelector) {
+  return function reduceCommonParentRulesForParentSelector (commonParentRules, [parentSelector, childRules]) {
+    return getCommonParentRulesFromChildRules(commonSelector, parentSelector, childRules, commonParentRules)
   }
 }
 
-function executeParentEntries (commonSelector, parentEntries, commonParentRules) {
-  parentEntries
-    .forEach(([parentSelector, childRules]) => {
-      executeChildRules(parentSelector, childRules, commonSelector, commonParentRules)
-    })
+function getCommonParentRulesFromParentEntries (parentEntries, commonSelector, commonParentRules = []) {
+  return (
+    parentEntries
+      .reduce(getCommonParentRulesForParentSelector(commonSelector), commonParentRules)
+  )
 }
 
-function executeCommonEntries (commonEntries, parentEntries, commonParentRules) {
-  commonEntries
-    .forEach(([commonSelector]) => {
-      executeParentEntries(commonSelector, parentEntries, commonParentRules)
-    })
+function getCommonParentRulesForCommonSelector (parentEntries) {
+  return function reduceCommonParentRulesForCommonSelector (commonParentRules, [commonSelector]) {
+    return getCommonParentRulesFromParentEntries(parentEntries, commonSelector, commonParentRules)
+  }
+}
+
+function getCommonParentRulesFromCommonEntries (commonEntries, parentEntries, commonParentRules = []) {
+  return (
+    commonEntries
+      .reduce(getCommonParentRulesForCommonSelector(parentEntries), commonParentRules)
+  )
 }
 
 function getCommonParentRules (commonSelectors, parentRules) {
   const commonEntries = Object.entries(commonSelectors).sort(([alpha], [omega]) => omega.localeCompare(alpha)) // "omega - alpha" not "alpha - omega"
   const parentEntries = Object.entries(parentRules)
 
-  const commonParentRules = []
-
-  executeCommonEntries (commonEntries, parentEntries, commonParentRules)
-
-  return commonParentRules
+  return (
+    getCommonParentRulesFromCommonEntries(commonEntries, parentEntries)
+  )
 }
 
 function getCommonParentDeclarationsFor (commonParentRule, rule) {
