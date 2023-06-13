@@ -1,6 +1,8 @@
 import hasSelectors from '../utils/selectors/has-selectors.mjs'
 
-function getCommonSelectorsFor (selectorLineage) {
+function getCommonSelectorsFor (rules, rule, selectorLineage) {
+  const index = rules.indexOf(rule)
+
   return function reduceCommonSelectorsFor (commonSelectors, s, i) {
     if (i) {
       let p = ''
@@ -13,22 +15,38 @@ function getCommonSelectorsFor (selectorLineage) {
 
       p += s
 
-      if (!commonSelectors[p]) commonSelectors[p] = 0
-      commonSelectors[p] += 1
+      if (!commonSelectors[p]) commonSelectors[p] = { count: 0 }
+      const {
+        count
+      } = commonSelectors[p]
+
+      commonSelectors[p] = {
+        count: count + 1,
+        index
+      }
     } else {
-      if (!commonSelectors[s]) commonSelectors[s] = 0
-      commonSelectors[s] += 1
+      if (!commonSelectors[s]) commonSelectors[s] = { count: 0 }
+      const {
+        count
+      } = commonSelectors[s]
+
+      commonSelectors[s] = {
+        count: count + 1,
+        index
+      }
     }
 
     return commonSelectors
   }
 }
 
-function getCommonSelectorsForSelectorLineage (commonSelectors, selectorLineage) {
-  return (
-    selectorLineage
-      .reduce(getCommonSelectorsFor(selectorLineage), commonSelectors)
-  )
+function getCommonSelectorsForSelectorLineage (rules, rule) {
+  return function getCommonSelectorsForSelectorLineage (commonSelectors, selectorLineage) {
+    return (
+      selectorLineage
+        .reduce(getCommonSelectorsFor(rules, rule, selectorLineage), commonSelectors)
+    )
+  }
 }
 
 const hasSelectorLineage = (selector) => selector.trim().includes(' ')
@@ -63,16 +81,24 @@ function hasCommonSelectorFor (commonSelector) {
   }
 }
 
-function getCommonSelectorsForRule (commonSelectors, { selectors }, i) {
-  return (
-    selectors
-      .filter(hasSelectorLineage)
-      .map(getSelectorLineage)
-      .reduce(getCommonSelectorsForSelectorLineage, commonSelectors)
-  )
+function getCommonSelectorsForRule (rules) {
+  return function reduceCommonSelectorsForRule (commonSelectors, rule) {
+    const {
+      selectors
+    } = rule
+
+    return (
+      selectors
+        .filter(hasSelectorLineage)
+        .map(getSelectorLineage)
+        .reduce(getCommonSelectorsForSelectorLineage(rules, rule), commonSelectors)
+    )
+  }
 }
 
-function getChildRules (index) {
+function getChildRules (rules, rule) {
+  const index = rules.indexOf(rule)
+
   return function reduceChildRules (parentRules, selector) {
     const parentSelector = getParentSelector(selector)
 
@@ -90,19 +116,25 @@ function getChildRules (index) {
   }
 }
 
-function getParentRulesForRule (parentRules, { selectors }, i) {
-  return (
-    selectors
-      .filter(hasParentSelector)
-      .reduce(getChildRules(i), parentRules)
-  )
+function getParentRulesForRule (rules) {
+  return function reduceParentRulesForRule (parentRules, rule) {
+    const {
+      selectors
+    } = rule
+
+    return (
+      selectors
+        .filter(hasParentSelector)
+        .reduce(getChildRules(rules, rule), parentRules)
+    )
+  }
 }
 
 export function getCommonSelectors (rules) {
   return (
     rules
       .filter(hasSelectors)
-      .reduce(getCommonSelectorsForRule, {})
+      .reduce(getCommonSelectorsForRule(rules), {})
   )
 }
 
@@ -110,7 +142,7 @@ export function getParentRules (rules) {
   return (
     rules
       .filter(hasSelectors)
-      .reduce(getParentRulesForRule, {})
+      .reduce(getParentRulesForRule(rules), {})
   )
 }
 
