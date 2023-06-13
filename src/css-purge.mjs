@@ -230,6 +230,22 @@ const hasParentSelector = (selector) => selector.trim().includes(' ')
 const toParentSelector = (selector) => getParentSelector(selector)
 */
 
+function getCommonParentRulesForParentSelector (commonParentRules, parentSelector) {
+  return function getCommonParentRulesFor ({ selector, index }) {
+    commonParentRules.push({
+      selector: parentSelector,
+      index,
+      childSelector: selector
+    })
+  }
+}
+
+function hasCommonSelectorFor (commonSelector) {
+  return function hasCommonSelector ({ selector }) {
+    return commonSelector === selector
+  }
+}
+
 function getCommonSelectorsForRule (commonSelectors, { selectors }, i) {
   return (
     selectors
@@ -280,29 +296,35 @@ function getParentRules (rules) {
   )
 }
 
+function executeChildRules (parentSelector, childRules, commonSelector, commonParentRules) {
+  if (childRules.length > 1) {
+    childRules
+      .filter(hasCommonSelectorFor(commonSelector))
+      .forEach(getCommonParentRulesForParentSelector(commonParentRules, parentSelector))
+  }
+}
+
+function executeParentEntries (commonSelector, parentEntries, commonParentRules) {
+  parentEntries
+    .forEach(([parentSelector, childRules]) => {
+      executeChildRules(parentSelector, childRules, commonSelector, commonParentRules)
+    })
+}
+
+function executeCommonEntries (commonEntries, parentEntries, commonParentRules) {
+  commonEntries
+    .forEach(([commonSelector]) => {
+      executeParentEntries(commonSelector, parentEntries, commonParentRules)
+    })
+}
+
 function getCommonParentRules (commonSelectors, parentRules) {
   const commonEntries = Object.entries(commonSelectors).sort(([alpha], [omega]) => omega.localeCompare(alpha)) // "omega - alpha" not "alpha - omega"
   const parentEntries = Object.entries(parentRules)
 
   const commonParentRules = []
 
-  commonEntries
-    .forEach(([sourceKey]) => {
-      parentEntries
-        .forEach(([parentSelector, childRules]) => {
-          if (childRules.length > 1) {
-            childRules
-              .filter(({ selector }) => sourceKey === selector)
-              .forEach(({ selector, index }) => {
-                commonParentRules.push({
-                  selector: parentSelector,
-                  index,
-                  childSelector: selector
-                })
-              })
-          }
-        })
-    })
+  executeCommonEntries (commonEntries, parentEntries, commonParentRules)
 
   return commonParentRules
 }
