@@ -1,7 +1,6 @@
 import debug from 'debug'
 
 import path from 'node:path'
-
 import {
   writeFileSync,
   createReadStream,
@@ -24,6 +23,14 @@ import processValues from './process-values.mjs'
 
 import trim from './css/trim.mjs'
 import hack from './css/hack.mjs'
+
+import {
+  getCommonSelectors,
+  getParentRules,
+  getCommonParentRules,
+  getCommonParentDeclarations,
+  getParentDeclarations
+} from './common-rules/index.mjs'
 
 import hasHtml from './utils/selectors/has-html.mjs'
 
@@ -183,7 +190,7 @@ class CSSPurge {
     let DEFAULT_OPTIONS = {
       css_file_location: 'default_options_css.css',
 
-      reduce_common_into_parent: false,
+      move_common_declarations_into_parent: false,
 
       trim: true,
       trim_keep_non_standard_inline_comments: false,
@@ -397,206 +404,79 @@ class CSSPurge {
         let selectorPropertiesList
 
         // reduce common declarations amongst children into parent
-        if (OPTIONS.reduce_common_into_parent) {
-          let directParents = []
-          let hierarchy = []
-          let hierachyKeys = []
-          let hierachyLength = 0
-          let commonParentsKeys = []
-          let commonParents = []
-          let commonParentsLen = 0
-          let commonParentDeclarations = []
-          let newParentDeclarations = []
-          let classLineage = ''
-          let parentClassLineage = ''
-          let lineageLabel = ''
-          let tmpDeclarations = []
+        if (OPTIONS.move_common_declarations_into_parent) {
+          try {
+            const commonSelectors = getCommonSelectors(rules)
 
-          for (let i = 0; i < RULES_COUNT; ++i) {
-            /// rules
-            // group classes - create hierarchy
-            if (rules[i].selectors !== undefined) {
-              for (let j = 0; j < rules[i].selectors.length; j++) { // each comma delimited
-                if (rules[i].selectors[j].includes('.')) {
-                  classLineage = rules[i].selectors[j].split(' ')
-                  parentClassLineage = classLineage.slice(0) // clone
-                  parentClassLineage.pop()
-                  parentClassLineage = parentClassLineage.join(' ')
+            const parentRules = getParentRules(rules)
 
-                  if (parentClassLineage !== undefined && parentClassLineage !== '') {
-                    if (directParents[parentClassLineage] !== undefined) {
-                      directParents[parentClassLineage].push({
-                        selector: rules[i].selectors[j],
-                        index: i
-                      })
-                    } else {
-                      directParents[parentClassLineage] = [{
-                        selector: rules[i].selectors[j],
-                        index: i
-                      }]
-                    }
-                  }
+            const commonParentRules = getCommonParentRules(commonSelectors, parentRules)
 
-                  for (let k = 0; k < classLineage.length; k++) { // depth of hierarchy
-                    if (k > 0) {
-                      lineageLabel = ''
+            const commonParentDeclarations = getCommonParentDeclarations(commonParentRules, rules)
 
-                      for (let l = k; l > 0; l--) {
-                        lineageLabel += classLineage[k - l] + ' '
-                      }
-                      lineageLabel += classLineage[k]
+            const parentDeclarations = getParentDeclarations(commonParentDeclarations, parentRules)
 
-                      if (hierarchy[lineageLabel] === undefined) {
-                        hierarchy[lineageLabel] = 0
-                      }
-
-                      hierarchy[lineageLabel] += 1
-                    } else {
-                      if (hierarchy[classLineage[k]] === undefined) {
-                        hierarchy[classLineage[k]] = 0
-                      }
-
-                      hierarchy[classLineage[k]] += 1
-                    }
-                  } // end of for
-                } // end of if
-              } // end of for
-            }
-          }
-
-          function sortHierarchy (obj) {
-            const keys = Object.keys(obj)
-            keys.sort(function (a, b) { return b.length - a.length })
-            hierarchy = []
-            for (let i = 0; i < keys.length; i++) {
-              hierarchy[keys[i]] = obj[keys[i]]
-
-              Object.keys(directParents).forEach(function (key, index, val) {
-                if (this[key].length > 1) {
-                  for (let j = 0; j < this[key].length; j++) {
-                    if (keys[i] === this[key][j].selector) {
-                      if (OPTIONS.verbose) { console.log(success('Process - Rules - Group Common Parent Rule : ' + keys[i])) }
-                      commonParentsKeys.push({
-                        selector: key,
-                        index: this[key][j].index,
-                        childSelector: keys[i]
-                      })
-                    }
-                  }
-                }
-              }, directParents)
-            }
-            return hierarchy
-          }
-
-          sortHierarchy(hierarchy)
-
-          hierachyKeys = Object.keys(hierarchy)
-          hierachyLength = hierachyKeys.length
-
-          // selectedHierarchyLevel = 0
-          commonParentsLen = commonParentsKeys.length
-
-          // get declarations
-          for (let i = 0; i < commonParentsKeys.length; i++) {
-            if (rules[commonParentsKeys[i].index].declarations !== undefined) {
-              for (let j = 0; j < rules[commonParentsKeys[i].index].declarations.length; j++) {
-                if (commonParentDeclarations[rules[commonParentsKeys[i].index].declarations[j].property + '_' + rules[commonParentsKeys[i].index].declarations[j].value] !== undefined) {
-                  commonParentDeclarations[rules[commonParentsKeys[i].index].declarations[j].property + '_' + rules[commonParentsKeys[i].index].declarations[j].value].count += 1
-                } else {
-                  commonParentDeclarations[rules[commonParentsKeys[i].index].declarations[j].property + '_' + rules[commonParentsKeys[i].index].declarations[j].value] = {
-                    property: rules[commonParentsKeys[i].index].declarations[j].property,
-                    value: rules[commonParentsKeys[i].index].declarations[j].value,
-                    count: 1,
-                    selector: rules[commonParentsKeys[i].index].selectors,
-                    selectorIndex: commonParentsKeys[i].index,
-                    commonParent: commonParentsKeys[i].selector
-                  }
-                }
+            function getHasFor ({ property, value }) {
+              return function has ({ property: p, value: v }) {
+                return (
+                  p === property &&
+                  v === value
+                )
               }
             }
-          }
 
-          Object.keys(commonParentDeclarations).forEach(function (val, index, key) {
-            if (this[val].count === directParents[this[val].commonParent].length) {
-              if (newParentDeclarations[this[val].commonParent] !== undefined) {
-                newParentDeclarations[this[val].commonParent].declarations.push({
-                  type: 'declaration',
-                  property: this[val].property,
-                  value: this[val].value
+            commonParentRules
+              .forEach((commonParent) => {
+                const {
+                  index
+                } = commonParent
+
+                const rule = rules[index]
+                if (rule) {
+                  if (Array.isArray(rule.declarations)) {
+                    const {
+                      selector
+                    } = commonParent
+
+                    Object
+                      .entries(parentDeclarations)
+                      .filter(([key]) => selector === key)
+                      .forEach(([key, parentDeclaration]) => {
+                        const declarations = [...rule.declarations] // .slice(0) // clone
+
+                        parentDeclaration.declarations
+                          .forEach((declaration, i) => {
+                            const has = getHasFor(declaration)
+                            if (declarations.some(has)) {
+                              const n = declarations.findIndex(has)
+                              declarations.splice(n, 1)
+                            }
+                          })
+
+                        if (declarations.length) {
+                          rule.declarations = declarations // update declarations
+                        } else {
+                          rules.splice(index, 1) // remove whole rule
+                        }
+                      })
+                  }
+                }
+              })
+
+            // Create Common Parents
+            Object
+              .entries(parentDeclarations)
+              .forEach(([selector, { selectorIndex, declarations }]) => {
+                const i = (selectorIndex ? selectorIndex - 1 : 0)
+                rules.splice(i, 0, {
+                  type: 'rule',
+                  selectors: [selector],
+                  declarations
                 })
-              } else {
-                newParentDeclarations[this[val].commonParent] = {
-                  declarations: [{
-                    type: 'declaration',
-                    property: this[val].property,
-                    value: this[val].value
-                  }],
-                  selectorIndex: this[val].selectorIndex
-                }
-              }
-
-              commonParents.push(this[val].commonParent)
-            }
-          }, commonParentDeclarations)
-
-          commonParentsLen = commonParentsKeys.length
-
-          for (let i = 0; i < commonParentsLen; i++) {
-            Object.keys(newParentDeclarations).forEach(function (key, index) {
-              if (commonParentsKeys[i] !== undefined && commonParentsKeys[i].selector === key) {
-                if (rules[commonParentsKeys[i].index] !== undefined && rules[commonParentsKeys[i].index].declarations !== undefined) {
-                  // clone declarations
-                  tmpDeclarations = rules[commonParentsKeys[i].index].declarations.slice(0) // clone
-                  DECLARATION_COUNT = tmpDeclarations.length
-
-                  for (let j = 0; j < this[key].declarations.length; j++) { // each parent declaration
-                    // remove declarations
-                    for (let k = 0; k < DECLARATION_COUNT; k++) { // each child declaration
-                      if (this[key].declarations[j] !== undefined &&
-                        this[key].declarations[j].type === 'declaration' &&
-                        this[key].declarations[j].property === tmpDeclarations[k].property &&
-                        this[key].declarations[j].value === tmpDeclarations[k].value) {
-                        tmpDeclarations.splice(k, 1)
-                        k -= 1
-                        DECLARATION_COUNT -= 1
-                      }
-                    } // end of k loop
-                  } // end of j loop
-
-                  if (tmpDeclarations.length === 0) {
-                    // remove whole rule
-                    rules.splice(commonParentsKeys[i].index, 1)
-                    i -= 1
-                    commonParentsLen -= 1
-                  } else {
-                    // update declarations
-                    rules[commonParentsKeys[i].index].declarations = tmpDeclarations
-                  }
-                }
-              }
-            }, newParentDeclarations)
-          } // end of i loop
-
-          // Create Common Parents
-          Object.keys(newParentDeclarations).forEach(function (key, index) {
-            rules.splice(((this[key].selectorIndex - 1 < 0) ? this[key].selectorIndex : this[key].selectorIndex - 1), 0, {
-              type: 'rule',
-              selectors: [key],
-              declarations: this[key].declarations
-            })
-          }, newParentDeclarations)
-
-          // some cleanup
-          directParents = []
-          hierarchy = []
-          hierachyKeys = []
-          commonParentsKeys = []
-          commonParents = []
-          commonParentDeclarations = []
-          newParentDeclarations = []
-          // processedCommonParentsChildren = []
-          tmpDeclarations = []
+              })
+          } catch (e) {
+            console.log(1, e)
+          }
 
           // reset rules count
           RULES_COUNT = rules.length

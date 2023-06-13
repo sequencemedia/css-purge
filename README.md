@@ -243,7 +243,7 @@ Example config.json:
 
     "html": "demo/html/static-jekyll/_site",
 
-    "new_reduce_common_into_parent": true,
+    "move_common_declarations_into_parent": true,
 
     "trim": true,
     "trim_keep_non_standard_inline_comments": false,

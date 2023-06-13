@@ -3,7 +3,7 @@ export default function processRules (rules, options) {
     let TOTAL_RULES = rules.length
 
     // reduce common declarations amongst children into parent
-    if (options.new_reduce_common_into_parent) {
+    if (options.move_common_declarations_into_parent) {
       let directParents = []
       let hierachy = []
       let hierachyKeys = []
