@@ -1,9 +1,5 @@
 import debug from 'debug'
 
-import {
-  isDeepStrictEqual
-} from 'node:util'
-
 import path from 'node:path'
 
 import {
@@ -51,7 +47,6 @@ import getFileSizeInKB from './utils/get-file-size-in-kb.mjs'
 import getSizeInKB from './utils/get-size-in-kb.mjs'
 import roundTo from './utils/round-to.mjs'
 import escape from './utils/escape.mjs'
-import hasSelectors from './utils/selectors/has-selectors.mjs'
 
 const log = debug('@sequencemedia/css-purge')
 
@@ -196,7 +191,7 @@ class CSSPurge {
     let DEFAULT_OPTIONS = {
       css_file_location: 'default_options_css.css',
 
-      reduce_common_into_parent: false,
+      move_common_declarations_into_parent: false,
 
       trim: true,
       trim_keep_non_standard_inline_comments: false,
@@ -410,7 +405,7 @@ class CSSPurge {
         let selectorPropertiesList
 
         // reduce common declarations amongst children into parent
-        if (OPTIONS.reduce_common_into_parent) {
+        if (OPTIONS.move_common_declarations_into_parent) {
           try {
             const commonSelectors = getCommonSelectors(rules)
 

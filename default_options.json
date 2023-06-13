@@ -8,7 +8,7 @@
   "format": true,
   "format_font_family": false,
   "generate_report": true,
-  "new_reduce_common_into_parent": false,
+  "move_common_declarations_into_parent": false,
   "reduce_declarations_file_location": "default_options_reduce_declarations.json",
   "report_file_location": "default_options_report.json",
   "shorten": true,
