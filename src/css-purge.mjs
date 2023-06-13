@@ -407,23 +407,19 @@ class CSSPurge {
 
         // reduce common declarations amongst children into parent
         if (OPTIONS.move_common_declarations_into_parent) {
-          try {
-            const commonSelectors = getCommonSelectors(rules)
+          const commonSelectors = getCommonSelectors(rules)
 
-            const parentRules = getParentRules(rules)
+          const parentRules = getParentRules(rules)
 
-            const commonParentRules = getCommonParentRules(commonSelectors, parentRules)
+          const commonParentRules = getCommonParentRules(commonSelectors, parentRules)
 
-            const commonParentDeclarations = getCommonParentDeclarations(commonParentRules, rules)
+          const commonParentDeclarations = getCommonParentDeclarations(commonParentRules, rules)
 
-            const parentDeclarations = getParentDeclarations(commonParentDeclarations, parentRules)
+          const parentDeclarations = getParentDeclarations(commonParentDeclarations, parentRules)
 
-            removeParentDeclarationsFromCommonParentRules(commonParentRules, rules, parentDeclarations)
+          removeParentDeclarationsFromCommonParentRules(commonParentRules, rules, parentDeclarations)
 
-            addParentDeclarationsToRules(parentDeclarations, rules)
-          } catch (e) {
-            console.log(1, e)
-          }
+          addParentDeclarationsToRules(parentDeclarations, rules)
 
           // reset rules count
           RULES_COUNT = rules.length
