@@ -494,7 +494,7 @@ class CSSPurge {
           hierachyKeys = Object.keys(hierarchy)
           hierachyLength = hierachyKeys.length
 
-          selectedHierarchyLevel = 0
+          // selectedHierarchyLevel = 0
           commonParentsLen = commonParentsKeys.length
 
           // get declarations
@@ -595,7 +595,7 @@ class CSSPurge {
           commonParents = []
           commonParentDeclarations = []
           newParentDeclarations = []
-          processedCommonParentsChildren = []
+          // processedCommonParentsChildren = []
           tmpDeclarations = []
 
           // reset rules count
