@@ -29,7 +29,9 @@ import {
   getParentRules,
   getCommonParentRules,
   getCommonParentDeclarations,
-  getParentDeclarations
+  getParentDeclarations,
+  removeParentDeclarationsFromCommonParentRules,
+  addParentDeclarationsToRules
 } from './common-rules/index.mjs'
 
 import hasHtml from './utils/selectors/has-html.mjs'
@@ -416,64 +418,9 @@ class CSSPurge {
 
             const parentDeclarations = getParentDeclarations(commonParentDeclarations, parentRules)
 
-            function getHasFor ({ property, value }) {
-              return function has ({ property: p, value: v }) {
-                return (
-                  p === property &&
-                  v === value
-                )
-              }
-            }
+            removeParentDeclarationsFromCommonParentRules(commonParentRules, rules, parentDeclarations)
 
-            commonParentRules
-              .forEach((commonParent) => {
-                const {
-                  index
-                } = commonParent
-
-                const rule = rules[index]
-                if (rule) {
-                  if (Array.isArray(rule.declarations)) {
-                    const {
-                      selector
-                    } = commonParent
-
-                    Object
-                      .entries(parentDeclarations)
-                      .filter(([key]) => selector === key)
-                      .forEach(([key, parentDeclaration]) => {
-                        const declarations = [...rule.declarations] // .slice(0) // clone
-
-                        parentDeclaration.declarations
-                          .forEach((declaration, i) => {
-                            const has = getHasFor(declaration)
-                            if (declarations.some(has)) {
-                              const n = declarations.findIndex(has)
-                              declarations.splice(n, 1)
-                            }
-                          })
-
-                        if (declarations.length) {
-                          rule.declarations = declarations // update declarations
-                        } else {
-                          rules.splice(index, 1) // remove whole rule
-                        }
-                      })
-                  }
-                }
-              })
-
-            // Create Common Parents
-            Object
-              .entries(parentDeclarations)
-              .forEach(([selector, { selectorIndex, declarations }]) => {
-                const i = (selectorIndex ? selectorIndex - 1 : 0)
-                rules.splice(i, 0, {
-                  type: 'rule',
-                  selectors: [selector],
-                  declarations
-                })
-              })
+            addParentDeclarationsToRules(parentDeclarations, rules)
           } catch (e) {
             console.log(1, e)
           }

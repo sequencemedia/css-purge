@@ -297,3 +297,82 @@ export function getParentDeclarations (commonParentDeclarations, parentRules) {
       .reduce(getParentDeclarationsForCommonParentDeclaration, {})
   )
 }
+
+function getHasFor ({ property, value }) {
+  return function has ({ property: p, value: v }) {
+    return (
+      p === property &&
+      v === value
+    )
+  }
+}
+
+function removeParentDeclarationFromRuleDeclarations (declarations) {
+  return function remove (declaration) {
+    const has = getHasFor(declaration)
+    if (declarations.some(has)) {
+      const i = declarations.findIndex(has)
+      declarations.splice(i, 1)
+    }
+  }
+}
+
+function removeParentDeclarationsFromRuleDeclarations (alpha) {
+  return function removeParentDeclarationsFromRuleDeclarations ({ declarations: omega }) {
+    omega
+      .forEach(removeParentDeclarationFromRuleDeclarations(alpha))
+
+    return alpha
+  }
+}
+
+function getParentDeclarationsForSelector (parentDeclarations, selector) {
+  return (
+    Object
+      .keys(parentDeclarations)
+      .filter((key) => selector === key)
+      .map((key) => parentDeclarations[key])
+  )
+}
+
+export function removeParentDeclarationsFromCommonParentRules (commonParentRules, rules, parentDeclarations) {
+  return (
+    commonParentRules
+      .forEach((commonParentRule) => {
+        const {
+          index
+        } = commonParentRule
+
+        const rule = rules[index]
+        if (rule) {
+          const {
+            declarations
+          } = rule
+
+          if (Array.isArray(declarations)) {
+            const {
+              selector
+            } = commonParentRule
+
+            getParentDeclarationsForSelector(parentDeclarations, selector)
+              .forEach(removeParentDeclarationsFromRuleDeclarations(declarations))
+
+            if (!declarations.length) rules.splice(index, 1) // remove whole rule
+          }
+        }
+      })
+  )
+}
+
+export function addParentDeclarationsToRules (parentDeclarations, rules) {
+  Object
+    .entries(parentDeclarations)
+    .forEach(([selector, { selectorIndex, declarations }]) => {
+      const i = (selectorIndex ? selectorIndex - 1 : 0)
+      rules.splice(i, 0, {
+        type: 'rule',
+        selectors: [selector],
+        declarations
+      })
+    })
+}
