@@ -194,7 +194,7 @@ class CSSPurge {
 
     const eventEmitter = new EventEmitter()
 
-    let INITIAL_OPTIONS = {
+    const INITIAL_OPTIONS = {
       ...DEFAULT_OPTIONS
     }
 
@@ -906,14 +906,12 @@ class CSSPurge {
         reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION = DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION
       } = options
 
-      Object.assign(OPTIONS, options)
-
       if (CSS_FILE_LOCATION) SUMMARY.files.output_css.push(CSS_FILE_LOCATION)
 
       DEFAULT_OPTIONS_REPORT_FILE_LOCATION = REPORT_FILE_LOCATION
       DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = REDUCE_DECLARATIONS_FILE_LOCATION
 
-      Object.assign(INITIAL_OPTIONS, OPTIONS)
+      Object.assign(INITIAL_OPTIONS, Object.assign(OPTIONS, options))
 
       SUMMARY.options = {
         ...OPTIONS
@@ -933,8 +931,9 @@ class CSSPurge {
         })
         .on('end', () => {
           if (defaultOptions !== '') {
+            let options
             try {
-              INITIAL_OPTIONS = JSON.parse(defaultOptions)
+              options = JSON.parse(defaultOptions)
             } catch (e) {
               eventEmitter.emit('DEFAULT_OPTIONS_READ_ERROR')
               handleOptionsFileReadError(e, DEFAULT_OPTIONS_FILE_LOCATION)
@@ -944,14 +943,14 @@ class CSSPurge {
               css_file_location: CSS_FILE_LOCATION,
               report_file_location: REPORT_FILE_LOCATION = DEFAULT_OPTIONS_REPORT_FILE_LOCATION,
               reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION = DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION
-            } = INITIAL_OPTIONS
+            } = options
 
             if (CSS_FILE_LOCATION) SUMMARY.files.output_css.push(CSS_FILE_LOCATION)
 
             DEFAULT_OPTIONS_REPORT_FILE_LOCATION = REPORT_FILE_LOCATION
             DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = REDUCE_DECLARATIONS_FILE_LOCATION
 
-            Object.assign(OPTIONS, INITIAL_OPTIONS)
+            Object.assign(INITIAL_OPTIONS, Object.assign(OPTIONS, options))
 
             SUMMARY.options = {
               ...OPTIONS
