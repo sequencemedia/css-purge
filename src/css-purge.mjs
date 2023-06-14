@@ -149,10 +149,12 @@ function toGroups (rules, groupSize = 4095) {
 
 function handleCssParseError (e) {
   console.log(error('Error parsing CSS'))
-  console.log('Reason: ' + e.reason)
-  console.log('Line: ' + e.line)
-  console.log('Column: ' + e.column)
-  console.log('Filename: ' + e.filename)
+  console.table({
+    Reason: e.reason,
+    Line: e.line,
+    Column: e.column,
+    File: e.filename
+  })
   process.exit(1)
 }
 
