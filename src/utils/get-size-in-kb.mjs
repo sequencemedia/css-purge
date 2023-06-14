@@ -1,3 +1,4 @@
+/*
 export default function getSizeInKB (string) {
   let i = string.length - 1
   let j = string.length
@@ -18,4 +19,15 @@ export default function getSizeInKB (string) {
   }
 
   return (j || 0) / 1000
+}
+*/
+
+export default function getSizeInKB (string) {
+  const {
+    byteLength
+  } = Buffer.from(string)
+
+  return (
+    byteLength / 1000
+  )
 }

@@ -4,7 +4,6 @@
   "bypass_media_rules": true,
   "bypass_page_rules": false,
   "bypass_supports_rules": false,
-  "css_file_location": "css_purged.css",
   "format": true,
   "format_font_family": false,
   "generate_report": true,

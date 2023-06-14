@@ -13,11 +13,11 @@ import clc from 'cli-color'
 import cssTools from '@adobe/css-tools'
 
 import validUrl from 'valid-url'
-import request from 'request'
 
 import jsdom from 'jsdom'
 
-import DEFAULT_DECLARATION_NAMES from './default-declaration-names.mjs'
+import DEFAULT_OPTIONS from './default_options.json' assert { type: 'json' }
+import DEFAULT_DECLARATION_NAMES from './default-declaration-names.json' assert { type: 'json' }
 
 import processValues from './process-values.mjs'
 
@@ -68,6 +68,9 @@ const logoRed = clc.xterm(197)
 // const appendToFileSync = fs.appendFileSync
 
 let hash
+
+const DEFAULT_FILE_LOCATION = './default_options_css.css'
+const DEFAULT_OPTIONS_FILE_LOCATION = './default_options.json'
 
 function toTrim (value) {
   return String(value).trim()
@@ -189,93 +192,26 @@ class CSSPurge {
 
     const eventEmitter = new EventEmitter()
 
-    let DEFAULT_OPTIONS = {
-      css_file_location: 'default_options_css.css',
-
-      move_common_declarations_into_parent: false,
-
-      trim: true,
-      trim_keep_non_standard_inline_comments: false,
-      trim_removed_rules_previous_comment: false,
-      trim_comments: false,
-      trim_whitespace: false,
-      trim_breaklines: false,
-      trim_last_semicolon: false,
-      bypass_media_rules: true,
-      bypass_document_rules: false,
-      bypass_supports_rules: false,
-      bypass_page_rules: false,
-      bypass_charset: false,
-      shorten: true,
-      shorten_zero: false,
-      shorten_hexcolor: false,
-      shorten_hexcolor_extended: false,
-      shorten_hexcolor_uppercase: false,
-      shorten_hexcolor_lowercase: true,
-      shorten_font: false,
-      shorten_background: false,
-      shorten_margin: false,
-      shorten_padding: false,
-      shorten_list_style: false,
-      shorten_outline: false,
-      shorten_border: false,
-      shorten_border_top: false,
-      shorten_border_right: false,
-      shorten_border_bottom: false,
-      shorten_border_left: false,
-      shorten_border_radius: false,
-      format: true,
-      format_font_family: false,
-      special_convert_rem: false,
-      special_convert_rem_default_px: 16,
-      special_convert_rem_px: 10,
-      special_convert_rem_font_size: true,
-      special_reduce_with_html: false,
-      special_reduce_with_html_ignore_selectors: [
-        '@-ms-',
-        ':-ms-',
-        '::',
-        ':valid',
-        ':invalid',
-        '+.',
-        ':-'
-      ],
-
-      report: false,
-      verbose: false,
-
-      zero_ignore_declaration: ['filter'],
-      zero_units: ['em', 'ex', '%', 'px', 'cm', 'mm', 'in', 'pt', 'pc', 'ch', 'rem', 'vh', 'vw', 'vmin', 'vmax'],
-
-      report_file_location: 'default_options_report.json',
-      reduce_declarations_file_location: 'default_options_reduce_declarations.json'
+    let INITIAL_OPTIONS = {
+      ...DEFAULT_OPTIONS
     }
 
-    const DEFAULT_FILE_LOCATION = 'default.css'
-    const DEFAULT_OPTIONS_FILE_LOCATION = 'default_options.json'
-
     let OPTIONS = {
-      ...DEFAULT_OPTIONS
+      ...INITIAL_OPTIONS
     }
 
     // let FILE_LOCATION
     let OPTIONS_FILE_LOCATION
-
-    let CSS_FILE_DATA = []
-    let HTML_FILE_DATA = []
-
-    let DEFAULT_OPTIONS_REPORT_FILE_LOCATION = DEFAULT_OPTIONS.report_file_location
 
     // summary
     const SUMMARY = {
       files: {
         output_css: [],
         input_css: [],
-        input_html: [],
-        input_js: []
+        input_html: []
       },
       options: {
-        ...DEFAULT_OPTIONS
+        ...INITIAL_OPTIONS
       },
       stats: {},
       duplicate_rules: [],
@@ -288,8 +224,7 @@ class CSSPurge {
     const STATS = {
       files: {
         css: [],
-        html: [],
-        js: []
+        html: []
       },
       before: {
         totalFileSizeKB: 0,
@@ -375,9 +310,11 @@ class CSSPurge {
       }
     }
 
-    /* read declaration reduce lists */
-    let DEFAULT_OPTIONS_REDUCE_DECLARATIONS = {}
-    let DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = 'default_options_reduce_declarations.json'
+    let {
+      report_file_location: DEFAULT_OPTIONS_REPORT_FILE_LOCATION,
+      reduce_declarations_file_location: DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION
+    } = DEFAULT_OPTIONS
+
     let HAS_READ_REDUCE_DECLARATIONS = false
 
     const selectors = ''
@@ -1034,7 +971,7 @@ class CSSPurge {
       DEFAULT_OPTIONS_REPORT_FILE_LOCATION = REPORT_FILE_LOCATION
       DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = REDUCE_DECLARATIONS_FILE_LOCATION
 
-      DEFAULT_OPTIONS = options
+      INITIAL_OPTIONS = options
       SUMMARY.options = {
         ...OPTIONS
       }
@@ -1054,7 +991,7 @@ class CSSPurge {
         .on('end', () => {
           if (defaultOptions !== '') {
             try {
-              DEFAULT_OPTIONS = JSON.parse(defaultOptions)
+              INITIAL_OPTIONS = JSON.parse(defaultOptions)
             } catch (e) {
               eventEmitter.emit('DEFAULT_OPTIONS_READ_ERROR')
               handleOptionsFileReadError(e, DEFAULT_OPTIONS_FILE_LOCATION)
@@ -1066,39 +1003,39 @@ class CSSPurge {
               css_file_location: CSS_FILE_LOCATION,
               report_file_location: REPORT_FILE_LOCATION,
               reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
-            } = DEFAULT_OPTIONS
+            } = INITIAL_OPTIONS
 
             if (TRIM) {
-              DEFAULT_OPTIONS.trim_removed_rules_previous_comment = true
-              DEFAULT_OPTIONS.trim_comments = true
-              DEFAULT_OPTIONS.trim_whitespace = true
-              DEFAULT_OPTIONS.trim_breaklines = true
-              DEFAULT_OPTIONS.trim_last_semicolon = true
+              INITIAL_OPTIONS.trim_removed_rules_previous_comment = true
+              INITIAL_OPTIONS.trim_comments = true
+              INITIAL_OPTIONS.trim_whitespace = true
+              INITIAL_OPTIONS.trim_breaklines = true
+              INITIAL_OPTIONS.trim_last_semicolon = true
             }
 
             if (SHORTEN) {
-              DEFAULT_OPTIONS.shorten_zero = true
-              DEFAULT_OPTIONS.shorten_hexcolor = true
-              DEFAULT_OPTIONS.shorten_hexcolor_extended = true
-              DEFAULT_OPTIONS.shorten_font = true
-              DEFAULT_OPTIONS.shorten_background = true
-              DEFAULT_OPTIONS.shorten_margin = true
-              DEFAULT_OPTIONS.shorten_padding = true
-              DEFAULT_OPTIONS.shorten_list_style = true
-              DEFAULT_OPTIONS.shorten_outline = true
-              DEFAULT_OPTIONS.shorten_border = true
-              DEFAULT_OPTIONS.shorten_border_top = true
-              DEFAULT_OPTIONS.shorten_border_right = true
-              DEFAULT_OPTIONS.shorten_border_bottom = true
-              DEFAULT_OPTIONS.shorten_border_left = true
-              DEFAULT_OPTIONS.shorten_border_radius = true
+              INITIAL_OPTIONS.shorten_zero = true
+              INITIAL_OPTIONS.shorten_hexcolor = true
+              INITIAL_OPTIONS.shorten_hexcolor_extended = true
+              INITIAL_OPTIONS.shorten_font = true
+              INITIAL_OPTIONS.shorten_background = true
+              INITIAL_OPTIONS.shorten_margin = true
+              INITIAL_OPTIONS.shorten_padding = true
+              INITIAL_OPTIONS.shorten_list_style = true
+              INITIAL_OPTIONS.shorten_outline = true
+              INITIAL_OPTIONS.shorten_border = true
+              INITIAL_OPTIONS.shorten_border_top = true
+              INITIAL_OPTIONS.shorten_border_right = true
+              INITIAL_OPTIONS.shorten_border_bottom = true
+              INITIAL_OPTIONS.shorten_border_left = true
+              INITIAL_OPTIONS.shorten_border_radius = true
             }
 
             SUMMARY.files.output_css.push(CSS_FILE_LOCATION)
             DEFAULT_OPTIONS_REPORT_FILE_LOCATION = REPORT_FILE_LOCATION
             DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = REDUCE_DECLARATIONS_FILE_LOCATION
 
-            OPTIONS = DEFAULT_OPTIONS
+            OPTIONS = INITIAL_OPTIONS
             SUMMARY.options = {
               ...OPTIONS
             }
@@ -1162,8 +1099,9 @@ class CSSPurge {
           reduceDeclarations += chunk
         })
         .on('end', () => {
+          let declarations
           try {
-            DEFAULT_OPTIONS_REDUCE_DECLARATIONS = JSON.parse(reduceDeclarations)
+            declarations = JSON.parse(reduceDeclarations)
           } catch (e) {
             eventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_ERROR')
             handleOptionsFileReadError(e, fileLocation)
@@ -1172,7 +1110,7 @@ class CSSPurge {
           let {
             declaration_names: declarationNames = [],
             selectors = {}
-          } = DEFAULT_OPTIONS_REDUCE_DECLARATIONS
+          } = declarations
 
           switch (typeof selectors) {
             case 'string':
@@ -1212,15 +1150,16 @@ class CSSPurge {
     } // end of readReduceDeclarationsFileLocation
 
     function processSelectorsForHTMLStart (selectors = [], html = null, options = null) {
-      if (OPTIONS.verbose) { console.log(info('Process - HTML - Determine Rules to Remove')) }
-
-      html = html ?? HTML_FILE_DATA.join('')
-
       if (options) {
         for (const key in options) {
           OPTIONS.html[key] = options[key]
         }
       }
+
+      if (OPTIONS.verbose) { console.log(info('Process - HTML - Determine Rules to Remove')) }
+
+      html = html ?? OPTIONS.fileData.join('')
+      delete OPTIONS.fileData
 
       let results = []
       let matches
@@ -1456,7 +1395,7 @@ class CSSPurge {
       })
     } // end of processSelectorsForHTMLEnd
 
-    function processHTML (selectors = [], html = null, options = null) {
+    async function processHTML (selectors = [], html = null, options = null) {
       // read html files
       if (OPTIONS.html && OPTIONS.special_reduce_with_html) {
         let htmlFiles = OPTIONS.html
@@ -1525,50 +1464,52 @@ class CSSPurge {
         } // end of switch
 
         eventEmitter
-          .on('HTML_READ_AGAIN', (fileIndex) => {
-            processSelectorsForHTMLStart(selectors, html, options)
+          .on('HTML_READ_AGAIN', async (fileIndex, fileData) => {
+            processSelectorsForHTMLStart(selectors, html, { ...options, fileData })
 
-            HTML_FILE_DATA = []
-
-            readHTMLFiles(htmlFiles, fileIndex)
+            await readHTMLFiles(htmlFiles, fileIndex, fileData)
           })
-          .on('HTML_READ_END', () => {
-            processSelectorsForHTMLStart(selectors, html, options)
-
-            HTML_FILE_DATA = []
+          .on('HTML_READ_END', (fileData) => {
+            processSelectorsForHTMLStart(selectors, html, { ...options, fileData })
 
             eventEmitter.emit('HTML_RESULTS_END', selectors)
           })
 
-        readHTMLFiles(htmlFiles)
+        await readHTMLFiles(htmlFiles)
       } // end of html files check
     } // end of processHTML
 
-    function readHTMLFiles (files = [], fileIndex = 0) {
+    async function readHTMLFiles (files = [], fileIndex = 0, fileData = []) {
       const file = files[fileIndex]
 
       if (OPTIONS.verbose) { console.log(info('Input - HTML File : ' + file)) }
 
       if (validUrl.isUri(file)) {
-        request({
-          url: file,
-          method: 'GET'
-        }, (e, head, body) => {
-          let fileSizeKB = getSizeInKB(body)
-
-          if (head) {
-            const contentLength = head.headers['content-length']
-
-            if (contentLength) {
-              fileSizeKB = contentLength / 1000
-            }
-          }
+        try {
+          const response = await fetch(file)
+          const content = await response.text()
+          const fileSizeKB = getSizeInKB(content)
 
           STATS.files.html.push({
             fileName: file,
             fileSizeKB
           })
-        })
+
+          SUMMARY.files.input_html.push(file)
+
+          fileData.push(content)
+
+          const nextFileIndex = fileIndex + 1
+
+          if (nextFileIndex < files.length) {
+            eventEmitter.emit('HTML_READ_AGAIN', nextFileIndex, fileData)
+          } else {
+            eventEmitter.emit('HTML_READ_END', fileData)
+          }
+        } catch (e) {
+          eventEmitter.emit('HTML_READ_ERROR')
+          handleHtmlFileReadError(e, file)
+        }
       } else {
         const fileSizeKB = getFileSizeInKB(file)
 
@@ -1576,59 +1517,22 @@ class CSSPurge {
           fileName: file,
           fileSizeKB
         })
-      }
 
-      SUMMARY.files.input_html.push(file)
+        SUMMARY.files.input_html.push(file)
 
-      if (validUrl.isUri(file)) {
-        request(file, (e, response, body) => {
-          if (response === undefined) {
-            // try again
-            request(file, (e, response, body) => {
-              if (response.statusCode === 200) {
-                HTML_FILE_DATA.push(body)
-
-                const nextFileIndex = fileIndex + 1
-
-                if (nextFileIndex < files.length) {
-                  eventEmitter.emit('HTML_READ_AGAIN', nextFileIndex)
-                } else {
-                  eventEmitter.emit('HTML_READ_END')
-                }
-              } else {
-                eventEmitter.emit('HTML_READ_ERROR')
-                handleHtmlFileReadError(e, file)
-              }
-            })
-          } else if (response.statusCode === 200) {
-            HTML_FILE_DATA.push(body)
-
-            const nextFileIndex = fileIndex + 1
-
-            if (nextFileIndex < files.length) {
-              eventEmitter.emit('HTML_READ_AGAIN', nextFileIndex)
-            } else {
-              eventEmitter.emit('HTML_READ_END')
-            }
-          } else {
-            eventEmitter.emit('HTML_READ_ERROR')
-            handleHtmlFileReadError(e, file)
-          }
-        })
-      } else {
         const readHTMLStream = createReadStream(file, 'utf8')
 
         readHTMLStream
           .on('data', (chunk) => {
-            HTML_FILE_DATA.push(chunk)
+            fileData.push(chunk)
           })
           .on('end', () => {
             const nextFileIndex = fileIndex + 1
 
             if (nextFileIndex < files.length) {
-              eventEmitter.emit('HTML_READ_AGAIN', nextFileIndex)
+              eventEmitter.emit('HTML_READ_AGAIN', nextFileIndex, fileData)
             } else {
-              eventEmitter.emit('HTML_READ_END')
+              eventEmitter.emit('HTML_READ_END', fileData)
             }
           })
           .on('error', (e) => {
@@ -1670,7 +1574,8 @@ class CSSPurge {
 
         if (OPTIONS.verbose) { console.log(info('Process - CSS')) }
 
-        css = css ?? CSS_FILE_DATA.join('')
+        css = css ?? OPTIONS.fileData.join('')
+        delete OPTIONS.fileData
 
         const {
           _3tokenValues,
@@ -2077,14 +1982,14 @@ class CSSPurge {
               if (VERBOSE) {
                 console.table({
                   Before: {
-                    KB: SUMMARY.stats.before.totalFileSizeKB
+                    KB: roundTo(SUMMARY.stats.before.totalFileSizeKB, 4)
                   },
                   After: {
-                    KB: SUMMARY.stats.after.totalFileSizeKB
+                    KB: roundTo(SUMMARY.stats.after.totalFileSizeKB, 4)
                   },
                   Saved: {
-                    KB: SUMMARY.stats.summary.savingsKB,
-                    '%': SUMMARY.stats.summary.savingsPercentage
+                    KB: roundTo(SUMMARY.stats.summary.savingsKB, 4),
+                    '%': roundTo(SUMMARY.stats.summary.savingsPercentage, 2)
                   }
                 })
               }
@@ -2124,9 +2029,16 @@ class CSSPurge {
 
           if (VERBOSE) {
             console.table({
-              Before: { KB: SUMMARY.stats.before.totalFileSizeKB },
-              After: { KB: SUMMARY.stats.after.totalFileSizeKB },
-              Saved: { KB: SUMMARY.stats.summary.savingsKB, '%': SUMMARY.stats.summary.savingsPercentage }
+              Before: {
+                KB: roundTo(SUMMARY.stats.before.totalFileSizeKB, 4)
+              },
+              After: {
+                KB: roundTo(SUMMARY.stats.after.totalFileSizeKB, 4)
+              },
+              Saved: {
+                KB: roundTo(SUMMARY.stats.summary.savingsKB, 4),
+                '%': roundTo(SUMMARY.stats.summary.savingsPercentage, 2)
+              }
             })
           }
         } // end of special_reduce_with_html
@@ -2161,14 +2073,14 @@ class CSSPurge {
       }
     } // end of processCSS
 
-    function processCSSFiles (options = DEFAULT_OPTIONS, fileLocation = DEFAULT_OPTIONS_FILE_LOCATION, complete) {
-      function handleDefaultOptionsReadEnd () {
+    function processCSSFiles (options = INITIAL_OPTIONS, fileLocation = DEFAULT_OPTIONS_FILE_LOCATION, complete) {
+      async function handleDefaultOptionsReadEnd () {
         eventEmitter.removeListener('DEFAULT_OPTIONS_READ_END', handleDefaultOptionsReadEnd)
 
-        // config
-        if (!OPTIONS.css) OPTIONS.css = DEFAULT_OPTIONS.css
+        // options (css files)
+        if (!OPTIONS.css) OPTIONS.css = INITIAL_OPTIONS.css
 
-        // Options
+        // options
         if (options) Object.assign(OPTIONS, options)
 
         let cssFiles = OPTIONS.css
@@ -2226,18 +2138,14 @@ class CSSPurge {
           fileLocation = cssFiles.toString()
 
           eventEmitter
-            .on('CSS_READ_AGAIN', (fileIndex) => {
-              CSS_FILE_DATA = []
-
-              readCSSFiles(cssFiles, fileIndex)
+            .on('CSS_READ_AGAIN', async (fileIndex, fileData) => {
+              await readCSSFiles(cssFiles, fileIndex, fileData)
             })
-            .on('CSS_READ_END', () => {
-              CSS_FILE_DATA = []
-
-              processCSS(null, OPTIONS, complete)
+            .on('CSS_READ_END', (fileData) => {
+              processCSS(null, { ...OPTIONS, fileData }, complete)
             })
 
-          readCSSFiles(cssFiles)
+          await readCSSFiles(cssFiles)
         }
       }
 
@@ -2286,32 +2194,38 @@ class CSSPurge {
       }
     } // end of processCSSFiles
 
-    function readCSSFiles (files = [], fileIndex = 0) {
+    async function readCSSFiles (files = [], fileIndex = 0, fileData = []) {
       const file = files[fileIndex]
 
       if (OPTIONS.verbose) { console.log(info('Input - CSS File : ' + file)) }
 
       if (validUrl.isUri(file)) {
-        request({
-          url: file,
-          method: 'GET'
-        }, (e, head, body) => {
-          let fileSizeKB = getSizeInKB(body)
-
-          if (head) {
-            const contentLength = head.headers['content-length']
-
-            if (contentLength) {
-              fileSizeKB = contentLength / 1000
-            }
-          }
+        try {
+          const response = await fetch(file)
+          const content = await response.text()
+          const fileSizeKB = getSizeInKB(content)
 
           STATS.files.css.push({
             fileName: file,
             fileSizeKB
           })
           STATS.before.totalFileSizeKB += fileSizeKB
-        })
+
+          SUMMARY.files.input_css.push(file)
+
+          fileData.push(content)
+
+          const nextFileIndex = fileIndex + 1
+
+          if (nextFileIndex < files.length) {
+            eventEmitter.emit('CSS_READ_AGAIN', nextFileIndex, fileData)
+          } else {
+            eventEmitter.emit('CSS_READ_END', fileData)
+          }
+        } catch (e) {
+          eventEmitter.emit('CSS_READ_ERROR')
+          handleCssFileReadError(e, file)
+        }
       } else {
         const fileSizeKB = getFileSizeInKB(file)
 
@@ -2320,66 +2234,29 @@ class CSSPurge {
           fileSizeKB
         })
         STATS.before.totalFileSizeKB += fileSizeKB
-      }
 
-      SUMMARY.files.input_css.push(file)
+        SUMMARY.files.input_css.push(file)
 
-      if (validUrl.isUri(file)) {
-        request(file, (e, response, body) => {
-          if (response === undefined) {
-            // try again
-            request(file, (e, response, body) => {
-              if (response.statusCode === 200) {
-                CSS_FILE_DATA.push(body)
-
-                const nextFileIndex = fileIndex + 1
-
-                if (nextFileIndex < files.length) {
-                  eventEmitter.emit('CSS_READ_AGAIN', nextFileIndex)
-                } else {
-                  eventEmitter.emit('CSS_READ_END')
-                }
-              } else {
-                eventEmitter.emit('CSS_READ_ERROR')
-                handleCssFileReadError(e, file)
-              }
-            })
-          } else if (response.statusCode === 200) {
-            CSS_FILE_DATA.push(body)
-
-            const nextFileIndex = fileIndex + 1
-
-            if (nextFileIndex < files.length) {
-              eventEmitter.emit('CSS_READ_AGAIN', nextFileIndex)
-            } else {
-              eventEmitter.emit('CSS_READ_END')
-            }
-          } else {
-            eventEmitter.emit('CSS_READ_ERROR')
-            handleCssFileReadError(e, file)
-          }
-        })
-      } else {
         const readStream = createReadStream(file, 'utf8')
 
         readStream
           .on('data', (chunk) => {
-            CSS_FILE_DATA.push(chunk)
+            fileData.push(chunk)
           })
           .on('end', () => {
             const nextFileIndex = fileIndex + 1
 
             if (nextFileIndex < files.length) {
-              eventEmitter.emit('CSS_READ_AGAIN', nextFileIndex)
+              eventEmitter.emit('CSS_READ_AGAIN', nextFileIndex, fileData)
             } else {
-              eventEmitter.emit('CSS_READ_END')
+              eventEmitter.emit('CSS_READ_END', fileData)
             }
           })
           .on('error', (e) => {
             eventEmitter.emit('CSS_READ_ERROR')
             handleCssFileReadError(e, file)
           })
-      } // end of url check
+      }
     } // end of readCSSFiles
 
     function writeCSSFiles (css = '') {
