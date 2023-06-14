@@ -198,7 +198,7 @@ class CSSPurge {
       ...DEFAULT_OPTIONS
     }
 
-    let OPTIONS = {
+    const OPTIONS = {
       ...INITIAL_OPTIONS
     }
 
@@ -901,79 +901,20 @@ class CSSPurge {
 
     function readOptions (options = {}) {
       const {
-        trim: TRIM,
-        shorten: SHORTEN,
-        format: FORMAT,
-        report: REPORT,
-        verbose: VERBOSE,
-        special_reduce_with_html: SPECIAL_REDUCE_WITH_HTML,
         css_file_location: CSS_FILE_LOCATION,
-        report_file_location: REPORT_FILE_LOCATION,
-        reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
+        report_file_location: REPORT_FILE_LOCATION = DEFAULT_OPTIONS_REPORT_FILE_LOCATION,
+        reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION = DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION
       } = options
 
-      if (TRIM) {
-        OPTIONS.trim = true
-        OPTIONS.trim_removed_rules_previous_comment = true
-        OPTIONS.trim_comments = true
-        OPTIONS.trim_whitespace = true
-        OPTIONS.trim_breaklines = true
-        OPTIONS.trim_last_semicolon = true
-      }
+      Object.assign(OPTIONS, options)
 
-      if (SHORTEN) {
-        OPTIONS.shorten = true
-        OPTIONS.shorten_zero = true
-        OPTIONS.shorten_hexcolor = true
-        OPTIONS.shorten_hexcolor_extended = true
-        OPTIONS.shorten_font = true
-        OPTIONS.shorten_background = true
-        OPTIONS.shorten_margin = true
-        OPTIONS.shorten_padding = true
-        OPTIONS.shorten_list_style = true
-        OPTIONS.shorten_outline = true
-        OPTIONS.shorten_border = true
-        OPTIONS.shorten_border_top = true
-        OPTIONS.shorten_border_right = true
-        OPTIONS.shorten_border_bottom = true
-        OPTIONS.shorten_border_left = true
-        OPTIONS.shorten_border_radius = true
-      }
+      if (CSS_FILE_LOCATION) SUMMARY.files.output_css.push(CSS_FILE_LOCATION)
 
-      if (FORMAT) {
-        OPTIONS.format = true
-        OPTIONS.format_font_family = true
-      }
-
-      if (REPORT) {
-        OPTIONS.report = true
-      }
-
-      if (VERBOSE) {
-        OPTIONS.verbose = true
-      }
-
-      if (SPECIAL_REDUCE_WITH_HTML) {
-        OPTIONS.special_reduce_with_html = SPECIAL_REDUCE_WITH_HTML
-      }
-
-      if (CSS_FILE_LOCATION) {
-        OPTIONS.css_file_location = CSS_FILE_LOCATION
-      }
-
-      if (REPORT_FILE_LOCATION) {
-        OPTIONS.report_file_location = REPORT_FILE_LOCATION
-      }
-
-      if (REDUCE_DECLARATIONS_FILE_LOCATION) {
-        OPTIONS.reduce_declarations_file_location = REDUCE_DECLARATIONS_FILE_LOCATION
-      }
-
-      SUMMARY.files.output_css.push(CSS_FILE_LOCATION)
       DEFAULT_OPTIONS_REPORT_FILE_LOCATION = REPORT_FILE_LOCATION
       DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = REDUCE_DECLARATIONS_FILE_LOCATION
 
-      INITIAL_OPTIONS = options
+      Object.assign(INITIAL_OPTIONS, OPTIONS)
+
       SUMMARY.options = {
         ...OPTIONS
       }
@@ -1000,44 +941,18 @@ class CSSPurge {
             }
 
             const {
-              trim: TRIM,
-              shorten: SHORTEN,
               css_file_location: CSS_FILE_LOCATION,
-              report_file_location: REPORT_FILE_LOCATION,
-              reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
+              report_file_location: REPORT_FILE_LOCATION = DEFAULT_OPTIONS_REPORT_FILE_LOCATION,
+              reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION = DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION
             } = INITIAL_OPTIONS
 
-            if (TRIM) {
-              INITIAL_OPTIONS.trim_removed_rules_previous_comment = true
-              INITIAL_OPTIONS.trim_comments = true
-              INITIAL_OPTIONS.trim_whitespace = true
-              INITIAL_OPTIONS.trim_breaklines = true
-              INITIAL_OPTIONS.trim_last_semicolon = true
-            }
+            if (CSS_FILE_LOCATION) SUMMARY.files.output_css.push(CSS_FILE_LOCATION)
 
-            if (SHORTEN) {
-              INITIAL_OPTIONS.shorten_zero = true
-              INITIAL_OPTIONS.shorten_hexcolor = true
-              INITIAL_OPTIONS.shorten_hexcolor_extended = true
-              INITIAL_OPTIONS.shorten_font = true
-              INITIAL_OPTIONS.shorten_background = true
-              INITIAL_OPTIONS.shorten_margin = true
-              INITIAL_OPTIONS.shorten_padding = true
-              INITIAL_OPTIONS.shorten_list_style = true
-              INITIAL_OPTIONS.shorten_outline = true
-              INITIAL_OPTIONS.shorten_border = true
-              INITIAL_OPTIONS.shorten_border_top = true
-              INITIAL_OPTIONS.shorten_border_right = true
-              INITIAL_OPTIONS.shorten_border_bottom = true
-              INITIAL_OPTIONS.shorten_border_left = true
-              INITIAL_OPTIONS.shorten_border_radius = true
-            }
-
-            SUMMARY.files.output_css.push(CSS_FILE_LOCATION)
             DEFAULT_OPTIONS_REPORT_FILE_LOCATION = REPORT_FILE_LOCATION
             DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = REDUCE_DECLARATIONS_FILE_LOCATION
 
-            OPTIONS = INITIAL_OPTIONS
+            Object.assign(OPTIONS, INITIAL_OPTIONS)
+
             SUMMARY.options = {
               ...OPTIONS
             }

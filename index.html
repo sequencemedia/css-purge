@@ -666,7 +666,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
       ":-"
     ],
 
-    "generate_report": true,
+    "report": true,
     "verbose": true,
 
     "bypass_media_rules": true,
@@ -676,7 +676,23 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
     "bypass_charset": false,
 
     "zero_ignore_declaration": [],
-    "zero_units": ["em", "ex", "%", "px", "cm", "mm", "in", "pt", "pc", "ch", "rem", "vh", "vw", "vmin", "vmax"],
+    "zero_units": [
+      "em",
+      "ex",
+      "%",
+      "px",
+      "cm",
+      "mm",
+      "in",
+      "pt",
+      "pc",
+      "ch",
+      "rem",
+      "vh",
+      "vw",
+      "vmin",
+      "vmax"
+    ],
 
     "report_file_location": "default_options_report.json",
 
@@ -1025,7 +1041,7 @@ node css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http
     </tr>
     <tr>
       <td>
-      	generate_report
+      	report
       </td>
       <td>
       	Allows the JSON report data to be generated.

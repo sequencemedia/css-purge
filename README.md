@@ -291,7 +291,7 @@ Example config.json:
       ":-"
     ],
 
-    "generate_report": true,
+    "report": true,
     "verbose": true,
 
     "bypass_media_rules": true,
@@ -301,7 +301,23 @@ Example config.json:
     "bypass_charset": false,
 
     "zero_ignore_declaration": [],
-    "zero_units": ["em", "ex", "%", "px", "cm", "mm", "in", "pt", "pc", "ch", "rem", "vh", "vw", "vmin", "vmax"],
+    "zero_units": [
+      "em",
+      "ex",
+      "%",
+      "px",
+      "cm",
+      "mm",
+      "in",
+      "pt",
+      "pc",
+      "ch",
+      "rem",
+      "vh",
+      "vw",
+      "vmin",
+      "vmax"
+    ],
 
     "report_file_location": "default_options_report.json",
 

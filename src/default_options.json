@@ -6,10 +6,10 @@
   "bypass_supports_rules": false,
   "format": true,
   "format_font_family": false,
-  "generate_report": true,
+  "report": true,
   "move_common_declarations_into_parent": false,
-  "reduce_declarations_file_location": "default_options_reduce_declarations.json",
-  "report_file_location": "default_options_report.json",
+  "reduce_declarations_file_location": "./default_options_reduce_declarations.json",
+  "report_file_location": "./default_options_report.json",
   "shorten": true,
   "shorten_background": false,
   "shorten_border": false,
@@ -51,5 +51,21 @@
   "trim_whitespace": false,
   "verbose": true,
   "zero_ignore_declaration": [],
-  "zero_units": ["em", "ex", "%", "px", "cm", "mm", "in", "pt", "pc", "ch", "rem", "vh", "vw", "vmin", "vmax"]
+  "zero_units": [
+    "em",
+    "ex",
+    "%",
+    "px",
+    "cm",
+    "mm",
+    "in",
+    "pt",
+    "pc",
+    "ch",
+    "rem",
+    "vh",
+    "vw",
+    "vmin",
+    "vmax"
+]
 }
