@@ -382,8 +382,12 @@ class CSSPurge {
         let amountRemoved
         let selectorPropertiesList
 
+        const {
+          move_common_declarations_into_parent: MOVE_COMMON_DECLARATIONS_INTO_PARENT
+        } = OPTIONS
+
         // reduce common declarations amongst children into parent
-        if (OPTIONS.move_common_declarations_into_parent) {
+        if (MOVE_COMMON_DECLARATIONS_INTO_PARENT) {
           const commonSelectors = getCommonSelectors(rules)
 
           const parentRules = getParentRules(rules)
@@ -397,9 +401,6 @@ class CSSPurge {
           removeParentDeclarationsFromCommonParentRules(commonParentRules, rules, parentDeclarations)
 
           addParentDeclarationsToRules(parentDeclarations, rules)
-
-          // reset rules count
-          RULES_COUNT = rules.length
         } // end of reduce common declarations amongst children into parent
 
         rules
@@ -1330,8 +1331,8 @@ class CSSPurge {
 
           try {
             // reduce root declarations by selector
-            selectorPropertiesList = []
-            declarationsCounts = []
+            const declarationsCounts = []
+            const selectorPropertiesList = []
 
             for (let k = 0; k < SELECTORS_COUNT; ++k) {
               if (rules[i] !== undefined &&
