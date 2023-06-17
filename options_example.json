@@ -108,7 +108,7 @@
       "vmax"
     ],
 
-    "report_file_location": "default_options_report.json",
+    "report_file_location": "report.json",
 
     "reduce_declarations_file_location": "default_options_reduce_declarations.json"
   }

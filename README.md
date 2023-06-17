@@ -1,22 +1,12 @@
 <a href="http://rbtech.github.io/css-purge" target="_blank"><img align="right" src="http://rbtech.github.io/css-purge/assets/images/visit_website.jpg"></a>
 
-
 [![npm](https://img.shields.io/npm/v/css-purge.svg)](https://www.npmjs.com/package/css-purge) [![npm](https://img.shields.io/npm/dm/css-purge.svg)](https://npmcharts.com/compare/css-purge?&=true&periodLength=30&minimal=true) [![NpmLicense](https://img.shields.io/npm/l/css-purge.svg)](https://www.npmjs.com/package/css-purge)
-
 
 **V3 - We just released our most awesome version yet!**
 
-
-
 ## A CSS tool written in Node JS as a command line app or library for the purging, burning, reducing, shortening, compressing, cleaning, trimming and formatting of duplicate, extra, excess or bloated CSS.
 
-
 [![CSS Purge](http://rbtech.github.io/css-purge/assets/images/CSS_Purge_Logo_Full.png)](http://rbtech.github.io/css-purge)
-
-
-
-
-
 
 ## Overview
 
@@ -31,11 +21,6 @@ This is the typical usage scenario, where you may want to purge some CSS from a 
 You want to take it a step further by taking your CSS file(s) and reducing it further based on what is used in your HTML file(s).
 
 ![Purging Unused CSS](http://rbtech.github.io/css-purge/assets/images/overview2.png)
-
-
-
-
-
 
 Usage
 ----
@@ -53,7 +38,6 @@ css-purge [CLI options]
 ```
 
 CLI Options:
-
 
 Command | Description
 ------------ | -------------
@@ -88,12 +72,6 @@ css-purge -i main.css -o main.min.css -m index.html
 css-purge -i "main.css, framework.css" -o main.min.css -m "index.html, http://www.mywebsite.com/index.html"
 ```
 
-
-
-
-
-
-
 ### Project Usage
 Local usage is nice for “setting up shop” for a project.
 
@@ -115,7 +93,6 @@ node css-purge [CLI options]
 
 CLI Options:
 
-
 Command | Description
 ------------ | -------------
 -i "filename/folder name location" | CSS file(s) input
@@ -126,10 +103,6 @@ Command | Description
 -d | run with the default config file (config_css.json must exist in folder)
 -v | displays the version number
 -h | CLI help
-
-
-
-
 
 ### Node JS Library Usage
 Libraries help share the awesomeness to more people :)
@@ -158,7 +131,6 @@ Some example usage:
     else
       console.log('Output CSS: ',  result);
   });
-
 
   //uses default settings that are set in the config file
   //make sure that css is set
@@ -198,8 +170,6 @@ Some example usage:
   );
 
 ```
-
-
 
 CSS-Purge Report Viewer
 ----
@@ -319,15 +289,12 @@ Example config.json:
       "vmax"
     ],
 
-    "report_file_location": "default_options_report.json",
+    "report_file_location": "report.json",
 
     "reduce_declarations_file_location": "default_options_reduce_declarations.json"
   }
 }
 ```
-
-
-
 
 Plugins!
 ----
@@ -335,13 +302,7 @@ Plugins!
 - [grunt-css-purge](https://github.com/dominikwilkowski/grunt-css-purge)
 - [Webpack loader : purge-css-loader](https://github.com/dzianisreznik/purge-css-loader)
 
-
 We will list them as they come.
-
-
-
-
-
 
 Help
 ----
@@ -354,13 +315,6 @@ Got a question on how to do something and when answered will help everyone?
 Then place it on StackOverflow with the tag &ldquo;css-purge&rdquo;
 - [View questions tagged with &ldquo;css-purge&rdquo;](https://stackoverflow.com/questions/tagged/css-purge)
 - Join us on gitter - [Visit the community](https://gitter.im/css-purge)
-
-
-
-
-
-
-
 
 License
 -----
