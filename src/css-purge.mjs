@@ -287,7 +287,7 @@ class CSSPurge {
       DEFAULT_OPTIONS_REPORT_FILE_LOCATION = REPORT_FILE_LOCATION
       DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = REDUCE_DECLARATIONS_FILE_LOCATION
 
-      Object.assign(INITIAL_OPTIONS, Object.assign(OPTIONS, options))
+      Object.assign(INITIAL_OPTIONS, Object.assign(OPTIONS, { ...options, report_file_location: REPORT_FILE_LOCATION, reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION }))
 
       SUMMARY.options = {
         ...OPTIONS
@@ -326,7 +326,7 @@ class CSSPurge {
             DEFAULT_OPTIONS_REPORT_FILE_LOCATION = REPORT_FILE_LOCATION
             DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = REDUCE_DECLARATIONS_FILE_LOCATION
 
-            Object.assign(INITIAL_OPTIONS, Object.assign(OPTIONS, options))
+            Object.assign(INITIAL_OPTIONS, Object.assign(OPTIONS, { ...options, report_file_location: REPORT_FILE_LOCATION, reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION }))
 
             SUMMARY.options = {
               ...OPTIONS
@@ -1279,18 +1279,18 @@ class CSSPurge {
       if (!css) eventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END')
 
       if (!HAS_READ_REDUCE_DECLARATIONS) {
-        const {
-          reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
-        } = OPTIONS
+        const REDUCE_DECLARATIONS_FILE_LOCATION = OPTIONS.reduce_declarations_file_location
 
-        const fileLocation = (
+        const reduceDeclarationsFileLocation = (
           DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION === path.join(ROOT, REDUCE_DECLARATIONS_FILE_LOCATION)
             ? DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION
             : REDUCE_DECLARATIONS_FILE_LOCATION
         )
 
-        if (existsSync(fileLocation)) {
-          readReduceDeclarationsFileLocation(fileLocation)
+        OPTIONS.reduce_declarations_file_location = reduceDeclarationsFileLocation
+
+        if (existsSync(reduceDeclarationsFileLocation)) {
+          readReduceDeclarationsFileLocation(reduceDeclarationsFileLocation)
         } else {
           if (options && !options.reduce_declarations) {
             const reduceDeclarations = {
@@ -1300,6 +1300,7 @@ class CSSPurge {
             }
 
             options.reduce_declarations = reduceDeclarations
+            options.reduce_declarations_file_location = reduceDeclarationsFileLocation
 
             readReduceDeclarations(reduceDeclarations)
           } else {
@@ -1410,18 +1411,18 @@ class CSSPurge {
       eventEmitter.on('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionsReduceDeclarationsEnd) // end of reduce config read
 
       if (!HAS_READ_REDUCE_DECLARATIONS) {
-        const {
-          reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
-        } = OPTIONS
+        const REDUCE_DECLARATIONS_FILE_LOCATION = OPTIONS.reduce_declarations_file_location
 
-        const fileLocation = (
+        const reduceDeclarationsFileLocation = (
           DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION === path.join(ROOT, REDUCE_DECLARATIONS_FILE_LOCATION)
             ? DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION
             : REDUCE_DECLARATIONS_FILE_LOCATION
         )
 
-        if (existsSync(fileLocation)) {
-          readReduceDeclarationsFileLocation(fileLocation)
+        OPTIONS.reduce_declarations_file_location = reduceDeclarationsFileLocation
+
+        if (existsSync(reduceDeclarationsFileLocation)) {
+          readReduceDeclarationsFileLocation(reduceDeclarationsFileLocation)
         } else {
           if (options && !options.reduce_declarations) {
             const reduceDeclarations = {
@@ -1431,6 +1432,7 @@ class CSSPurge {
             }
 
             options.reduce_declarations = reduceDeclarations
+            options.reduce_declarations_file_location = reduceDeclarationsFileLocation
 
             readReduceDeclarations(reduceDeclarations)
           } else {
