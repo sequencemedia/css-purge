@@ -43,7 +43,7 @@ export default function getBackgroundProp (background, prop) {
       }
 
       if (Array.isArray(value1)) {
-        value2 = value1.reduce((accumulator, value) => value === '0' ? accumulator += value + ' ' : accumulator, '')
+        value2 = value1.reduce((accumulator, value) => value === '0' ? accumulator.concat(value + ' ') : accumulator, '')
 
         if (value2 !== '') {
           return value2.trim()

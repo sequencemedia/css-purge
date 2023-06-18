@@ -72,7 +72,8 @@
     "husky": "^8.0.3"
   },
   "imports": {
-    "#css-purge": "./src/css-purge.mjs"
+    "#css-purge": "./src/css-purge.mjs",
+    "#where-am-i": "./where-am-i.mjs"
   },
   "exports": {
     ".": "./src/css-purge.mjs"

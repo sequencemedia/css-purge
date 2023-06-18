@@ -7,7 +7,6 @@ import {
   existsSync
 } from 'node:fs'
 import EventEmitter from 'node:events'
-import crypto from 'node:crypto'
 
 import clc from 'cli-color'
 import cssTools from '@adobe/css-tools'
@@ -15,6 +14,8 @@ import cssTools from '@adobe/css-tools'
 import validUrl from 'valid-url'
 
 import jsdom from 'jsdom'
+
+import ROOT from '#where-am-i'
 
 import DEFAULT_OPTIONS from './default_options.json' assert { type: 'json' }
 import DEFAULT_DECLARATION_NAMES from './default-declaration-names.json' assert { type: 'json' }
@@ -53,7 +54,7 @@ const log = debug('@sequencemedia/css-purge')
 
 const { JSDOM } = jsdom
 
-const success = clc.greenBright
+// const success = clc.greenBright
 // const success2 = clc.green
 const info = clc.xterm(123)
 const error = clc.red
@@ -66,8 +67,6 @@ const logoRed = clc.xterm(197)
 // const read = fs.readFileSync
 // const write = fs.writeFileSync
 // const appendToFileSync = fs.appendFileSync
-
-let hash
 
 const DEFAULT_FILE_LOCATION = './default_options_css.css'
 const DEFAULT_OPTIONS_FILE_LOCATION = './default_options.json'
@@ -180,6 +179,32 @@ function toDuplicateSupports ({ media, position }) {
     selectors: `@supports ${media}`,
     position
   }
+}
+
+function getPropertyMapFor (declarations = []) {
+  const propertyMap = new Map()
+
+  declarations
+    .forEach((declaration) => {
+      const {
+        type
+      } = declaration
+
+      if (type === 'declaration') {
+        const {
+          property
+        } = declaration
+
+        const count = (
+          propertyMap.has(property)
+            ? propertyMap.get(property) + 1
+            : 1
+        )
+        propertyMap.set(property, count)
+      }
+    })
+
+  return propertyMap
 }
 
 function handleCssParseError (e) {
@@ -348,17 +373,18 @@ class CSSPurge {
       }
     }
 
-    let {
-      report_file_location: DEFAULT_OPTIONS_REPORT_FILE_LOCATION,
-      reduce_declarations_file_location: DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION
+    const {
+      report_file_location: REPORT_FILE_LOCATION,
+      reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
     } = DEFAULT_OPTIONS
+
+    let DEFAULT_OPTIONS_REPORT_FILE_LOCATION = path.join(ROOT, REPORT_FILE_LOCATION)
+    let DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION = path.join(ROOT, REDUCE_DECLARATIONS_FILE_LOCATION)
 
     let HAS_READ_REDUCE_DECLARATIONS = false
 
-    const selectors = ''
-    let SELECTORS_COUNT = 0
-
     const SELECTOR_PROPERTY_MAP = new Map()
+    let SELECTORS = []
 
     let DECLARATION_NAMES = [
       ...DEFAULT_DECLARATION_NAMES
@@ -370,18 +396,6 @@ class CSSPurge {
       console.log('ENTER PROCESS')
 
       if (rules) {
-        let RULES_COUNT = rules.length
-        let DECLARATION_COUNT = 0
-
-        let declarations
-        let declarationsNameCounts
-        let declarationsCounts
-        let declarationsValueCounts
-
-        let duplicateIds
-        let amountRemoved
-        let selectorPropertiesList
-
         const {
           move_common_declarations_into_parent: MOVE_COMMON_DECLARATIONS_INTO_PARENT
         } = OPTIONS
@@ -686,27 +700,7 @@ class CSSPurge {
                   declarations = []
                 } = rule
 
-                const propertyMap = new Map()
-
-                declarations
-                  .forEach((declaration) => {
-                    const {
-                      type
-                    } = declaration
-
-                    if (type === 'declaration') {
-                      const {
-                        property
-                      } = declaration
-
-                      const count = (
-                        propertyMap.has(property)
-                          ? propertyMap.get(property) + 1
-                          : 1
-                      )
-                      propertyMap.set(property, count)
-                    }
-                  })
+                const propertyMap = getPropertyMapFor(declarations)
 
                 const declarationMap = new Map()
 
@@ -918,12 +912,102 @@ class CSSPurge {
             if (rule.type === 'supports' && !rule.rules.length) rules.splice(i, 1)
           })
 
-        RULES_COUNT = rules.length
+        if (TRIM || TRIM_REMOVED_RULES_PREVIOUS_COMMENT) {
+          rules
+            .forEach((rule) => {
+              if (rule) {
+                if (rule.type === 'rule') {
+                  if (rule.selectors) {
+                    const ALPHA = rule.selectors.toString()
 
-        console.log({ RULES_COUNT })
+                    SELECTORS
+                      .forEach((OMEGA) => {
+                        if (ALPHA === OMEGA) {
+                          if (SELECTOR_PROPERTY_MAP.has(OMEGA)) {
+                            const {
+                              declarations = []
+                            } = rule
+
+                            const propertyMap = getPropertyMapFor(declarations)
+
+                            propertyMap
+                              .forEach((count) => { // (count, property) => {
+                                if (count > 1) {
+                                  declarations
+                                    .forEach((declaration, i) => {
+                                      if (declaration.type === 'declaration' && declaration.property === OMEGA) {
+                                        const properties = SELECTOR_PROPERTY_MAP.get(OMEGA)
+                                        if (properties.includes(declaration.property)) {
+                                          const count = propertyMap.get(OMEGA)
+                                          if (count > 1) {
+                                            const n = i - 1
+                                            const delta = declarations[n]
+                                            if (delta) {
+                                              if (delta.type === 'comment') declarations.splice(n, 1)
+                                            }
+                                          }
+                                        }
+                                      }
+                                    })
+                                }
+                              })
+                          }
+                        }
+                      })
+                  }
+                }
+              }
+            })
+        }
+
+        rules
+          .forEach((rule) => {
+            if (rule) {
+              if (rule.type === 'rule') {
+                if (rule.selectors) {
+                  const ALPHA = rule.selectors.toString()
+
+                  SELECTORS
+                    .forEach((OMEGA) => {
+                      if (ALPHA === OMEGA) {
+                        if (SELECTOR_PROPERTY_MAP.has(OMEGA)) {
+                          const {
+                            declarations = []
+                          } = rule
+
+                          const propertyMap = getPropertyMapFor(declarations)
+
+                          propertyMap
+                            .forEach((count) => { // (count, property) => {
+                              if (count > 1) {
+                                declarations
+                                  .forEach((declaration, i) => {
+                                    if (declaration.type === 'declaration' && declaration.property === OMEGA) {
+                                      const properties = SELECTOR_PROPERTY_MAP.get(OMEGA)
+                                      if (properties.includes(declaration.property)) {
+                                        const count = propertyMap.get(OMEGA)
+                                        if (count > 1) {
+                                          SUMMARY.duplicate_declarations.push(declaration)
+                                          SUMMARY.stats.summary.noDuplicateDeclarations += 1
+                                          declarations.splice(i, 1)
+                                        }
+                                      }
+                                    }
+                                  })
+                              }
+                            })
+                        }
+                      }
+                    })
+                }
+              }
+            }
+          })
+
+        /*
+        let RULES_COUNT = rules.length
 
         for (let i = 0; i < RULES_COUNT; ++i) {
-          /*
           /// /comments
           // checking declarations for comments
           if (rules[i] !== undefined && rules[i].declarations !== undefined) {
@@ -1140,15 +1224,11 @@ class CSSPurge {
               }
             } // end of supports selector
           } // end of j
-          */
-
-          RULES_COUNT = rules.length
 
           /// /end of rules
           /// /declarations
           // reduce root delcarations by property name and by duplicate values
 
-          /*
           if (
             rules[i] !== undefined &&
               (rules[i].type === 'rule' || (rules[i].type === 'page' && OPTIONS.bypass_page_rules === false))) {
@@ -1325,95 +1405,86 @@ class CSSPurge {
                 }
               } // end of reduce root declarations by property name
           } // end of rule check
-          */
 
-          console.log({ selectors }, SELECTORS_COUNT)
+          // reduce root declarations by selector
+          for (let k = 0; k < SELECTORS_COUNT; ++k) {
+            if (rules[i] !== undefined &&
+              rules[i].type === 'rule') {
+              if (rules[i].selectors !== undefined && rules[i].selectors.toString() === selectors[k]) {
+                let DECLARATION_COUNT = rules[i].declarations.length
 
-          try {
-            // reduce root declarations by selector
-            const declarationsCounts = []
-            const selectorPropertiesList = []
+                const declarationsCounts = []
 
-            for (let k = 0; k < SELECTORS_COUNT; ++k) {
-              if (rules[i] !== undefined &&
-                rules[i].type === 'rule') {
-                if (rules[i].selectors !== undefined && rules[i].selectors.toString() === selectors[k]) {
-                  DECLARATION_COUNT = rules[i].declarations.length
-
-                  // detect declarations duplicates
-                  for (let l = 0; l < DECLARATION_COUNT; ++l) {
-                    if (rules[i].declarations[l].type === 'declaration') {
-                      if (declarationsCounts[rules[i].declarations[l].property] !== undefined) {
-                        declarationsCounts[rules[i].declarations[l].property] += 1
-                      } else {
-                        declarationsCounts[rules[i].declarations[l].property] = 1
-                      }
+                // detect declarations duplicates
+                for (let l = 0; l < DECLARATION_COUNT; ++l) {
+                  if (rules[i].declarations[l].type === 'declaration') {
+                    if (declarationsCounts[rules[i].declarations[l].property] !== undefined) {
+                      declarationsCounts[rules[i].declarations[l].property] += 1
+                    } else {
+                      declarationsCounts[rules[i].declarations[l].property] = 1
                     }
-                  } // end of declarations duplicate check
+                  }
+                } // end of declarations duplicate check
 
-                  // declarations reduction
-                  for (const key in declarationsCounts) {
-                    if (declarationsCounts.hasOwnProperty(key)) {
-                      if (declarationsCounts[key] > 1) {
-                        for (let l = 0; l < DECLARATION_COUNT; ++l) {
-                          if (rules[i].declarations[l].type === 'declaration') {
-                            const key = selectors[k]
-                            if (SELECTOR_PROPERTY_MAP.has(key)) {
-                              selectorPropertiesList = SELECTOR_PROPERTY_MAP.get(key)
-                              if (rules[i].declarations[l].property === key &&
-                                (selectorPropertiesList.includes(rules[i].declarations[l].property)) &&
-                                declarationsCounts[key] > 1) { // leave behind 1
-                                // remove previous comment above declaration to be removed
-                                if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                                  if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
-                                    rules[i].declarations.splice(l - 1, 1)
-                                    l -= 1
-                                    DECLARATION_COUNT -= 1
-                                  }
+                // declarations reduction
+                for (const key in declarationsCounts) {
+                  if (declarationsCounts.hasOwnProperty(key)) {
+                    if (declarationsCounts[key] > 1) {
+                      for (let l = 0; l < DECLARATION_COUNT; ++l) {
+                        if (rules[i].declarations[l].type === 'declaration') {
+                          const key = selectors[k]
+                          if (SELECTOR_PROPERTY_MAP.has(key)) {
+                            const selectorPropertiesList = SELECTOR_PROPERTY_MAP.get(key)
+                            if (rules[i].declarations[l].property === key &&
+                              (selectorPropertiesList.includes(rules[i].declarations[l].property)) &&
+                              declarationsCounts[key] > 1) { // leave behind 1
+                              // remove previous comment above declaration to be removed
+                              if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+                                if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
+                                  rules[i].declarations.splice(l - 1, 1)
+                                  l -= 1
+                                  DECLARATION_COUNT -= 1
                                 }
-
-                                if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
-                                SUMMARY.duplicate_declarations.push(rules[i].declarations[l])
-                                SUMMARY.stats.summary.noDuplicateDeclarations += 1
-                                rules[i].declarations.splice(l, 1)
-                                l -= 1
-                                DECLARATION_COUNT -= 1
-                                declarationsCounts[key] -= 1
                               }
-                            } else { // all in selector
-                              if (rules[i].declarations[l].property === key &&
-                                declarationsCounts[key] > 1) { // leave behind 1
-                                // remove previous comment above declaration to be removed
-                                if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
-                                  if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
-                                    rules[i].declarations.splice(l - 1, 1)
-                                    l -= 1
-                                    DECLARATION_COUNT -= 1
-                                  }
+
+                              if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
+                              SUMMARY.duplicate_declarations.push(rules[i].declarations[l])
+                              SUMMARY.stats.summary.noDuplicateDeclarations += 1
+                              rules[i].declarations.splice(l, 1)
+                              l -= 1
+                              DECLARATION_COUNT -= 1
+                              declarationsCounts[key] -= 1
+                            }
+                          } else { // all in selector
+                            if (rules[i].declarations[l].property === key &&
+                              declarationsCounts[key] > 1) { // leave behind 1
+                              // remove previous comment above declaration to be removed
+                              if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+                                if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
+                                  rules[i].declarations.splice(l - 1, 1)
+                                  l -= 1
+                                  DECLARATION_COUNT -= 1
                                 }
-
-                                if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
-                                SUMMARY.duplicate_declarations.push(rules[i].declarations[l])
-                                SUMMARY.stats.summary.noDuplicateDeclarations += 1
-                                rules[i].declarations.splice(l, 1)
-                                l -= 1
-                                DECLARATION_COUNT -= 1
-                                declarationsCounts[key] -= 1
                               }
+
+                              if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
+                              SUMMARY.duplicate_declarations.push(rules[i].declarations[l])
+                              SUMMARY.stats.summary.noDuplicateDeclarations += 1
+                              rules[i].declarations.splice(l, 1)
+                              l -= 1
+                              DECLARATION_COUNT -= 1
+                              declarationsCounts[key] -= 1
                             }
                           }
                         }
                       }
                     }
-                  } // end of declarations reduction
-                } // end of if
+                  }
+                } // end of declarations reduction
               } // end of if
-            } // end of reduce root declarations by selector
-          } catch (e) {
-            console.log(e)
-          }
+            } // end of if
+          } // end of reduce root declarations by selector
 
-          /*
           /// /end of declarations
           /// /empty nodes
           // remove empty @sign keyframes
@@ -1490,11 +1561,12 @@ class CSSPurge {
             i -= 1
             RULES_COUNT -= 1
           }
-          */
 
-          console.log('EXIT PROCESS')
           /// /end of empty nodes
         } // end of i
+        */
+
+        console.log('EXIT PROCESS')
       } // end of undefined
     } // end of processRules
 
@@ -1567,27 +1639,29 @@ class CSSPurge {
     } // end of readOptionsFileLocation
 
     function readReduceDeclarations (reduceDeclarations = {}) {
-      let {
+      const {
         declaration_names: declarationNames = [],
         selectors = {}
       } = reduceDeclarations
 
       switch (typeof selectors) {
-        case 'string':
-          if (selectors.length) {
-            selectors = selectors.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean)
-            SELECTORS_COUNT = selectors.length
-          }
-
-          break
         case 'object':
+          SELECTOR_PROPERTY_MAP.clear()
+
           Object
             .entries(selectors)
             .forEach(([key, value]) => {
               SELECTOR_PROPERTY_MAP.set(key, value.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean))
             })
 
-          SELECTORS_COUNT = Object.keys(selectors).length
+          SELECTORS = Array.from(SELECTOR_PROPERTY_MAP.keys())
+          break
+        case 'string':
+          SELECTORS = (
+            selectors.length
+              ? selectors.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean)
+              : []
+          )
           break
       }
 
@@ -1601,6 +1675,7 @@ class CSSPurge {
       }
 
       HAS_READ_REDUCE_DECLARATIONS = true
+
       eventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
     } // end of readReduceDeclarations
 
@@ -1622,27 +1697,29 @@ class CSSPurge {
             handleOptionsFileReadError(e, fileLocation)
           }
 
-          let {
+          const {
             declaration_names: declarationNames = [],
             selectors = {}
           } = declarations
 
           switch (typeof selectors) {
-            case 'string':
-              if (selectors.length) {
-                selectors = selectors.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean)
-                SELECTORS_COUNT = selectors.length
-              }
-
-              break
             case 'object':
+              SELECTOR_PROPERTY_MAP.clear()
+
               Object
                 .entries(selectors)
                 .forEach(([key, value]) => {
                   SELECTOR_PROPERTY_MAP.set(key, value.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean))
                 })
 
-              SELECTORS_COUNT = Object.keys(selectors).length
+              SELECTORS = Array.from(SELECTOR_PROPERTY_MAP.keys())
+              break
+            case 'string':
+              SELECTORS = (
+                selectors.length
+                  ? selectors.replace(/^\s+|\s+$/g, '').replace(/\r?\n|\r/g, '').split(',').map(toTrim).filter(Boolean)
+                  : []
+              )
               break
           }
 
@@ -1656,6 +1733,7 @@ class CSSPurge {
           }
 
           HAS_READ_REDUCE_DECLARATIONS = true
+
           eventEmitter.emit('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', OPTIONS)
         })
         .on('error', (e) => {
@@ -1665,11 +1743,7 @@ class CSSPurge {
     } // end of readReduceDeclarationsFileLocation
 
     function processSelectorsForHTMLStart (selectors = [], html = null, options = null) {
-      if (options) {
-        for (const key in options) {
-          OPTIONS.html[key] = options[key]
-        }
-      }
+      if (options) Object.assign(OPTIONS.html, options)
 
       if (OPTIONS.verbose) { console.log(info('Process - HTML - Determine Rules to Remove')) }
 
@@ -1732,22 +1806,18 @@ class CSSPurge {
         }
       } = new JSDOM(html, { contentType: 'text/html' })
 
-      for (let i = 0, selectorsLength = selectors.length; i < selectorsLength; ++i) {
-        for (let j = 0, resultsLength = results.length; j < resultsLength; ++j) {
-          if (selectors[i] === results[j]) {
-            selectors.splice(i, 1)
-            selectorsLength -= 1
-            i -= 1
-            break
-          }
-        }
+      selectors
+        .forEach((selector, i) => {
+          results
+            .forEach((result) => {
+              if (selector === result) selectors.splice(i, 1)
+            })
+        })
 
-        if (document.querySelector(selectors[i]) !== null) {
-          selectors.splice(i, 1)
-          selectorsLength -= 1
-          i -= 1
-        }
-      }
+      selectors
+        .forEach((selector, i) => {
+          if (document.querySelector(selector)) selectors.splice(i, 1)
+        })
 
       return selectors
     } // end of processSelectorsForHTMLStart
@@ -2018,9 +2088,7 @@ class CSSPurge {
             break
           case 'string': // formats
             {
-              let collection = htmlFiles.replace(/ /g, '')
-
-              // comma delimited list - filename1.html, filename2.html
+              let collection = htmlFiles.replace(/ /g, '') // comma delimited list - filename1.html, filename2.html
               if (collection.includes(',')) {
                 collection = collection.replace(/^\s+|\s+$/g, '').split(',').map(toTrim).filter(Boolean)
 
@@ -2640,8 +2708,14 @@ class CSSPurge {
           reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
         } = OPTIONS
 
-        if (existsSync(REDUCE_DECLARATIONS_FILE_LOCATION)) {
-          readReduceDeclarationsFileLocation(REDUCE_DECLARATIONS_FILE_LOCATION)
+        const fileLocation = (
+          DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION === path.join(ROOT, REDUCE_DECLARATIONS_FILE_LOCATION)
+            ? DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION
+            : REDUCE_DECLARATIONS_FILE_LOCATION
+        )
+
+        if (existsSync(fileLocation)) {
+          readReduceDeclarationsFileLocation(fileLocation)
         } else {
           if (options && !options.reduce_declarations) {
             const reduceDeclarations = {
@@ -2693,15 +2767,15 @@ class CSSPurge {
             case 'string':
               {
                 // formats
-                cssFiles = cssFiles.replace(/ /g, '')
-                if (cssFiles.includes(',')) { // comma delimited list - filename1.css, filename2.css
-                  cssFiles = cssFiles.split(',').map(toTrim).filter(Boolean)
+                let collection = cssFiles.replace(/ /g, '')
+                if (collection.includes(',')) { // comma delimited list - filename1.css, filename2.css
+                  collection = collection.split(',').map(toTrim).filter(Boolean)
 
                   const collector = []
 
-                  cssFiles
-                    .forEach((file) => {
-                      getFilePath(file, ['.css'], collector)
+                  collection
+                    .forEach((member) => {
+                      getFilePath(member, ['.css'], collector)
                     })
 
                   if (collector.length) {
@@ -2711,7 +2785,7 @@ class CSSPurge {
                   const collector = []
 
                   // string path
-                  getFilePath(cssFiles, ['.css'], collector)
+                  getFilePath(collection, ['.css'], collector)
 
                   if (collector.length) {
                     cssFiles = collector
@@ -2761,8 +2835,14 @@ class CSSPurge {
           reduce_declarations_file_location: REDUCE_DECLARATIONS_FILE_LOCATION
         } = OPTIONS
 
-        if (existsSync(REDUCE_DECLARATIONS_FILE_LOCATION)) {
-          readReduceDeclarationsFileLocation(REDUCE_DECLARATIONS_FILE_LOCATION)
+        const fileLocation = (
+          DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION === path.join(ROOT, REDUCE_DECLARATIONS_FILE_LOCATION)
+            ? DEFAULT_OPTIONS_REDUCE_DECLARATIONS_FILE_LOCATION
+            : REDUCE_DECLARATIONS_FILE_LOCATION
+        )
+
+        if (existsSync(fileLocation)) {
+          readReduceDeclarationsFileLocation(fileLocation)
         } else {
           if (options && !options.reduce_declarations) {
             const reduceDeclarations = {
