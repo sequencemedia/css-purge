@@ -18,6 +18,10 @@ import toPosition from '#utils/to-position'
 import getValueOfFontProp from '#utils/get-value-of-font-prop'
 import formatFontFamily from '#utils/format-font-family'
 
+import {
+  handleCssFontError
+} from '#utils/errors'
+
 /**
  *  Preserve order
  */
@@ -95,20 +99,6 @@ function hasFont (properties) {
 }
 
 const log = debug('@sequencemedia/css-purge/process-font')
-const error = debug('@sequencemedia/css-purge/process-font:error')
-
-function handleError ({ source, start }, required) {
-  error('Error parsing font declaration')
-  error({
-    source,
-    start: {
-      line: start.line,
-      column: start.column
-    },
-    required
-  })
-  process.exit(1)
-}
 
 export default function processFont (rule, OPTIONS, SUMMARY) {
   const {
@@ -203,7 +193,7 @@ export default function processFont (rule, OPTIONS, SUMMARY) {
                 FONT_VALUES[4] = fontPropValue
                 fontPropValue = fontPropValue + ' ' + fontFamilyValue
               } else {
-                handleError(propPosition, 'font-family')
+                handleCssFontError(propPosition, 'font-family')
               }
             } else {
               if (propValue === 'check size') {
@@ -214,7 +204,7 @@ export default function processFont (rule, OPTIONS, SUMMARY) {
                   if (fontPropValue === 'inherit') {
                     FONT_VALUES[4] = fontPropValue
                   } else {
-                    handleError(propPosition, 'font-size')
+                    handleCssFontError(propPosition, 'font-size')
                   }
                 }
               }
@@ -236,7 +226,7 @@ export default function processFont (rule, OPTIONS, SUMMARY) {
                     FONT_VALUES[6] = ''
                   }
                 } else {
-                  handleError(propPosition, 'font-size')
+                  handleCssFontError(propPosition, 'font-size')
                 }
               }
             } else {
@@ -245,7 +235,7 @@ export default function processFont (rule, OPTIONS, SUMMARY) {
                   FONT_VALUES[6] = fontPropValue
                   fontPropValue = fontPropValue + ' ' + fontFamilyValue
                 } else {
-                  handleError(propPosition, 'font-family')
+                  handleCssFontError(propPosition, 'font-family')
                 }
               } else {
                 if (FORMAT || FORMAT_FONT_FAMILY) { // ensure multi-worded families have quotes

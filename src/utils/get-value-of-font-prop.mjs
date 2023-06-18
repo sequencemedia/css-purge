@@ -14,11 +14,7 @@ export default function getValueOfFontProp (font, property, position) {
           ? ''
           : value
       )
-    } catch (e) {
-      const {
-        message
-      } = e
-
+    } catch ({ message }) {
       const m = message.toLowerCase()
 
       if (m.includes('missing required font-size')) {
@@ -27,7 +23,7 @@ export default function getValueOfFontProp (font, property, position) {
         if (m.includes('missing required font-family')) {
           return 'check family'
         } else {
-          handleCssParseFontError(e, position)
+          handleCssParseFontError(position)
         }
       }
     }

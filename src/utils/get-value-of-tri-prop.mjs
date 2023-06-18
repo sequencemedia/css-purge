@@ -69,6 +69,7 @@ export default function getValueOfTriProp (valueIn, prop) {
 
       return ''
     }
+
     case 'width':
     {
       const value = valueIn.match(/\bmedium\b|\bthin\b|\bthick\b|\b0\b|(([0-9][.]?|[.][0-9]?)+(pt|pc|px|in|cm|mm|q|cap|em|ex|rem|ic|lh|rlh|vh|vw|vi|vb|vmin|vmax))/g)
@@ -78,8 +79,7 @@ export default function getValueOfTriProp (valueIn, prop) {
 
       return ''
     }
-
-    default:
-      return ''
   }
+
+  return ''
 }

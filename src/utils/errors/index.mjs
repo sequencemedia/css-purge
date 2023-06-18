@@ -13,12 +13,23 @@ export function handleCssParseError (e) {
   process.exit(1)
 }
 
-export function handleCssParseFontError (e, position) {
+export function handleCssParseFontError (position) {
   error('Error parsing CSS font')
   console.table({
     Source: position.source,
     Line: position.start.line,
     Column: position.start.column
+  })
+  process.exit(1)
+}
+
+export function handleCssFontError (position, required) {
+  error('Error parsing CSS font')
+  console.table({
+    Source: position.source,
+    Line: position.start.line,
+    Column: position.start.column,
+    Required: required
   })
   process.exit(1)
 }
