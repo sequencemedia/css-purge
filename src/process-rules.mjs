@@ -1,285 +1,711 @@
-export default function processRules (rules, options) {
-  if (rules !== undefined) {
-    let TOTAL_RULES = rules.length
+import {
+  getCommonSelectors,
+  getParentRules,
+  getCommonParentRules,
+  getCommonParentDeclarations,
+  getParentDeclarations,
+  removeParentDeclarationsFromCommonParentRules,
+  addParentDeclarationsToRules
+} from './common-rules/index.mjs'
+
+import hasTypeComment from './utils/declarations/has-type-comment.mjs'
+
+function toDeclaration ({ selectors = [] }, property) {
+  return {
+    selectors,
+    property
+  }
+}
+
+function toDuplicate ({ type, selectors, position }) {
+  return {
+    selectors: (type === 'page') ? '@page' : selectors,
+    position
+  }
+}
+
+function toDuplicateMedia ({ media, position }) {
+  return {
+    selectors: `@media ${media}`,
+    position
+  }
+}
+
+function toDuplicateDocument ({ media, position }) {
+  return {
+    selectors: `@document ${media}`,
+    position
+  }
+}
+
+function toDuplicateSupports ({ media, position }) {
+  return {
+    selectors: `@supports ${media}`,
+    position
+  }
+}
+
+function getPropertyMapFor (declarations = []) {
+  const propertyMap = new Map()
+
+  declarations
+    .forEach((declaration) => {
+      const {
+        type
+      } = declaration
+
+      if (type === 'declaration') {
+        const {
+          property
+        } = declaration
+
+        const count = (
+          propertyMap.has(property)
+            ? propertyMap.get(property) + 1
+            : 1
+        )
+        propertyMap.set(property, count)
+      }
+    })
+
+  return propertyMap
+}
+
+export default function processRules (rules, OPTIONS, SUMMARY, DECLARATION_NAMES, SELECTORS, SELECTOR_PROPERTIES) {
+  console.log('ENTER PROCESS')
+
+  if (rules) {
+    const {
+      move_common_declarations_into_parent: MOVE_COMMON_DECLARATIONS_INTO_PARENT
+    } = OPTIONS
 
     // reduce common declarations amongst children into parent
-    if (options.move_common_declarations_into_parent) {
-      let directParents = []
-      let hierachy = []
-      let hierachyKeys = []
-      let hierachyLen = 0
-      let selectedHierachyLevel = 0
-      const commonParentsIdx = -1
-      let commonParentsKeys = []
-      let commonParents = []
-      let commonParentsLen = 0
-      const commonParent = ''
-      const commonParent2 = ''
-      const commonParentTotal = 0
-      let commonParentDeclarations = []
-      const commonLineage = ''
-      let newParentDeclarations = []
-      let processedCommonParentsChildren = []
-      let classLineage = ''
-      let parentClassLineage = ''
-      let lineageLabel = ''
-      let tmpDeclarations = []
+    if (MOVE_COMMON_DECLARATIONS_INTO_PARENT) {
+      const commonSelectors = getCommonSelectors(rules)
 
-      // let declarationsNameCounts //  = []
-      // const selectorPropertiesList = []
-      // const declarationsCounts = []
-      // let DECLARATION_COUNT
+      const parentRules = getParentRules(rules)
 
-      rules.forEach((rule) => {
-        if (rule.selectors !== undefined) {
-          rule.selectors.forEach((selector) => {
-            if (selector.includes('.')) {
-              const classLineage = selector.split(' ')
-              const parentClassLineage = classLineage.slice(0) // clone
-              parentClassLineage.pop()
-              parentClassLineage = parentClassLineage.join(' ')
+      const commonParentRules = getCommonParentRules(commonSelectors, parentRules)
 
-              if (parentClassLineage) {
-                if (Array.isArray(directParents[parentClassLineage])) {
-                  directParents[parentClassLineage].push({
-                    selector,
-                    index: i
-                  })
-                } else {
-                  directParents[parentClassLineage] = [{
-                    selector,
-                    index: i
-                  }]
-                }
-              }
+      const commonParentDeclarations = getCommonParentDeclarations(commonParentRules, rules)
 
-              classLineage.forEach((lineageLabel, i) => {
-                if (i > 0) {
-                  for (let j = i; j > 0; j--) {
-                    lineageLabel += classLineage[i - j] + ' '
-                  }
-                }
+      const parentDeclarations = getParentDeclarations(commonParentDeclarations, parentRules)
 
-                if (!Reflect.has(hierachy, lineageLabel)) {
-                  hierachy[lineageLabel] = 0
-                }
+      removeParentDeclarationsFromCommonParentRules(commonParentRules, rules, parentDeclarations)
 
-                hierachy[lineageLabel] += 1
-              })
-            } // end of if
-          })
-        }
-      })
-      for (let i = 0; i < TOTAL_RULES; ++i) {
-        /// rules
-        // group classes - create hierarchy
-        if (rules[i].selectors !== undefined) {
-          for (let j = 0; j < rules[i].selectors.length; j++) { // each comma delimited
-            if (rules[i].selectors[j].includes('.')) {
-              classLineage = rules[i].selectors[j].split(' ')
-              parentClassLineage = classLineage.slice(0) // clone
-              parentClassLineage.pop()
-              parentClassLineage = parentClassLineage.join(' ')
-
-              if (parentClassLineage !== undefined && parentClassLineage !== '') {
-                if (directParents[parentClassLineage] !== undefined) {
-                  directParents[parentClassLineage].push({
-                    selector: rules[i].selectors[j],
-                    index: i
-                  })
-                } else {
-                  directParents[parentClassLineage] = [{
-                    selector: rules[i].selectors[j],
-                    index: i
-                  }]
-                }
-              }
-
-              for (let k = 0; k < classLineage.length; k++) { // depth of hierachy
-                if (k > 0) {
-                  lineageLabel = ''
-
-                  for (let l = k; l > 0; l--) {
-                    lineageLabel += classLineage[k - l] + ' '
-                  }
-
-                  lineageLabel += classLineage[k]
-
-                  if (hierachy[lineageLabel] === undefined) {
-                    hierachy[lineageLabel] = 0
-                  }
-
-                  hierachy[lineageLabel] += 1
-                } else {
-                  if (hierachy[classLineage[k]] === undefined) {
-                    hierachy[classLineage[k]] = 0
-                  }
-
-                  hierachy[classLineage[k]] += 1
-                }
-              } // end of for
-            } // end of if
-          } // end of for
-        }
-      }
-
-      function sortHierachy (obj) {
-        const keys = Object.keys(obj)
-        keys.sort(function (a, b) { return b.length - a.length })
-        hierachy = []
-        for (let i = 0; i < keys.length; i++) {
-          hierachy[keys[i]] = obj[keys[i]]
-
-          Object.keys(directParents).forEach(function (key, index, val) {
-            if (this[key].length > 1) {
-              for (let j = 0; j < this[key].length; j++) {
-                if (keys[i] == this[key][j].selector) {
-                  if (options.verbose) { console.log(success('Process - Rules - Group Common Parent Rule : ' + keys[i])) }
-                  commonParentsKeys.push({
-                    selector: key,
-                    index: this[key][j].index,
-                    childSelector: keys[i]
-                  })
-                }
-              }
-            }
-          }, directParents)
-        }
-        return hierachy
-      }
-
-      sortHierachy(hierachy)
-
-      hierachyKeys = Object.keys(hierachy)
-      hierachyLen = hierachyKeys.length
-      selectedHierachyLevel = 0
-      commonParentsLen = commonParentsKeys.length
-
-      // get declarations
-      for (let i = 0; i < commonParentsKeys.length; i++) {
-        if (rules[commonParentsKeys[i].index].declarations !== undefined) {
-          for (let j = 0; j < rules[commonParentsKeys[i].index].declarations.length; j++) {
-            if (commonParentDeclarations[rules[commonParentsKeys[i].index].declarations[j].property + '_' + rules[commonParentsKeys[i].index].declarations[j].value] !== undefined) {
-              commonParentDeclarations[rules[commonParentsKeys[i].index].declarations[j].property + '_' + rules[commonParentsKeys[i].index].declarations[j].value].count += 1
-            } else {
-              commonParentDeclarations[rules[commonParentsKeys[i].index].declarations[j].property + '_' + rules[commonParentsKeys[i].index].declarations[j].value] = {
-                property: rules[commonParentsKeys[i].index].declarations[j].property,
-                value: rules[commonParentsKeys[i].index].declarations[j].value,
-                count: 1,
-                selector: rules[commonParentsKeys[i].index].selectors,
-                selectorIndex: commonParentsKeys[i].index,
-                commonParent: commonParentsKeys[i].selector
-              }
-            }
-          }
-        }
-      }
-
-      Object.keys(commonParentDeclarations).forEach(function (val, index, key) {
-        if (this[val].count == directParents[this[val].commonParent].length) {
-          if (newParentDeclarations[this[val].commonParent] !== undefined) {
-            newParentDeclarations[this[val].commonParent].declarations.push({
-              type: 'declaration',
-              property: this[val].property,
-              value: this[val].value
-            })
-          } else {
-            newParentDeclarations[this[val].commonParent] = {
-              declarations: [{
-                type: 'declaration',
-                property: this[val].property,
-                value: this[val].value
-              }],
-              selectorIndex: this[val].selectorIndex
-            }
-          }
-
-          commonParents.push(this[val].commonParent)
-        }
-      }, commonParentDeclarations)
-
-      commonParentsLen = commonParentsKeys.length
-
-      for (let i = 0; i < commonParentsLen; i++) {
-        Object.keys(newParentDeclarations).forEach(function (key, index) {
-          if (commonParentsKeys[i] !== undefined && commonParentsKeys[i].selector == key) {
-            if (rules[commonParentsKeys[i].index] !== undefined && rules[commonParentsKeys[i].index].declarations !== undefined) {
-              // clone declarations
-              tmpDeclarations = rules[commonParentsKeys[i].index].declarations.slice(0) // clone
-              let DECLARATION_COUNT = tmpDeclarations.length
-
-              for (let j = 0; j < this[key].declarations.length; j++) { // each parent declaration
-                // remove declarations
-                for (let k = 0; k < DECLARATION_COUNT; k++) { // each child declaration
-                  if (this[key].declarations[j] !== undefined &&
-                    this[key].declarations[j].type == 'declaration' &&
-                    this[key].declarations[j].property == tmpDeclarations[k].property &&
-                    this[key].declarations[j].value == tmpDeclarations[k].value) {
-                    tmpDeclarations.splice(k, 1)
-                    k -= 1
-                    DECLARATION_COUNT -= 1
-                  }
-                } // end of k loop
-              } // end of j loop
-
-              if (tmpDeclarations.length == 0) {
-                // remove whole rule
-                rules.splice(commonParentsKeys[i].index, 1)
-                i -= 1
-                commonParentsLen -= 1
-              } else {
-                // update declarations
-                rules[commonParentsKeys[i].index].declarations = tmpDeclarations
-              }
-            }
-          }
-        }, newParentDeclarations)
-      } // end of i loop
-
-      // Create Common Parents
-      Object.keys(newParentDeclarations).forEach(function (key, index) {
-        rules.splice(((this[key].selectorIndex - 1 < 0) ? this[key].selectorIndex : this[key].selectorIndex - 1), 0, {
-          type: 'rule',
-          selectors: [key],
-          declarations: this[key].declarations
-        })
-      }, newParentDeclarations)
-
-      // some cleanup
-      directParents = []
-      hierachy = []
-      hierachyKeys = []
-      commonParentsKeys = []
-      commonParents = []
-      commonParentDeclarations = []
-      newParentDeclarations = []
-      processedCommonParentsChildren = []
-      tmpDeclarations = []
-
-      // reset rules count
-      TOTAL_RULES = rules.length
+      addParentDeclarationsToRules(parentDeclarations, rules)
     } // end of reduce common declarations amongst children into parent
 
-    for (let i = 0; i < TOTAL_RULES; ++i) {
+    rules
+      .filter(Boolean)
+      .forEach((rule) => {
+        const {
+          declarations = []
+        } = rule
+
+        declarations
+          .forEach((declaration, i) => {
+            const {
+              value = ''
+            } = declaration
+
+            if (value === '') {
+              SUMMARY.empty_declarations.push(toDeclaration(rule, declaration))
+              SUMMARY.stats.summary.noEmptyDeclarations += 1
+              declarations.splice(i, 1)
+            }
+          })
+      })
+
+    const {
+      trim: TRIM,
+      trim_comments: TRIM_COMMENTS,
+      trim_removed_rules_previous_comment: TRIM_REMOVED_RULES_PREVIOUS_COMMENT
+    } = OPTIONS
+
+    if (TRIM || TRIM_COMMENTS) {
+      rules
+        .filter(Boolean)
+        .forEach(({ declarations = [] }) => {
+          declarations
+            .filter(hasTypeComment)
+            .forEach((declarations, declaration, i) => {
+              declarations.splice(i, 1)
+            })
+        })
+    }
+
+    if (TRIM || TRIM_REMOVED_RULES_PREVIOUS_COMMENT) {
+      /**
+       *  This gets adjacent rules (before and after) which means lots of conditions.
+       *  It's simpler not to filter but to just roll with the conditions
+       */
+      rules
+        .forEach((alpha, i) => {
+          if (alpha) {
+            if (alpha.selectors) {
+              const j = i + 1
+              rules.slice(j)
+                .forEach((omega) => {
+                  if (omega) {
+                    if (omega.selectors) {
+                      const ALPHA = alpha.selectors.toString()
+                      const OMEGA = omega.selectors.toString()
+                      if (ALPHA === OMEGA) {
+                        const n = i - 1
+                        const delta = rules[n]
+                        if (delta) {
+                          if (delta.type === 'comment') rules.splice(n, 1)
+                        }
+                      }
+                    }
+                  }
+                })
+            }
+          }
+        })
+
+      rules
+        .forEach((alpha, i) => {
+          if (alpha) {
+            if (alpha.selectors) {
+              const j = i + 1
+              rules.slice(j)
+                .forEach((omega, m) => {
+                  if (omega) {
+                    if (omega.selectors) {
+                      const ALPHA = alpha.selectors.toString()
+                      const OMEGA = omega.selectors.toString()
+                      if (ALPHA === OMEGA) {
+                        SUMMARY.duplicate_rules.push(toDuplicate(omega))
+                        SUMMARY.stats.summary.noDuplicateRules += 1
+
+                        alpha.declarations = (
+                          alpha.declarations
+                            .concat(omega.declarations)
+                        )
+
+                        const n = j + m // rules.findIndex((rule) => rule === omega)
+                        rules.splice(n, 1)
+                      }
+                    }
+                  }
+                })
+            }
+          }
+        })
+
+      const {
+        bypass_media_rules: BYPASS_MEDIA_RULES
+      } = OPTIONS
+
+      if (!BYPASS_MEDIA_RULES) {
+        rules
+          .forEach((alpha, i) => {
+            if (alpha) {
+              if (alpha.type === 'media' && alpha.media) {
+                const j = i + 1
+                rules.slice(j)
+                  .forEach((omega) => {
+                    if (omega) {
+                      if (omega.media) {
+                        const ALPHA = alpha.media.toString()
+                        const OMEGA = omega.media.toString()
+                        if (ALPHA === OMEGA) {
+                          const n = i - 1
+                          const delta = rules[n]
+                          if (delta) {
+                            if (delta.type === 'comment') rules.splice(n, 1)
+                          }
+                        }
+                      }
+                    }
+                  })
+              }
+            }
+          })
+
+        rules
+          .forEach((alpha, i) => {
+            if (alpha) {
+              if (alpha.type === 'media' && alpha.media) {
+                const j = i + 1
+                rules.slice(j)
+                  .forEach((omega, m) => {
+                    if (omega) {
+                      if (omega.media) {
+                        const ALPHA = alpha.media.toString()
+                        const OMEGA = omega.media.toString()
+                        if (ALPHA === OMEGA) {
+                          SUMMARY.duplicate_rules.push(toDuplicateMedia(omega))
+                          SUMMARY.stats.summary.noDuplicateRules += 1
+
+                          alpha.rules = (
+                            alpha.rules
+                              .concat(omega.rules)
+                          )
+
+                          const n = j + m // rules.findIndex((rule) => rule === omega)
+                          rules.splice(n, 1)
+                        }
+                      }
+                    }
+                  })
+              }
+            }
+          })
+      }
+
+      rules
+        .forEach((alpha, i) => {
+          if (alpha) {
+            if (alpha.type === 'document' && alpha.document) {
+              const j = i + 1
+              rules.slice(j)
+                .forEach((omega) => {
+                  if (omega) {
+                    if (omega.document) {
+                      const ALPHA = alpha.document.toString()
+                      const OMEGA = omega.document.toString()
+                      if (ALPHA === OMEGA) {
+                        const n = i - 1
+                        const delta = rules[n]
+                        if (delta) {
+                          if (delta.type === 'comment') rules.splice(n, 1)
+                        }
+                      }
+                    }
+                  }
+                })
+            }
+          }
+        })
+
+      rules
+        .forEach((alpha, i) => {
+          if (alpha) {
+            if (alpha.type === 'document' && alpha.document) {
+              const j = i + 1
+              rules.slice(j)
+                .forEach((omega, m) => {
+                  if (omega) {
+                    if (omega.document) {
+                      const ALPHA = alpha.document.toString()
+                      const OMEGA = omega.document.toString()
+                      if (ALPHA === OMEGA) {
+                        SUMMARY.duplicate_rules.push(toDuplicateDocument(omega))
+                        SUMMARY.stats.summary.noDuplicateRules += 1
+
+                        alpha.rules = (
+                          alpha.rules
+                            .concat(omega.rules)
+                        )
+
+                        const n = j + m // rules.findIndex((rule) => rule === omega)
+                        rules.splice(n, 1)
+                      }
+                    }
+                  }
+                })
+            }
+          }
+        })
+
+      rules
+        .forEach((alpha, i) => {
+          if (alpha) {
+            if (alpha.type === 'supports' && alpha.supports) {
+              const j = i + 1
+              rules.slice(j)
+                .forEach((omega) => {
+                  if (omega) {
+                    if (omega.supports) {
+                      const ALPHA = alpha.supports.toString()
+                      const OMEGA = omega.supports.toString()
+                      if (ALPHA === OMEGA) {
+                        const n = i - 1
+                        const delta = rules[n]
+                        if (delta) {
+                          if (delta.type === 'comment') rules.splice(n, 1)
+                        }
+                      }
+                    }
+                  }
+                })
+            }
+          }
+        })
+
+      rules
+        .forEach((alpha, i) => {
+          if (alpha) {
+            if (alpha.type === 'supports' && alpha.supports) {
+              const j = i + 1
+              rules.slice(j)
+                .forEach((omega, m) => {
+                  if (omega) {
+                    if (omega.supports) {
+                      const ALPHA = alpha.supports.toString()
+                      const OMEGA = omega.supports.toString()
+                      if (ALPHA === OMEGA) {
+                        SUMMARY.duplicate_rules.push(toDuplicateSupports(omega))
+                        SUMMARY.stats.summary.noDuplicateRules += 1
+
+                        alpha.rules = (
+                          alpha.rules
+                            .concat(omega.rules)
+                        )
+
+                        const n = j + m // rules.findIndex((rule) => rule === omega)
+                        rules.splice(n, 1)
+                      }
+                    }
+                  }
+                })
+            }
+          }
+        })
+    }
+
+    const {
+      bypass_page_rules: BYPASS_PAGE_RULES
+    } = OPTIONS
+
+    rules
+      .forEach((rule) => {
+        if (rule) {
+          if (rule.type === 'rule' || (rule.type === 'page' && !BYPASS_PAGE_RULES)) {
+            const {
+              declarations = []
+            } = rule
+
+            const propertyMap = getPropertyMapFor(declarations)
+
+            const declarationMap = new Map()
+
+            propertyMap
+              .forEach((count, alpha) => {
+                if (!DECLARATION_NAMES.includes(alpha)) {
+                  declarations
+                    .forEach((declaration) => {
+                      const {
+                        type
+                      } = declaration
+
+                      if (type === 'declaration') {
+                        const {
+                          property: omega
+                        } = declaration
+
+                        if (alpha === omega) {
+                          const {
+                            value
+                          } = declaration
+
+                          const properties = declarationMap.get(omega) ?? new Map()
+                          const values = properties.get(value) ?? new Set()
+                          declarationMap.set(omega, properties.set(value, values.add(declaration)))
+                        }
+                      }
+                    })
+                }
+              })
+
+            if (TRIM || TRIM_REMOVED_RULES_PREVIOUS_COMMENT) {
+              declarationMap
+                .forEach((properties) => {
+                  properties
+                    .forEach((values) => {
+                      values
+                        .forEach((declaration) => {
+                          if (declarations.includes(declaration)) {
+                            const n = declarations.indexOf(declaration) - 1
+                            const delta = declarations[n]
+                            if (delta) {
+                              if (delta.type === 'comment') declarations.splice(n, 1)
+                            }
+                          }
+                        })
+                    })
+                })
+            }
+
+            declarationMap
+              .forEach((properties) => {
+                properties
+                  .forEach((values) => {
+                    values
+                      .forEach((declaration) => {
+                        if (values.size > 1) {
+                          if (declarations.includes(declaration)) {
+                            SUMMARY.duplicate_declarations.push(declaration)
+                            SUMMARY.stats.summary.noDuplicateDeclarations += 1
+
+                            const i = declarations.indexOf(declaration)
+                            declarations.splice(i, 1)
+                          }
+
+                          values.delete(declaration)
+                        }
+                      })
+                  })
+              })
+
+            if (TRIM || TRIM_REMOVED_RULES_PREVIOUS_COMMENT) {
+              DECLARATION_NAMES
+                .forEach((DECLARATION_NAME) => {
+                  propertyMap
+                    .forEach((count, property) => {
+                      /**
+                       *  Do nothing if the initial count is 1
+                       */
+                      if (count > 1) {
+                        declarations
+                          .forEach((declaration, i) => {
+                            if (declaration.type === 'declaration' && declaration.property === property) {
+                              if (declaration.property === DECLARATION_NAME) {
+                                const n = i - 1
+                                const omega = declarations[n]
+                                if (omega) {
+                                  if (omega.type === 'comment') declarations.splice(n, 1)
+                                }
+                              }
+                            }
+                          })
+                      }
+                    })
+                })
+            }
+
+            DECLARATION_NAMES
+              .forEach((DECLARATION_NAME) => {
+                propertyMap
+                  .forEach((count, property) => {
+                    /**
+                     *  Do nothing if the initial count is 1
+                     */
+                    if (count > 1) {
+                      declarations
+                        .forEach((alpha, i) => {
+                          if (alpha.type === 'declaration' && alpha.property === property) {
+                            /**
+                             *  Do nothing if the current count is 1
+                             */
+                            const count = propertyMap.get(property)
+                            if (count > 1) {
+                              if (alpha.property === DECLARATION_NAME) {
+                                if (alpha.value.includes('!important')) {
+                                  const n = i + 1
+                                  const omega = declarations[n]
+                                  if (omega) {
+                                    SUMMARY.duplicate_declarations.push(omega)
+                                    SUMMARY.stats.summary.noDuplicateDeclarations += 1
+                                    declarations.splice(n, 1)
+                                  }
+                                } else {
+                                  SUMMARY.duplicate_declarations.push(alpha)
+                                  SUMMARY.stats.summary.noDuplicateDeclarations += 1
+                                  declarations.splice(i, 1)
+                                }
+                                propertyMap.set(property, count - 1)
+                              }
+                            }
+                          }
+                        })
+                    }
+                  })
+              })
+          }
+        }
+      })
+
+    if (TRIM || TRIM_REMOVED_RULES_PREVIOUS_COMMENT) {
+      rules
+        .forEach((rule, i) => {
+          if (rule.keyframes && !rule.keyframes.length) {
+            const n = i - 1
+            const delta = rules[n]
+            if (delta) {
+              if (delta.type === 'comment') rules.splice(n, 1)
+            }
+          }
+        })
+    }
+
+    rules
+      .forEach((rule, i) => {
+        if (rule.keyframes && !rule.keyframes.length) rules.splice(i, 1)
+      })
+
+    if (TRIM || TRIM_REMOVED_RULES_PREVIOUS_COMMENT) {
+      rules
+        .forEach((rule, i) => {
+          if (rule.type === 'media' && !rule.rules.length) {
+            const n = i - 1
+            const delta = rules[n]
+            if (delta) {
+              if (delta.type === 'comment') rules.splice(n, 1)
+            }
+          }
+        })
+    }
+
+    rules
+      .forEach((rule, i) => {
+        if (rule.type === 'media' && !rule.rules.length) rules.splice(i, 1)
+      })
+
+    if (TRIM || TRIM_REMOVED_RULES_PREVIOUS_COMMENT) {
+      rules
+        .forEach((rule, i) => {
+          if (rule.type === 'document' && !rule.rules.length) {
+            const n = i - 1
+            const delta = rules[n]
+            if (delta) {
+              if (delta.type === 'comment') rules.splice(n, 1)
+            }
+          }
+        })
+    }
+
+    rules
+      .forEach((rule, i) => {
+        if (rule.type === 'document' && !rule.rules.length) rules.splice(i, 1)
+      })
+
+    if (TRIM || TRIM_REMOVED_RULES_PREVIOUS_COMMENT) {
+      rules
+        .forEach((rule, i) => {
+          if (rule.type === 'supports' && !rule.rules.length) {
+            const n = i - 1
+            const delta = rules[n]
+            if (delta) {
+              if (delta.type === 'comment') rules.splice(n, 1)
+            }
+          }
+        })
+    }
+
+    rules
+      .forEach((rule, i) => {
+        if (rule.type === 'supports' && !rule.rules.length) rules.splice(i, 1)
+      })
+
+    if (TRIM || TRIM_REMOVED_RULES_PREVIOUS_COMMENT) {
+      rules
+        .forEach((rule) => {
+          if (rule) {
+            if (rule.type === 'rule') {
+              if (rule.selectors) {
+                const ALPHA = rule.selectors.toString()
+
+                SELECTORS
+                  .forEach((OMEGA) => {
+                    if (ALPHA === OMEGA) {
+                      if (SELECTOR_PROPERTIES.has(OMEGA)) {
+                        const {
+                          declarations = []
+                        } = rule
+
+                        const propertyMap = getPropertyMapFor(declarations)
+
+                        propertyMap
+                          .forEach((count) => { // (count, property) => {
+                            if (count > 1) {
+                              declarations
+                                .forEach((declaration, i) => {
+                                  if (declaration.type === 'declaration' && declaration.property === OMEGA) {
+                                    const properties = SELECTOR_PROPERTIES.get(OMEGA)
+                                    if (properties.includes(declaration.property)) {
+                                      const count = propertyMap.get(OMEGA)
+                                      if (count > 1) {
+                                        const n = i - 1
+                                        const delta = declarations[n]
+                                        if (delta) {
+                                          if (delta.type === 'comment') declarations.splice(n, 1)
+                                        }
+                                      }
+                                    }
+                                  }
+                                })
+                            }
+                          })
+                      }
+                    }
+                  })
+              }
+            }
+          }
+        })
+    }
+
+    rules
+      .forEach((rule) => {
+        if (rule) {
+          if (rule.type === 'rule') {
+            if (rule.selectors) {
+              const ALPHA = rule.selectors.toString()
+
+              SELECTORS
+                .forEach((OMEGA) => {
+                  if (ALPHA === OMEGA) {
+                    if (SELECTOR_PROPERTIES.has(OMEGA)) {
+                      const {
+                        declarations = []
+                      } = rule
+
+                      const propertyMap = getPropertyMapFor(declarations)
+
+                      propertyMap
+                        .forEach((count) => { // (count, property) => {
+                          if (count > 1) {
+                            declarations
+                              .forEach((declaration, i) => {
+                                if (declaration.type === 'declaration' && declaration.property === OMEGA) {
+                                  const properties = SELECTOR_PROPERTIES.get(OMEGA)
+                                  if (properties.includes(declaration.property)) {
+                                    const count = propertyMap.get(OMEGA)
+                                    if (count > 1) {
+                                      SUMMARY.duplicate_declarations.push(declaration)
+                                      SUMMARY.stats.summary.noDuplicateDeclarations += 1
+                                      declarations.splice(i, 1)
+                                    }
+                                  }
+                                }
+                              })
+                          }
+                        })
+                    }
+                  }
+                })
+            }
+          }
+        }
+      })
+
+    /*
+    let RULES_COUNT = rules.length
+
+    for (let i = 0; i < RULES_COUNT; ++i) {
       /// /comments
       // checking declarations for comments
       if (rules[i] !== undefined && rules[i].declarations !== undefined) {
         declarations = rules[i].declarations
-        let DECLARATION_COUNT = declarations.length
+        DECLARATION_COUNT = declarations.length
 
         for (let j = 0; j < DECLARATION_COUNT; ++j) {
           // check for empty properties
-          if (rules[i].declarations[j].value == '') {
-            summary.empty_declarations.push({
+          if (rules[i].declarations[j].value === '') {
+            SUMMARY.empty_declarations.push({
               selectors: rules[i].selectors,
               property: rules[i].declarations[j]
             })
           }
 
           // remove comments in declarations - for turning off comments
-          if (options.trim_comments || options.trim) {
-            if (declarations[j] !== undefined && declarations[j].type == 'comment') {
-              if (options.verbose) { console.log(info('Process - Rules - Remove Comment')) }
+          if (OPTIONS.trim_comments || OPTIONS.trim) {
+            if (declarations[j] !== undefined && declarations[j].type === 'comment') {
+              if (OPTIONS.verbose) { console.log(info('Process - Rules - Remove Comment')) }
               rules[i].declarations.splice(j, 1)
               j -= 1
               DECLARATION_COUNT -= 1
@@ -289,51 +715,52 @@ export default function processRules (rules, options) {
       }
 
       // remove comments in root - for turning off comments
-      if (options.trim_comments || options.trim) {
-        if (rules[i] !== undefined && rules[i].type == 'comment') {
-          if (options.verbose) { console.log(info('Process - Rules - Remove Comment')) }
+      if (OPTIONS.trim_comments || OPTIONS.trim) {
+        if (rules[i] !== undefined && rules[i].type === 'comment') {
+          if (OPTIONS.verbose) { console.log(info('Process - Rules - Remove Comment')) }
           rules.splice(i, 1)
           i -= 1
-          TOTAL_RULES -= 1
+          RULES_COUNT -= 1
         }
       }
       /// /end of comments
+
       /// /rules
       // remove duplicate root rules
-      for (let j = i + 1; j < TOTAL_RULES; ++j) {
-        // console.log(j, TOTAL_RULES)
+      for (let j = i + 1; j < RULES_COUNT; ++j) {
         // root rules
         // rule selector
+
         if (rules[i] !== undefined &&
-          // && rules[i].type == 'rule'
+          // && rules[i].type === 'rule'
           rules[i].selectors !== undefined &&
           rules[j] !== undefined && rules[j].selectors !== undefined) {
           // duplicate rule found
-          if (rules[i].selectors.toString() == rules[j].selectors.toString()) {
+          if (rules[i].selectors.toString() === rules[j].selectors.toString()) {
             // remove previous comment in root
-            if (options.trim_removed_rules_previous_comment || options.trim) {
-              if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+            if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+              if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                 rules.splice(i - 1, 1)
                 i -= 1
                 j -= 1
-                TOTAL_RULES -= 1
+                RULES_COUNT -= 1
               }
             }
 
-            if (options.verbose) { console.log(success('Process - Rules - Group Duplicate Rule : ' + (rules[j].selectors ? rules[j].selectors.join(', ') : ''))) }
+            if (OPTIONS.verbose) { console.log(success('Process - Rules - Group Duplicate Rule : ' + (rules[j].selectors ? rules[j].selectors.join(', ') : ''))) }
 
             // copy + reduce
-            summary.stats.summary.noDuplicateRules += 1
+            SUMMARY.stats.summary.noDuplicateRules += 1
             if (j < i && (j - i) > 1) { // check comparison distance
-              summary.duplicate_rules.push({
-                selectors: (rules[i].type == 'page') ? '@page' : rules[i].selectors,
+              SUMMARY.duplicate_rules.push({
+                selectors: (rules[i].type === 'page') ? '@page' : rules[i].selectors,
                 position: rules[i].position
               })
               rules[j].declarations = rules[j].declarations.concat(rules[i].declarations)
               rules.splice(i, 1)
             } else {
-              summary.duplicate_rules.push({
-                selectors: (rules[j].type == 'page') ? '@page' : rules[j].selectors,
+              SUMMARY.duplicate_rules.push({
+                selectors: (rules[j].type === 'page') ? '@page' : rules[j].selectors,
                 position: rules[j].position
               })
               rules[i].declarations = rules[i].declarations.concat(rules[j].declarations)
@@ -341,40 +768,42 @@ export default function processRules (rules, options) {
             }
             i -= 1
             j -= 1
-            TOTAL_RULES -= 1
+            RULES_COUNT -= 1
           }
         } // end of rule selector
 
         // media selector - it could affect evaluation sequence
-        if (rules[i] !== undefined && rules[i].type == 'media' &&
+        if (
+          rules[i] !== undefined && rules[i].type === 'media' &&
           rules[i].media !== undefined &&
-          rules[j] !== undefined && rules[j].media !== undefined &&
-          options.bypass_media_rules != true) {
+          rules[j] !== undefined &&
+          rules[j].media !== undefined &&
+          OPTIONS.bypass_media_rules !== true) {
           // duplicate rule found
-          if (rules[i].media.toString() == rules[j].media.toString()) {
+          if (rules[i].media.toString() === rules[j].media.toString()) {
             // remove previous comment in root
-            if (options.trim_removed_rules_previous_comment || options.trim) {
-              if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+            if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+              if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                 rules.splice(i - 1, 1)
                 i -= 1
                 j -= 1
-                TOTAL_RULES -= 1
+                RULES_COUNT -= 1
               }
             }
 
-            if (options.verbose) { console.log(info('Process - Rules - @media - Group Duplicate Rule : ' + (rules[j].selectors ? rules[j].selectors.join(', ') : ''))) }
+            if (OPTIONS.verbose) { console.log(info('Process - Rules - @media - Group Duplicate Rule : ' + (rules[j].selectors ? rules[j].selectors.join(', ') : ''))) }
 
             // copy + reduce
-            summary.stats.summary.noDuplicateRules += 1
+            SUMMARY.stats.summary.noDuplicateRules += 1
             if (j < i && (j - i) > 1) { // check comparison distance
-              summary.duplicate_rules.push({
+              SUMMARY.duplicate_rules.push({
                 selectors: '@media ' + rules[i].media,
                 position: rules[i].position
               })
               rules[j].rules = rules[j].rules.concat(rules[i].rules)
               rules.splice(i, 1)
             } else {
-              summary.duplicate_rules.push({
+              SUMMARY.duplicate_rules.push({
                 selectors: '@media ' + rules[j].media,
                 position: rules[j].position
               })
@@ -383,39 +812,42 @@ export default function processRules (rules, options) {
             }
             i -= 1
             j -= 1
-            TOTAL_RULES -= 1
+            RULES_COUNT -= 1
           }
         }
         // end of media selector
+
         // document selector
-        if (rules[i] !== undefined && rules[i].type == 'document' &&
+        if (
+          rules[i] !== undefined && rules[i].type === 'document' &&
           rules[i].document !== undefined &&
-          rules[j] !== undefined && rules[j].document !== undefined) {
+          rules[j] !== undefined &&
+          rules[j].document !== undefined) {
           // duplicate rule found
-          if (rules[i].document.toString() == rules[j].document.toString()) {
+          if (rules[i].document.toString() === rules[j].document.toString()) {
             // remove previous comment in root
-            if (options.trim_removed_rules_previous_comment || options.trim) {
-              if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+            if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+              if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                 rules.splice(i - 1, 1)
                 i -= 1
                 j -= 1
-                TOTAL_RULES -= 1
+                RULES_COUNT -= 1
               }
             }
 
-            if (options.verbose) { console.log(success('Process - Rules - @document - Group Duplicate Rule : ' + (rules[j].selectors ? rules[j].selectors.join(', ') : ''))) }
+            if (OPTIONS.verbose) { console.log(success('Process - Rules - @document - Group Duplicate Rule : ' + (rules[j].selectors ? rules[j].selectors.join(', ') : ''))) }
 
             // copy + reduce
-            summary.stats.summary.noDuplicateRules += 1
+            SUMMARY.stats.summary.noDuplicateRules += 1
             if (j < i && (j - i) > 1) { // check comparison distance
-              summary.duplicate_rules.push({
+              SUMMARY.duplicate_rules.push({
                 selectors: '@document ' + rules[i].document,
                 position: rules[i].position
               })
               rules[j].rules = rules[j].rules.concat(rules[i].rules)
               rules.splice(i, 1)
             } else {
-              summary.duplicate_rules.push({
+              SUMMARY.duplicate_rules.push({
                 selectors: '@document ' + rules[j].document,
                 position: rules[j].position
               })
@@ -424,39 +856,41 @@ export default function processRules (rules, options) {
             }
             i -= 1
             j -= 1
-            TOTAL_RULES -= 1
+            RULES_COUNT -= 1
           }
         } // end of document selector
 
         // supports selector
-        if (rules[i] !== undefined && rules[i].type == 'supports' &&
+        if (
+          rules[i] !== undefined && rules[i].type === 'supports' &&
           rules[i].supports !== undefined &&
-          rules[j] !== undefined && rules[j].supports !== undefined) {
+          rules[j] !== undefined &&
+          rules[j].supports !== undefined) {
           // duplicate rule found
-          if (rules[i].supports.toString() == rules[j].supports.toString()) {
+          if (rules[i].supports.toString() === rules[j].supports.toString()) {
             // remove previous comment in root
-            if (options.trim_removed_rules_previous_comment || options.trim) {
-              if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
+            if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+              if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
                 rules.splice(i - 1, 1)
                 i -= 1
                 j -= 1
-                TOTAL_RULES -= 1
+                RULES_COUNT -= 1
               }
             }
 
-            if (options.verbose) { console.log(success('Process - Rules - @supports - Group Duplicate Rule : ' + (rules[j].supports ? rules[j].supports : ''))) }
+            if (OPTIONS.verbose) { console.log(success('Process - Rules - @supports - Group Duplicate Rule : ' + (rules[j].supports ? rules[j].supports : ''))) }
 
             // copy + reduce
-            summary.stats.summary.noDuplicateRules += 1
+            SUMMARY.stats.summary.noDuplicateRules += 1
             if (j < i && (j - i) > 1) { // check comparison distance
-              summary.duplicate_rules.push({
+              SUMMARY.duplicate_rules.push({
                 selectors: '@supports ' + rules[i].supports,
                 position: rules[i].position
               })
               rules[j].rules = rules[j].rules.concat(rules[i].rules)
               rules.splice(i, 1)
             } else {
-              summary.duplicate_rules.push({
+              SUMMARY.duplicate_rules.push({
                 selectors: '@supports ' + rules[j].supports,
                 position: rules[j].position
               })
@@ -465,7 +899,7 @@ export default function processRules (rules, options) {
             }
             i -= 1
             j -= 1
-            TOTAL_RULES -= 1
+            RULES_COUNT -= 1
           }
         } // end of supports selector
       } // end of j
@@ -473,154 +907,169 @@ export default function processRules (rules, options) {
       /// /end of rules
       /// /declarations
       // reduce root delcarations by property name and by duplicate values
-      if (rules[i] !== undefined &&
-        (rules[i].type == 'rule' || (rules[i].type == 'page' && options.bypass_page_rules == false))) {
-        const declarationsNameCounts = []
 
-        let DECLARATION_COUNT = rules[i].declarations.length
+      if (
+        rules[i] !== undefined &&
+          (rules[i].type === 'rule' || (rules[i].type === 'page' && OPTIONS.bypass_page_rules === false))) {
 
-        // declarations duplicate check
-        for (let l = 0; l < DECLARATION_COUNT; ++l) {
-          if (rules[i].declarations[l].type == 'declaration') {
-            if (declarationsNameCounts[rules[i].declarations[l].property] !== undefined) {
-              declarationsNameCounts[rules[i].declarations[l].property] += 1
-            } else {
-              declarationsNameCounts[rules[i].declarations[l].property] = 1
+          declarationsNameCounts = []
+
+          DECLARATION_COUNT = rules[i].declarations.length
+
+          // declarations duplicate check
+
+          for (let l = 0; l < DECLARATION_COUNT; ++l) {
+            if (rules[i].declarations[l].type === 'declaration') {
+              if (declarationsNameCounts[rules[i].declarations[l].property] !== undefined) {
+                declarationsNameCounts[rules[i].declarations[l].property] += 1
+              } else {
+                declarationsNameCounts[rules[i].declarations[l].property] = 1
+              }
             }
-          }
-        } // end of declarations duplicate check
+          } // end of declarations duplicate check
 
-        // reduce according to values
-        const declarationsValueCounts = []
-        let valKey = ''
+          // reduce according to values
+          declarationsValueCounts = []
 
-        // detect duplicate values
-        for (const key in declarationsNameCounts) {
-          if (!declarationNames.includes(key)) { // only properties not in list
-            for (let l = 0; l < DECLARATION_COUNT; ++l) {
-              if (rules[i].declarations[l].type == 'declaration' &&
-                rules[i].declarations[l].property == key) {
-                hash = crypto.createHash('sha256')
-                hash.update(rules[i].declarations[l].property + rules[i].declarations[l].value)
+          for (const key in declarationsNameCounts) {
+            if (!DECLARATION_NAMES.includes(key)) { // only properties not in list
+              for (let l = 0; l < DECLARATION_COUNT; ++l) {
+                if (
+                  rules[i].declarations[l].type === 'declaration' &&
+                rules[i].declarations[l].property === key) {
+                  hash = crypto.createHash('sha256')
+                  hash.update(rules[i].declarations[l].property + rules[i].declarations[l].value)
 
-                valKey = hash.digest('hex')
-
-                if (declarationsValueCounts[valKey] !== undefined) {
-                  declarationsValueCounts[valKey].id += ',' + l
-                  declarationsValueCounts[valKey].count += 1
-                } else {
-                  declarationsValueCounts[valKey] = {
-                    id: l,
-                    count: 1
+                  const key = hash.digest('hex')
+                  // console.log(key)
+                  if (declarationsValueCounts[key] !== undefined) {
+                    declarationsValueCounts[key].id += ',' + l
+                    declarationsValueCounts[key].count += 1
+                  } else {
+                    declarationsValueCounts[key] = {
+                      id: l,
+                      count: 1
+                    }
                   }
                 }
               }
             }
           }
-        }
 
         // remove duplicate declarations by duplicate values
-        const declarationsValueCountsCount = Object.keys(declarationsValueCounts).length
 
-        let amountRemoved = 1
+          amountRemoved = 1
 
-        for (const key in declarationsValueCounts) {
-          if (declarationsValueCounts.hasOwnProperty(key)) {
+          for (const key in declarationsValueCounts) {
             if (declarationsValueCounts[key].count > 1) {
-              duplicate_ids = declarationsValueCounts[key].id.split(',')
+              const duplicateIds = declarationsValueCounts[key].id.split(',').map(toTrim).filter(Boolean)
+
+              console.log(duplicateIds)
 
               amountRemoved = 1 // shift the ids by the amount removed
-              for (let l = 0; l < duplicate_ids.length - 1; ++l) { // -1 to leave last behind
-                // remove previous comment above declaration to be removed
-                if (options.trim_removed_rules_previous_comment || options.trim) {
-                  if (rules[i].declarations[duplicate_ids[l] - 1] !== undefined && rules[i].declarations[duplicate_ids[l] - 1].type == 'comment') {
-                    rules[i].declarations.splice(duplicate_ids[l] - 1, 1)
+
+              for (let l = 0; l < duplicateIds.length - 1; ++l) { // -1 to leave last behind
+              // remove previous comment above declaration to be removed
+                if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+                  if (rules[i].declarations[duplicateIds[l] - 1] !== undefined && rules[i].declarations[duplicateIds[l] - 1].type === 'comment') {
+                    rules[i].declarations.splice(duplicateIds[l] - 1, 1)
                     DECLARATION_COUNT -= 1
 
                     // adjust removal ids by amount already removed
-                    if (duplicate_ids[l] !== undefined) {
-                      duplicate_ids[l] -= amountRemoved // shift the ids by the amount removed
+                    if (duplicateIds[l] !== undefined) {
+                      duplicateIds[l] -= amountRemoved // shift the ids by the amount removed
                     }
                     amountRemoved += 1
                   }
                 }
 
-                if (options.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
+                if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
 
-                summary.duplicate_declarations.push(rules[i].declarations[duplicate_ids[l]])
-                summary.stats.summary.noDuplicateDeclarations += 1
-                rules[i].declarations.splice(duplicate_ids[l], 1)
+                SUMMARY.duplicate_declarations.push(rules[i].declarations[duplicateIds[l]])
+                SUMMARY.stats.summary.noDuplicateDeclarations += 1
+                rules[i].declarations.splice(duplicateIds[l], 1)
                 DECLARATION_COUNT -= 1
 
                 // adjust removal ids by amount already removed
-                if (duplicate_ids[l + 1] !== undefined) {
-                  duplicate_ids[l + 1] -= amountRemoved // shift the ids by the amount removed
+                if (duplicateIds[l + 1] !== undefined) {
+                  duplicateIds[l + 1] -= amountRemoved // shift the ids by the amount removed
 
                   // shift all the ids of the declarations afterwards
                   for (const key2 in declarationsValueCounts) {
-                    if (declarationsValueCounts.hasOwnProperty(key2) && (key2 != key)) {
+                    if (declarationsValueCounts.hasOwnProperty(key2) && (key2 !== key)) {
                       if (typeof declarationsValueCounts[key2].id === 'number') {
-                        duplicate_ids = []
-                        duplicate_ids[0] = declarationsValueCounts[key2].id
+                        duplicateIds = []
+                        duplicateIds[0] = declarationsValueCounts[key2].id
                       } else {
-                        duplicate_ids = declarationsValueCounts[key2].id.split(',')
+                        duplicateIds = declarationsValueCounts[key2].id.split(',').map(toTrim).filter(Boolean)
                       }
 
-                      for (let l = 0; l < duplicate_ids.length; ++l) {
-                        if (duplicate_ids[l] !== undefined) {
-                          duplicate_ids[l] -= amountRemoved
+                      for (let l = 0; l < duplicateIds.length; ++l) {
+                        if (duplicateIds[l] !== undefined) {
+                          duplicateIds[l] -= amountRemoved
                         }
                       }
-                      declarationsValueCounts[key2].id = duplicate_ids.join()
+                      declarationsValueCounts[key2].id = duplicateIds.join()
                     }
                   }
-                  // end of shifting all ids
+                // end of shifting all ids
                 }
                 amountRemoved += 1
               }
             } // end of if
-          } // end of if
-        } // end of for in
+          } // end of for in
+
+        // console.log({ DECLARATION_NAMES })
 
         // end of reduce according to values
-        for (let k = 0; k < declarationNamesCount; ++k) {
+
+          const declarationNamesCount = DECLARATION_NAMES.length
+
+          for (let k = 0; k < declarationNamesCount; ++k) {
           // declarations reduction
-          for (const key in declarationsNameCounts) {
-            if (declarationsNameCounts.hasOwnProperty(key)) {
+            for (const key in declarationsNameCounts) {
+
+              // console.log(2, key)
+
               if (declarationsNameCounts[key] > 1) {
                 for (let l = 0; l < DECLARATION_COUNT; ++l) {
-                  if (rules[i].declarations[l].type == 'declaration') {
-                    if (rules[i].declarations[l].property == key &&
-                      declarationsNameCounts[key] > 1 // leave behind 1
+                  if (rules[i].declarations[l].type === 'declaration') {
+                    if (rules[i].declarations[l].property === key &&
+                    declarationsNameCounts[key] > 1 // leave behind 1
                     ) {
-                      // reduce according to list
-                      if (rules[i].declarations[l].property == declarationNames[k]) {
-                        // console.log(declarationsNameCounts[key])
-                        // console.log(key)
-                        // console.log(rules[i].declarations[l].property)
-                        // console.log(declarationNames[k])
-                        // remove previous comment above declaration to be removed
-                        if (options.trim_removed_rules_previous_comment || options.trim) {
-                          if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type == 'comment') {
+                    // reduce according to list
+
+                      // console.log(2, DECLARATION_NAMES[k])
+
+                      if (rules[i].declarations[l].property === DECLARATION_NAMES[k]) {
+                      // console.log(declarationsNameCounts[key])
+                      // console.log(key)
+                      // console.log(rules[i].declarations[l].property)
+                      // console.log(DECLARATION_NAMES[k])
+                      // remove previous comment above declaration to be removed
+                        if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+                          if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
                             rules[i].declarations.splice(l - 1, 1)
                             l -= 1
                             DECLARATION_COUNT -= 1
                           }
                         }
 
-                        if (options.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
+                        if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
 
                         // console.log(rules[i].declarations[l].value.indexOf('!important') !== -1)
                         // console.log(rules[i].declarations[l].value)
                         // console.log(rules[i].declarations[l+1].value)
                         // prioritises !important declarations
                         if (rules[i].declarations[l].value.indexOf('!important') !== -1) {
-                          summary.duplicate_declarations.push(rules[i].declarations[l + 1])
-                          summary.stats.summary.noDuplicateDeclarations += 1
+                          SUMMARY.duplicate_declarations.push(rules[i].declarations[l + 1])
+                          SUMMARY.stats.summary.noDuplicateDeclarations += 1
                           rules[i].declarations.splice(l + 1, 1)
                         } else {
-                          summary.duplicate_declarations.push(rules[i].declarations[l])
-                          summary.stats.summary.noDuplicateDeclarations += 1
+                          console.log(rules[i].declarations[l])
+
+                          SUMMARY.duplicate_declarations.push(rules[i].declarations[l])
+                          SUMMARY.stats.summary.noDuplicateDeclarations += 1
                           rules[i].declarations.splice(l, 1)
                         }
 
@@ -633,23 +1082,21 @@ export default function processRules (rules, options) {
                 }
               }
             }
-          }
-        } // end of reduce root declarations by property name
+          } // end of reduce root declarations by property name
       } // end of rule check
 
       // reduce root declarations by selector
-      let selectorPropertiesList = []
-      const declarationsCounts = []
-
-      for (let k = 0; k < selectorsCount; ++k) {
+      for (let k = 0; k < SELECTORS_COUNT; ++k) {
         if (rules[i] !== undefined &&
-          rules[i].type == 'rule') {
+          rules[i].type === 'rule') {
           if (rules[i].selectors !== undefined && rules[i].selectors.toString() === selectors[k]) {
             let DECLARATION_COUNT = rules[i].declarations.length
 
+            const declarationsCounts = []
+
             // detect declarations duplicates
             for (let l = 0; l < DECLARATION_COUNT; ++l) {
-              if (rules[i].declarations[l].type == 'declaration') {
+              if (rules[i].declarations[l].type === 'declaration') {
                 if (declarationsCounts[rules[i].declarations[l].property] !== undefined) {
                   declarationsCounts[rules[i].declarations[l].property] += 1
                 } else {
@@ -663,45 +1110,45 @@ export default function processRules (rules, options) {
               if (declarationsCounts.hasOwnProperty(key)) {
                 if (declarationsCounts[key] > 1) {
                   for (let l = 0; l < DECLARATION_COUNT; ++l) {
-                    if (rules[i].declarations[l].type == 'declaration') {
-                      selectorPropertiesList = selectorPropertyValues[selectors[k]]
-
-                      if (selectorPropertiesList !== undefined) { // specific in selector
-                        if (rules[i].declarations[l].property == key &&
+                    if (rules[i].declarations[l].type === 'declaration') {
+                      const key = selectors[k]
+                      if (SELECTOR_PROPERTIES.has(key)) {
+                        const selectorPropertiesList = SELECTOR_PROPERTIES.get(key)
+                        if (rules[i].declarations[l].property === key &&
                           (selectorPropertiesList.includes(rules[i].declarations[l].property)) &&
                           declarationsCounts[key] > 1) { // leave behind 1
                           // remove previous comment above declaration to be removed
-                          if (options.trim_removed_rules_previous_comment || options.trim) {
-                            if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type == 'comment') {
+                          if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+                            if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
                               rules[i].declarations.splice(l - 1, 1)
                               l -= 1
                               DECLARATION_COUNT -= 1
                             }
                           }
 
-                          if (options.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
-                          summary.duplicate_declarations.push(rules[i].declarations[l])
-                          summary.stats.summary.noDuplicateDeclarations += 1
+                          if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
+                          SUMMARY.duplicate_declarations.push(rules[i].declarations[l])
+                          SUMMARY.stats.summary.noDuplicateDeclarations += 1
                           rules[i].declarations.splice(l, 1)
                           l -= 1
                           DECLARATION_COUNT -= 1
                           declarationsCounts[key] -= 1
                         }
                       } else { // all in selector
-                        if (rules[i].declarations[l].property == key &&
+                        if (rules[i].declarations[l].property === key &&
                           declarationsCounts[key] > 1) { // leave behind 1
                           // remove previous comment above declaration to be removed
-                          if (options.trim_removed_rules_previous_comment || options.trim) {
-                            if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type == 'comment') {
+                          if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+                            if (rules[i].declarations[l - 1] !== undefined && rules[i].declarations[l - 1].type === 'comment') {
                               rules[i].declarations.splice(l - 1, 1)
                               l -= 1
                               DECLARATION_COUNT -= 1
                             }
                           }
 
-                          if (options.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
-                          summary.duplicate_declarations.push(rules[i].declarations[l])
-                          summary.stats.summary.noDuplicateDeclarations += 1
+                          if (OPTIONS.verbose) { console.log(success('Process - Declaration - Group Duplicate Declarations : ' + (rules[i].selectors ? rules[i].selectors.join(', ') : '') + ' - ' + (rules[i].declarations[l] !== undefined ? rules[i].declarations[l].property : ''))) }
+                          SUMMARY.duplicate_declarations.push(rules[i].declarations[l])
+                          SUMMARY.stats.summary.noDuplicateDeclarations += 1
                           rules[i].declarations.splice(l, 1)
                           l -= 1
                           DECLARATION_COUNT -= 1
@@ -720,80 +1167,84 @@ export default function processRules (rules, options) {
       /// /end of declarations
       /// /empty nodes
       // remove empty @sign keyframes
-      if (rules[i] != undefined && rules[i].keyframes !== undefined && rules[i].keyframes.length == 0) {
+      if (rules[i] != undefined && rules[i].keyframes !== undefined && rules[i].keyframes.length === 0) {
         // remove previous comment in root
-        if (options.trim_removed_rules_previous_comment || options.trim) {
-          if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
-            if (options.verbose) { console.log(info('Process - @keyframes - Remove comment : ' + (rules[i].keyframes ? rules[i].keyframes.join(', ') : ''))) }
+        if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+          if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
+            if (OPTIONS.verbose) { console.log(info('Process - @keyframes - Remove comment : ' + (rules[i].keyframes ? rules[i].keyframes.join(', ') : ''))) }
             rules.splice(i - 1, 1)
             i -= 1
-            TOTAL_RULES -= 1
+            RULES_COUNT -= 1
           }
         }
 
-        if (options.verbose) { console.log(info('Process - @keyframes - Remove Empty Rule : ' + (rules[i].keyframes ? rules[i].keyframes.join(', ') : ''))) }
+        if (OPTIONS.verbose) { console.log(info('Process - @keyframes - Remove Empty Rule : ' + (rules[i].keyframes ? rules[i].keyframes.join(', ') : ''))) }
 
         rules.splice(i, 1)
         i -= 1
-        TOTAL_RULES -= 1
+        RULES_COUNT -= 1
       }
 
       // remove empty @sign media
-      if (rules[i] !== undefined && rules[i].type == 'media' &&
-        rules[i].rules.length == 0) {
+      if (rules[i] !== undefined && rules[i].type === 'media' &&
+        rules[i].rules.length === 0) {
         // remove previous comment in root
-        if (options.trim_removed_rules_previous_comment || options.trim) {
-          if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
-            if (options.verbose) { console.log(info('Process - @media - Remove comment : ' + (rules[i].media ? rules[i].media : ''))) }
+        if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+          if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
+            if (OPTIONS.verbose) { console.log(info('Process - @media - Remove comment : ' + (rules[i].media ? rules[i].media : ''))) }
             rules.splice(i - 1, 1)
             i -= 1
-            TOTAL_RULES -= 1
+            RULES_COUNT -= 1
           }
         }
-        if (options.verbose) { console.log(info('Process - @media - Remove Empty Rule : ' + (rules[i].media ? rules[i].media : ''))) }
+        if (OPTIONS.verbose) { console.log(info('Process - @media - Remove Empty Rule : ' + (rules[i].media ? rules[i].media : ''))) }
         rules.splice(i, 1)
         i -= 1
-        TOTAL_RULES -= 1
+        RULES_COUNT -= 1
       }
 
       // remove empty @sign document
-      if (rules[i] !== undefined && rules[i].type == 'document' &&
-        rules[i].rules.length == 0) {
+      if (rules[i] !== undefined && rules[i].type === 'document' &&
+        rules[i].rules.length === 0) {
         // remove previous comment in root
-        if (options.trim_removed_rules_previous_comment || options.trim) {
-          if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
-            if (options.verbose) { console.log(info('Process - @document - Remove comment : ' + (rules[i].document ? rules[i].document : ''))) }
+        if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+          if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
+            if (OPTIONS.verbose) { console.log(info('Process - @document - Remove comment : ' + (rules[i].document ? rules[i].document : ''))) }
             rules.splice(i - 1, 1)
             i -= 1
-            TOTAL_RULES -= 1
+            RULES_COUNT -= 1
           }
         }
 
-        if (options.verbose) { console.log(info('Process - @document - Remove Empty Rule : ' + (rules[i].document ? rules[i].document : ''))) }
+        if (OPTIONS.verbose) { console.log(info('Process - @document - Remove Empty Rule : ' + (rules[i].document ? rules[i].document : ''))) }
         rules.splice(i, 1)
         i -= 1
-        TOTAL_RULES -= 1
+        RULES_COUNT -= 1
       }
 
       // remove empty @sign supports
-      if (rules[i] !== undefined && rules[i].type == 'supports' &&
-        rules[i].rules.length == 0) {
+      if (rules[i] !== undefined && rules[i].type === 'supports' &&
+        rules[i].rules.length === 0) {
         // remove previous comment in root
-        if (options.trim_removed_rules_previous_comment || options.trim) {
-          if (rules[i - 1] !== undefined && rules[i - 1].type == 'comment') {
-            if (options.verbose) { console.log(info('Process - @supports - Remove comment : ' + (rules[i].supports ? rules[i].supports : ''))) }
+        if (OPTIONS.trim_removed_rules_previous_comment || OPTIONS.trim) {
+          if (rules[i - 1] !== undefined && rules[i - 1].type === 'comment') {
+            if (OPTIONS.verbose) { console.log(info('Process - @supports - Remove comment : ' + (rules[i].supports ? rules[i].supports : ''))) }
             rules.splice(i - 1, 1)
             i -= 1
-            TOTAL_RULES -= 1
+            RULES_COUNT -= 1
           }
         }
 
-        if (options.verbose) { console.log(info('Process - @supports - Remove Empty Rule : ' + (rules[i].supports ? rules[i].supports : ''))) }
+        if (OPTIONS.verbose) { console.log(info('Process - @supports - Remove Empty Rule : ' + (rules[i].supports ? rules[i].supports : ''))) }
         rules.splice(i, 1)
         i -= 1
-        TOTAL_RULES -= 1
+        RULES_COUNT -= 1
       }
+
       /// /end of empty nodes
     } // end of i
+    */
+
+    console.log('EXIT PROCESS')
   } // end of undefined
 } // end of processRules
