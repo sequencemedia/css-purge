@@ -1,7 +1,7 @@
 import debug from 'debug'
 
-import colors from './colors.mjs'
-import extendedColors from './extended-colors.mjs'
+import colors from '../colors.mjs'
+import extendedColors from '../extended-colors.mjs'
 
 import hslToRgb from '#utils/hsl-to-rgb'
 import componentFromString from '#utils/component-from-string'

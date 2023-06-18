@@ -47,19 +47,9 @@ const {
   JSDOM
 } = jsdom
 
-// const success = clc.greenBright
-// const success2 = clc.green
 const info = clc.xterm(123)
 const error = clc.red
-// const errorLine = clc.redBright
-// const warning = clc.yellow
-// const awesome = clc.magentaBright
-const logoRed = clc.xterm(197)
-// const cool = clc.xterm(105)
-
-// const read = fs.readFileSync
-// const write = fs.writeFileSync
-// const appendToFileSync = fs.appendFileSync
+const time = clc.xterm(197)
 
 const DEFAULT_FILE_LOCATION = './default.css'
 const DEFAULT_OPTIONS_FILE_LOCATION = './default_options.json'
@@ -511,10 +501,10 @@ class CSSPurge {
         })
     } // end of readReduceDeclarationsFileLocation
 
-    function processSelectorsForHTMLStart (selectors = [], html = null, options = null) {
+    function prepareSelectorsForHTML (selectors = [], html = null, options = null) {
       if (options) Object.assign(OPTIONS.html, options)
 
-      if (OPTIONS.verbose) { console.log(info('Process - HTML - Determine Rules to Remove')) }
+      if (OPTIONS.verbose) { console.log(info('Prepare - HTML')) }
 
       html = html ?? OPTIONS.fileData.join('')
       delete OPTIONS.fileData
@@ -589,14 +579,14 @@ class CSSPurge {
         })
 
       return selectors
-    } // end of processSelectorsForHTMLStart
+    } // end of prepareSelectorsForHTML
 
-    function processSelectorsForHTMLEnd (rules = [], selectors = []) {
-      if (OPTIONS.verbose) { console.log(info('Process - HTML - Remove Unused Rules')) }
+    function processSelectorsForHTML (rules = [], selectors = []) {
+      if (OPTIONS.verbose) { console.log(info('Process - HTML')) }
 
       removeUnused(rules, selectors)
 
-      if (OPTIONS.verbose) { console.log(info('Process - Rules - Base')) }
+      if (OPTIONS.verbose) { console.log(info('Process - HTML - Rules')) }
 
       processRules(rules, OPTIONS, SUMMARY, PARAMS)
 
@@ -647,7 +637,7 @@ class CSSPurge {
           rules
         }
       })
-    } // end of processSelectorsForHTMLEnd
+    } // end of processSelectorsForHTML
 
     async function processHTML (selectors = [], html = null, options = null) {
       // read html files
@@ -719,12 +709,12 @@ class CSSPurge {
 
         eventEmitter
           .on('HTML_READ_AGAIN', async (fileIndex, fileData) => {
-            processSelectorsForHTMLStart(selectors, html, { ...options, fileData })
+            prepareSelectorsForHTML(selectors, html, { ...options, fileData })
 
             await readHTMLFiles(htmlFiles, fileIndex, fileData)
           })
           .on('HTML_READ_END', (fileData) => {
-            processSelectorsForHTMLStart(selectors, html, { ...options, fileData })
+            prepareSelectorsForHTML(selectors, html, { ...options, fileData })
 
             eventEmitter.emit('HTML_RESULTS_END', selectors)
           })
@@ -820,7 +810,7 @@ class CSSPurge {
         if (OPTIONS.verbose) {
           timeKey = (OPTIONS.css_file_location) ? OPTIONS.css_file_location : new Date()
 
-          console.time(logoRed(`Purged "${timeKey}" in`))
+          console.time(time(`Purged "${timeKey}" in`))
         }
 
         if (OPTIONS.verbose) { console.log(info('Process - CSS')) }
@@ -1203,7 +1193,7 @@ class CSSPurge {
             .on('HTML_RESULTS_END', (selectorsRemoved) => {
               SUMMARY.selectors_removed = selectorsRemoved
 
-              const css = processSelectorsForHTMLEnd(rules, selectors)
+              const css = processSelectorsForHTML(rules, selectors)
 
               complete(null, writeCSSFiles(css))
 

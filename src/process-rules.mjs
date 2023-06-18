@@ -6,7 +6,7 @@ import {
   getParentDeclarations,
   removeParentDeclarationsFromCommonParentRules,
   addParentDeclarationsToRules
-} from '#common-rules/index'
+} from './process-rules/common-rules.mjs'
 
 import hasTypeComment from '#utils/declarations/has-type-comment'
 
