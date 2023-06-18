@@ -20,6 +20,7 @@ import ROOT from '#where-am-i'
 import DEFAULT_OPTIONS from './default_options.json' assert { type: 'json' }
 import DEFAULT_DECLARATION_NAMES from './default-declaration-names.json' assert { type: 'json' }
 
+import removeUnused from './remove-unused.mjs'
 import processRules from './process-rules.mjs'
 import processValues from './process-values.mjs'
 
@@ -39,11 +40,12 @@ import getFilePath from './utils/get-file-path.mjs'
 import getFileSizeInKB from './utils/get-file-size-in-kb.mjs'
 import getSizeInKB from './utils/get-size-in-kb.mjs'
 import roundTo from './utils/round-to.mjs'
-import escape from './utils/escape.mjs'
 
 const log = debug('@sequencemedia/css-purge')
 
-const { JSDOM } = jsdom
+const {
+  JSDOM
+} = jsdom
 
 // const success = clc.greenBright
 // const success2 = clc.green
@@ -59,7 +61,7 @@ const logoRed = clc.xterm(197)
 // const write = fs.writeFileSync
 // const appendToFileSync = fs.appendFileSync
 
-const DEFAULT_FILE_LOCATION = './default_options_css.css'
+const DEFAULT_FILE_LOCATION = './default.css'
 const DEFAULT_OPTIONS_FILE_LOCATION = './default_options.json'
 
 function toTrim (value) {
@@ -313,12 +315,13 @@ class CSSPurge {
 
     let HAS_READ_REDUCE_DECLARATIONS = false
 
-    const SELECTOR_PROPERTIES = new Map()
-    let SELECTORS = []
-
-    let DECLARATION_NAMES = [
-      ...DEFAULT_DECLARATION_NAMES
-    ]
+    const PARAMS = {
+      selector_properties: new Map(),
+      selectors: [],
+      declaration_names: [
+        ...DEFAULT_DECLARATION_NAMES
+      ]
+    }
 
     function readOptions (options = {}) {
       const {
@@ -394,10 +397,14 @@ class CSSPurge {
         selectors = {}
       } = reduceDeclarations
 
+      const SELECTOR_PROPERTIES = new Map()
+      let SELECTORS = []
+      let DECLARATION_NAMES = [
+        ...DEFAULT_DECLARATION_NAMES
+      ]
+
       switch (typeof selectors) {
         case 'object':
-          SELECTOR_PROPERTIES.clear()
-
           Object
             .entries(selectors)
             .forEach(([selector, properties]) => {
@@ -423,6 +430,10 @@ class CSSPurge {
           DECLARATION_NAMES = declarationNames.map(toTrim).filter(Boolean)
         }
       }
+
+      PARAMS.selector_properties = SELECTOR_PROPERTIES
+      PARAMS.selectors = SELECTORS
+      PARAMS.declaration_names = DECLARATION_NAMES
 
       HAS_READ_REDUCE_DECLARATIONS = true
 
@@ -452,10 +463,14 @@ class CSSPurge {
             selectors = {}
           } = declarations
 
+          const SELECTOR_PROPERTIES = new Map()
+          let SELECTORS = []
+          let DECLARATION_NAMES = [
+            ...DEFAULT_DECLARATION_NAMES
+          ]
+
           switch (typeof selectors) {
             case 'object':
-              SELECTOR_PROPERTIES.clear()
-
               Object
                 .entries(selectors)
                 .forEach(([selector, properties]) => {
@@ -481,6 +496,10 @@ class CSSPurge {
               DECLARATION_NAMES = declarationNames.map(toTrim).filter(Boolean)
             }
           }
+
+          PARAMS.selector_properties = SELECTOR_PROPERTIES
+          PARAMS.selectors = SELECTORS
+          PARAMS.declaration_names = DECLARATION_NAMES
 
           HAS_READ_REDUCE_DECLARATIONS = true
 
@@ -575,181 +594,11 @@ class CSSPurge {
     function processSelectorsForHTMLEnd (rules = [], selectors = []) {
       if (OPTIONS.verbose) { console.log(info('Process - HTML - Remove Unused Rules')) }
 
-      function has (collection) {
-        return function match (member) {
-          return collection.includes(member)
-        }
-      }
-
-      function getRemoveUnusedSelectors (rules, selectors, i) {
-        return function removeUnusedSelectors (rule) {
-          selectors
-            .forEach(getRemoveUnusedSelector(rules, selectors, rule, i))
-        }
-      }
-
-      function getRemoveUnusedSelector (rules, selectors, rule, i) {
-        return function removeUnusedSelector (selector) {
-          const pattern = `^(.${selector}|${selector})$`
-          const regExp = (
-            selector.includes('[') ||
-            selector.includes('*')
-          )
-            ? new RegExp(escape(pattern, 'gm'))
-            : new RegExp(pattern, 'gm')
-
-          const {
-            selectors: SELECTORS
-          } = rule
-
-          if (SELECTORS.join(',').match(regExp)) {
-            if (SELECTORS.length > 1) {
-              if (!SELECTORS.some(has(selectors))) rules.splice(i, 1)
-            } else {
-              rules.splice(i, 1)
-            }
-          }
-        }
-      }
-
-      function getRemoveUnusedSelectorsForRules (rules, selectors) {
-        return function removeUnusedSelectorsForRules (rule, i) {
-          const {
-            type
-          } = rule
-
-          if (type === 'rule') {
-            selectors
-              .forEach(getRemoveUnusedSelector(rules, selectors, rule, i))
-          } else {
-            if (
-              type === 'document' ||
-              type === 'supports' ||
-              type === 'media'
-            ) {
-              const {
-                rules
-              } = rule
-
-              if (Array.isArray(rules)) {
-                rules
-                  .forEach(getRemoveUnusedSelectors(rules, selectors, i))
-              }
-            }
-          }
-        }
-      }
-
-      rules
-        .forEach(getRemoveUnusedSelectorsForRules(rules, selectors))
-
-      /*
-      // remove unused selectors
-      let foundInnocent = false
-      let tmpSelectors = ''
-      let findSelector = null
-
-      for (let i = 0, RULES_COUNT = rules.length; i < RULES_COUNT; ++i) {
-        if (rules[i] !== undefined) {
-          switch (rules[i].type) {
-            case 'rule':
-              for (let j = 0, rulesCount2 = selectors.length; j < rulesCount2; ++j) {
-                tmpSelectors = rules[i].selectors
-
-                if (selectors[j].includes('[') ||
-                  selectors[j].includes('*')) {
-                  findSelector = new RegExp(escape('^(.' + selectors[j] + '|' + selectors[j] + ')$', 'gm'))
-                } else {
-                  findSelector = new RegExp('^(.' + selectors[j] + '|' + selectors[j] + ')$', 'gm')
-                }
-
-                if (tmpSelectors.join(',').match(findSelector)) {
-                  if (tmpSelectors.length > 1) {
-                    foundInnocent = false
-
-                    // check for any "innocent" amongst the guilty group
-                    for (let k = 0, rulesCount3 = tmpSelectors.length; k < rulesCount3; ++k) {
-                      if (selectors.indexOf(tmpSelectors[k]) === -1) {
-                        foundInnocent = true
-                        break
-                      }
-                    }
-
-                    if (!foundInnocent) { // remove only guilty
-                      // remove rule
-                      rules.splice(i, 1)
-                      i -= 1
-                      RULES_COUNT -= 1
-                    }
-                  } else {
-                    // remove rule
-                    rules.splice(i, 1)
-                    i -= 1
-                    RULES_COUNT -= 1
-                  }
-
-                  break
-                }
-              }
-
-              break
-            case 'document':
-            case 'supports':
-            case 'media':
-              for (let j = 0, rulesCount2 = rules[i].rules.length; j < rulesCount2; ++j) {
-                if (rules[i].rules[j] !== undefined) {
-                  for (let k = 0, rulesCount3 = selectors.length; k < rulesCount3; ++k) {
-                    tmpSelectors = rules[i].rules[j].selectors
-
-                    if (selectors[k].includes('[') ||
-                      selectors[k].includes('*')) {
-                      findSelector = new RegExp(escape('^(.' + selectors[k] + '|' + selectors[k] + ')$', 'gm'))
-                    } else {
-                      findSelector = new RegExp('^(.' + selectors[k] + '|' + selectors[k] + ')$', 'gm')
-                    }
-
-                    if (tmpSelectors.join(',').match(findSelector)) {
-                      if (tmpSelectors.length > 1) {
-                        foundInnocent = false
-
-                        // check for any "innocent" amongst the guilty group
-                        for (let l = 0, rulesCount4 = tmpSelectors.length; l < rulesCount4; ++l) {
-                          if (selectors.indexOf(tmpSelectors[l]) === -1) {
-                            foundInnocent = true
-                            break
-                          }
-                        }
-
-                        if (!foundInnocent) { // remove only guilty
-                          // remove rule
-                          rules[i].rules.splice(j, 1)
-                          j -= 1
-                          rulesCount3 -= 1
-                        }
-                      } else {
-                        // remove rule
-                        rules[i].rules.splice(j, 1)
-                        j -= 1
-                        rulesCount3 -= 1
-                        break
-                      }
-                    }
-                  }
-                }
-              }
-              break
-            case 'charset':
-              break
-            case 'page':
-              break
-          }
-        }
-      }
-      */
+      removeUnused(rules, selectors)
 
       if (OPTIONS.verbose) { console.log(info('Process - Rules - Base')) }
 
-      processRules(rules, OPTIONS, SUMMARY, DECLARATION_NAMES, SELECTORS, SELECTOR_PROPERTIES)
+      processRules(rules, OPTIONS, SUMMARY, PARAMS)
 
       // after
       STATS.after.totalFileSizeKB = 0
@@ -803,7 +652,9 @@ class CSSPurge {
     async function processHTML (selectors = [], html = null, options = null) {
       // read html files
       if (OPTIONS.html && OPTIONS.special_reduce_with_html) {
-        let htmlFiles = OPTIONS.html
+        let {
+          html: htmlFiles
+        } = OPTIONS
 
         // check for file or files
         switch (typeof htmlFiles) {
@@ -1070,7 +921,7 @@ class CSSPurge {
 
         if (OPTIONS.verbose) { console.log(info('Process - Rules - Base')) }
 
-        processRules(rules, OPTIONS, SUMMARY, DECLARATION_NAMES, SELECTORS, SELECTOR_PROPERTIES)
+        processRules(rules, OPTIONS, SUMMARY, PARAMS)
         processValues(rules, OPTIONS, SUMMARY)
 
         // @media rules
@@ -1078,9 +929,9 @@ class CSSPurge {
           .filter(Boolean)
           .filter(hasTypeMedia)
           .forEach(({ rules, media }) => {
-            log('@media', media)
+            log(`@media ${media}`)
 
-            processRules(rules, OPTIONS, SUMMARY, DECLARATION_NAMES, SELECTORS, SELECTOR_PROPERTIES)
+            processRules(rules, OPTIONS, SUMMARY, PARAMS)
             processValues(rules, OPTIONS, SUMMARY)
           })
 
@@ -1090,9 +941,9 @@ class CSSPurge {
             .filter(Boolean)
             .filter(hasTypeDocument)
             .forEach(({ rules, document }) => {
-              log('@document', document)
+              log(`@document ${document}`)
 
-              processRules(rules, OPTIONS, SUMMARY, DECLARATION_NAMES, SELECTORS, SELECTOR_PROPERTIES)
+              processRules(rules, OPTIONS, SUMMARY, PARAMS)
               processValues(rules, OPTIONS, SUMMARY)
             })
         }
@@ -1103,9 +954,9 @@ class CSSPurge {
             .filter(Boolean)
             .filter(hasTypeSupports)
             .forEach(({ rules, supports }) => {
-              log('@supports', supports)
+              log(`@supports ${supports}`)
 
-              processRules(rules, OPTIONS, SUMMARY, DECLARATION_NAMES, SELECTORS, SELECTOR_PROPERTIES)
+              processRules(rules, OPTIONS, SUMMARY, PARAMS)
               processValues(rules, OPTIONS, SUMMARY)
             })
         }
@@ -1494,7 +1345,9 @@ class CSSPurge {
         // options
         if (options) Object.assign(OPTIONS, options)
 
-        let cssFiles = OPTIONS.css
+        let {
+          css: cssFiles
+        } = OPTIONS
 
         if (cssFiles) {
           // check for file or files
