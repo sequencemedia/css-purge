@@ -6,7 +6,7 @@
   "bypass_supports_rules": false,
   "format": true,
   "format_font_family": false,
-  "report": true,
+  "report": false,
   "move_common_declarations_into_parent": false,
   "reduce_declarations_file_location": "./src/default-options/default-options-reduce-declarations.json",
   "report_file_location": "./report.json",
