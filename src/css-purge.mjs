@@ -16,7 +16,6 @@ import validUrl from 'valid-url'
 import jsdom from 'jsdom'
 
 import ROOT from '#where-am-i'
-
 import trim from '#css/trim'
 import hack from '#css/hack'
 
