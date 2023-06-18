@@ -1,4 +1,4 @@
-import escape from './utils/escape.mjs'
+import escape from '#utils/escape'
 
 function has (collection) {
   return function match (member) {

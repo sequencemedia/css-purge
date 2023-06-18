@@ -1,16 +1,16 @@
 import debug from 'debug'
 
-import hasPropertyMargin from './utils/declarations/has-property-margin.mjs'
-import hasPropertyMarginTop from './utils/declarations/has-property-margin-top.mjs'
-import hasPropertyMarginRight from './utils/declarations/has-property-margin-right.mjs'
-import hasPropertyMarginBottom from './utils/declarations/has-property-margin-bottom.mjs'
-import hasPropertyMarginLeft from './utils/declarations/has-property-margin-left.mjs'
+import hasPropertyMargin from '#utils/declarations/has-property-margin'
+import hasPropertyMarginTop from '#utils/declarations/has-property-margin-top'
+import hasPropertyMarginRight from '#utils/declarations/has-property-margin-right'
+import hasPropertyMarginBottom from '#utils/declarations/has-property-margin-bottom'
+import hasPropertyMarginLeft from '#utils/declarations/has-property-margin-left'
 
-import hasInherit from './utils/has-inherit.mjs'
-import hasImportant from './utils/has-important.mjs'
-import toProperty from './utils/to-property.mjs'
-import toValue from './utils/to-value.mjs'
-import getValueOfSquareProp from './utils/get-value-of-square-prop.mjs'
+import hasInherit from '#utils/has-inherit'
+import hasImportant from '#utils/has-important'
+import toProperty from '#utils/to-property'
+import toValue from '#utils/to-value'
+import getValueOfSquareProp from '#utils/get-value-of-square-prop'
 
 /**
  *  Preserve order

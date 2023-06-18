@@ -6,9 +6,9 @@ import {
   getParentDeclarations,
   removeParentDeclarationsFromCommonParentRules,
   addParentDeclarationsToRules
-} from './common-rules/index.mjs'
+} from '#common-rules/index'
 
-import hasTypeComment from './utils/declarations/has-type-comment.mjs'
+import hasTypeComment from '#utils/declarations/has-type-comment'
 
 function toDeclaration ({ selectors = [] }, property) {
   return {

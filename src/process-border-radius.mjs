@@ -1,16 +1,16 @@
 import debug from 'debug'
 
-import hasPropertyBorderRadius from './utils/declarations/has-property-border-radius.mjs'
-import hasPropertyBorderTopLeftRadius from './utils/declarations/has-property-border-top-left-radius.mjs'
-import hasPropertyBorderTopRightRadius from './utils/declarations/has-property-border-top-right-radius.mjs'
-import hasPropertyBorderBottomLeftRadius from './utils/declarations/has-property-border-bottom-left-radius.mjs'
-import hasPropertyBorderBottomRightRadius from './utils/declarations/has-property-border-bottom-right-radius.mjs'
+import hasPropertyBorderRadius from '#utils/declarations/has-property-border-radius'
+import hasPropertyBorderTopLeftRadius from '#utils/declarations/has-property-border-top-left-radius'
+import hasPropertyBorderTopRightRadius from '#utils/declarations/has-property-border-top-right-radius'
+import hasPropertyBorderBottomLeftRadius from '#utils/declarations/has-property-border-bottom-left-radius'
+import hasPropertyBorderBottomRightRadius from '#utils/declarations/has-property-border-bottom-right-radius'
 
-import hasInherit from './utils/has-inherit.mjs'
-import hasImportant from './utils/has-important.mjs'
-import toProperty from './utils/to-property.mjs'
-import toValue from './utils/to-value.mjs'
-import getValueOfSquareProp from './utils/get-value-of-square-prop.mjs'
+import hasInherit from '#utils/has-inherit'
+import hasImportant from '#utils/has-important'
+import toProperty from '#utils/to-property'
+import toValue from '#utils/to-value'
+import getValueOfSquareProp from '#utils/get-value-of-square-prop'
 
 /**
  *  Preserve order

@@ -1,4 +1,4 @@
-import hasSelectors from '../utils/selectors/has-selectors.mjs'
+import hasSelectors from '#utils/selectors/has-selectors'
 
 function getCommonSelectorsFor (rules, rule, selectorLineage) {
   const index = rules.indexOf(rule)

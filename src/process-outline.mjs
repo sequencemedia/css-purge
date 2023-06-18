@@ -1,15 +1,15 @@
 import debug from 'debug'
 
-import hasPropertyOutline from './utils/declarations/has-property-outline.mjs'
-import hasPropertyOutlineWidth from './utils/declarations/has-property-outline-width.mjs'
-import hasPropertyOutlineStyle from './utils/declarations/has-property-outline-style.mjs'
-import hasPropertyOutlineColor from './utils/declarations/has-property-outline-color.mjs'
+import hasPropertyOutline from '#utils/declarations/has-property-outline'
+import hasPropertyOutlineWidth from '#utils/declarations/has-property-outline-width'
+import hasPropertyOutlineStyle from '#utils/declarations/has-property-outline-style'
+import hasPropertyOutlineColor from '#utils/declarations/has-property-outline-color'
 
-import hasInherit from './utils/has-inherit.mjs'
-import hasImportant from './utils/has-important.mjs'
-import toProperty from './utils/to-property.mjs'
-import toValue from './utils/to-value.mjs'
-import getValueOfTriProp from './utils/get-value-of-tri-prop.mjs'
+import hasInherit from '#utils/has-inherit'
+import hasImportant from '#utils/has-important'
+import toProperty from '#utils/to-property'
+import toValue from '#utils/to-value'
+import getValueOfTriProp from '#utils/get-value-of-tri-prop'
 
 /**
  *  Preserve order

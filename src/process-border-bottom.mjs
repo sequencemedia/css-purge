@@ -1,15 +1,15 @@
 import debug from 'debug'
 
-import hasPropertyBorderBottom from './utils/declarations/has-property-border-bottom.mjs'
-import hasPropertyBorderBottomWidth from './utils/declarations/has-property-border-bottom-width.mjs'
-import hasPropertyBorderBottomStyle from './utils/declarations/has-property-border-bottom-style.mjs'
-import hasPropertyBorderBottomColor from './utils/declarations/has-property-border-bottom-color.mjs'
+import hasPropertyBorderBottom from '#utils/declarations/has-property-border-bottom'
+import hasPropertyBorderBottomWidth from '#utils/declarations/has-property-border-bottom-width'
+import hasPropertyBorderBottomStyle from '#utils/declarations/has-property-border-bottom-style'
+import hasPropertyBorderBottomColor from '#utils/declarations/has-property-border-bottom-color'
 
-import hasInherit from './utils/has-inherit.mjs'
-import hasImportant from './utils/has-important.mjs'
-import toProperty from './utils/to-property.mjs'
-import toValue from './utils/to-value.mjs'
-import getValueOfTriProp from './utils/get-value-of-tri-prop.mjs'
+import hasInherit from '#utils/has-inherit'
+import hasImportant from '#utils/has-important'
+import toProperty from '#utils/to-property'
+import toValue from '#utils/to-value'
+import getValueOfTriProp from '#utils/get-value-of-tri-prop'
 
 /**
  *  Preserve order

@@ -72,6 +72,9 @@
     "husky": "^8.0.3"
   },
   "imports": {
+    "#common-rules/*": "./src/common-rules/*.mjs",
+    "#css/*": "./src/css/*.mjs",
+    "#utils/*": "./src/utils/*.mjs",
     "#css-purge": "./src/css-purge.mjs",
     "#where-am-i": "./where-am-i.mjs"
   },

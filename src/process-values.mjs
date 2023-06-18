@@ -1,7 +1,7 @@
 import debug from 'debug'
 
-import hasDeclarations from './utils/declarations/has-declarations.mjs'
-import hasTypeRule from './utils/declarations/has-type-rule.mjs'
+import hasDeclarations from '#utils/declarations/has-declarations'
+import hasTypeRule from '#utils/declarations/has-type-rule'
 
 import processBackground from './process-background.mjs'
 import processBorder from './process-border.mjs'

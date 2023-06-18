@@ -1,17 +1,17 @@
 import debug from 'debug'
 
-import hasPropertyBackground from './utils/declarations/has-property-background.mjs'
-import hasPropertyBackgroundColor from './utils/declarations/has-property-background-color.mjs'
-import hasPropertyBackgroundImage from './utils/declarations/has-property-background-image.mjs'
-import hasPropertyBackgroundRepeat from './utils/declarations/has-property-background-repeat.mjs'
-import hasPropertyBackgroundAttachment from './utils/declarations/has-property-background-attachment.mjs'
-import hasPropertyBackgroundPosition from './utils/declarations/has-property-background-position.mjs'
+import hasPropertyBackground from '#utils/declarations/has-property-background'
+import hasPropertyBackgroundColor from '#utils/declarations/has-property-background-color'
+import hasPropertyBackgroundImage from '#utils/declarations/has-property-background-image'
+import hasPropertyBackgroundRepeat from '#utils/declarations/has-property-background-repeat'
+import hasPropertyBackgroundAttachment from '#utils/declarations/has-property-background-attachment'
+import hasPropertyBackgroundPosition from '#utils/declarations/has-property-background-position'
 
-import hasInherit from './utils/has-inherit.mjs'
-import hasImportant from './utils/has-important.mjs'
-import toProperty from './utils/to-property.mjs'
-import toValue from './utils/to-value.mjs'
-import getBackgroundProperty from './utils/get-background-prop.mjs'
+import hasInherit from '#utils/has-inherit'
+import hasImportant from '#utils/has-important'
+import toProperty from '#utils/to-property'
+import toValue from '#utils/to-value'
+import getBackgroundProperty from '#utils/get-background-prop'
 
 /**
  *  Preserve order

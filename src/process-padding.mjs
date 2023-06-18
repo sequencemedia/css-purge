@@ -1,16 +1,16 @@
 import debug from 'debug'
 
-import hasPropertyPadding from './utils/declarations/has-property-padding.mjs'
-import hasPropertyPaddingTop from './utils/declarations/has-property-padding-top.mjs'
-import hasPropertyPaddingRight from './utils/declarations/has-property-padding-right.mjs'
-import hasPropertyPaddingBottom from './utils/declarations/has-property-padding-bottom.mjs'
-import hasPropertyPaddingLeft from './utils/declarations/has-property-padding-left.mjs'
+import hasPropertyPadding from '#utils/declarations/has-property-padding'
+import hasPropertyPaddingTop from '#utils/declarations/has-property-padding-top'
+import hasPropertyPaddingRight from '#utils/declarations/has-property-padding-right'
+import hasPropertyPaddingBottom from '#utils/declarations/has-property-padding-bottom'
+import hasPropertyPaddingLeft from '#utils/declarations/has-property-padding-left'
 
-import hasInherit from './utils/has-inherit.mjs'
-import hasImportant from './utils/has-important.mjs'
-import toProperty from './utils/to-property.mjs'
-import toValue from './utils/to-value.mjs'
-import getValueOfSquareProp from './utils/get-value-of-square-prop.mjs'
+import hasInherit from '#utils/has-inherit'
+import hasImportant from '#utils/has-important'
+import toProperty from '#utils/to-property'
+import toValue from '#utils/to-value'
+import getValueOfSquareProp from '#utils/get-value-of-square-prop'
 
 /**
  *  Preserve order

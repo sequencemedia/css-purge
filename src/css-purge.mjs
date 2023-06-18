@@ -17,29 +17,29 @@ import jsdom from 'jsdom'
 
 import ROOT from '#where-am-i'
 
+import trim from '#css/trim'
+import hack from '#css/hack'
+
+import hasHtml from '#utils/selectors/has-html'
+
+import hasTypeMedia from '#utils/declarations/has-type-media'
+import hasTypeDocument from '#utils/declarations/has-type-document'
+import hasTypeSupports from '#utils/declarations/has-type-supports'
+import hasTypeComment from '#utils/declarations/has-type-comment'
+
+import getTokens from '#utils/get-tokens'
+import getSelectors from '#utils/get-selectors'
+import getFilePath from '#utils/get-file-path'
+import getFileSizeInKB from '#utils/get-file-size-in-kb'
+import getSizeInKB from '#utils/get-size-in-kb'
+import roundTo from '#utils/round-to'
+
 import DEFAULT_OPTIONS from './default_options.json' assert { type: 'json' }
 import DEFAULT_DECLARATION_NAMES from './default-declaration-names.json' assert { type: 'json' }
 
 import removeUnused from './remove-unused.mjs'
 import processRules from './process-rules.mjs'
 import processValues from './process-values.mjs'
-
-import trim from './css/trim.mjs'
-import hack from './css/hack.mjs'
-
-import hasHtml from './utils/selectors/has-html.mjs'
-
-import hasTypeMedia from './utils/declarations/has-type-media.mjs'
-import hasTypeDocument from './utils/declarations/has-type-document.mjs'
-import hasTypeSupports from './utils/declarations/has-type-supports.mjs'
-import hasTypeComment from './utils/declarations/has-type-comment.mjs'
-
-import getTokens from './utils/get-tokens.mjs'
-import getSelectors from './utils/get-selectors.mjs'
-import getFilePath from './utils/get-file-path.mjs'
-import getFileSizeInKB from './utils/get-file-size-in-kb.mjs'
-import getSizeInKB from './utils/get-size-in-kb.mjs'
-import roundTo from './utils/round-to.mjs'
 
 const log = debug('@sequencemedia/css-purge')
 

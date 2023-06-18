@@ -1,15 +1,15 @@
 import debug from 'debug'
 
-import hasPropertyBorderRight from './utils/declarations/has-property-border-right.mjs'
-import hasPropertyBorderRightWidth from './utils/declarations/has-property-border-right-width.mjs'
-import hasPropertyBorderRightStyle from './utils/declarations/has-property-border-right-style.mjs'
-import hasPropertyBorderRightColor from './utils/declarations/has-property-border-right-color.mjs'
+import hasPropertyBorderRight from '#utils/declarations/has-property-border-right'
+import hasPropertyBorderRightWidth from '#utils/declarations/has-property-border-right-width'
+import hasPropertyBorderRightStyle from '#utils/declarations/has-property-border-right-style'
+import hasPropertyBorderRightColor from '#utils/declarations/has-property-border-right-color'
 
-import hasInherit from './utils/has-inherit.mjs'
-import hasImportant from './utils/has-important.mjs'
-import toProperty from './utils/to-property.mjs'
-import toValue from './utils/to-value.mjs'
-import getValueOfTriProp from './utils/get-value-of-tri-prop.mjs'
+import hasInherit from '#utils/has-inherit'
+import hasImportant from '#utils/has-important'
+import toProperty from '#utils/to-property'
+import toValue from '#utils/to-value'
+import getValueOfTriProp from '#utils/get-value-of-tri-prop'
 
 /**
  *  Preserve order

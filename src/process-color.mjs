@@ -3,8 +3,8 @@ import debug from 'debug'
 import colors from './colors.mjs'
 import extendedColors from './extended-colors.mjs'
 
-import hslToRgb from './utils/hsl-to-rgb.mjs'
-import componentFromString from './utils/component-from-string.mjs'
+import hslToRgb from '#utils/hsl-to-rgb'
+import componentFromString from '#utils/component-from-string'
 
 const log = debug('@sequencemedia/css-purge/process-color')
 

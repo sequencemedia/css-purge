@@ -1,15 +1,15 @@
 import debug from 'debug'
 
-import hasPropertyBorderTop from './utils/declarations/has-property-border-top.mjs'
-import hasPropertyBorderTopWidth from './utils/declarations/has-property-border-top-width.mjs'
-import hasPropertyBorderTopStyle from './utils/declarations/has-property-border-top-style.mjs'
-import hasPropertyBorderTopColor from './utils/declarations/has-property-border-top-color.mjs'
+import hasPropertyBorderTop from '#utils/declarations/has-property-border-top'
+import hasPropertyBorderTopWidth from '#utils/declarations/has-property-border-top-width'
+import hasPropertyBorderTopStyle from '#utils/declarations/has-property-border-top-style'
+import hasPropertyBorderTopColor from '#utils/declarations/has-property-border-top-color'
 
-import hasInherit from './utils/has-inherit.mjs'
-import hasImportant from './utils/has-important.mjs'
-import toProperty from './utils/to-property.mjs'
-import toValue from './utils/to-value.mjs'
-import getValueOfTriProp from './utils/get-value-of-tri-prop.mjs'
+import hasInherit from '#utils/has-inherit'
+import hasImportant from '#utils/has-important'
+import toProperty from '#utils/to-property'
+import toValue from '#utils/to-value'
+import getValueOfTriProp from '#utils/get-value-of-tri-prop'
 
 /**
  *  Preserve order

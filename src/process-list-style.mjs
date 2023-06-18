@@ -1,15 +1,15 @@
 import debug from 'debug'
 
-import hasPropertyListStyle from './utils/declarations/has-property-list-style.mjs'
-import hasPropertyListStyleType from './utils/declarations/has-property-list-style-type.mjs'
-import hasPropertyListStylePosition from './utils/declarations/has-property-list-style-position.mjs'
-import hasPropertyListStyleImage from './utils/declarations/has-property-list-style-image.mjs'
+import hasPropertyListStyle from '#utils/declarations/has-property-list-style'
+import hasPropertyListStyleType from '#utils/declarations/has-property-list-style-type'
+import hasPropertyListStylePosition from '#utils/declarations/has-property-list-style-position'
+import hasPropertyListStyleImage from '#utils/declarations/has-property-list-style-image'
 
-import hasInherit from './utils/has-inherit.mjs'
-import hasImportant from './utils/has-important.mjs'
-import toProperty from './utils/to-property.mjs'
-import toValue from './utils/to-value.mjs'
-import getValueOfTriProp from './utils/get-value-of-tri-prop.mjs'
+import hasInherit from '#utils/has-inherit'
+import hasImportant from '#utils/has-important'
+import toProperty from '#utils/to-property'
+import toValue from '#utils/to-value'
+import getValueOfTriProp from '#utils/get-value-of-tri-prop'
 
 /**
  *  Preserve order
