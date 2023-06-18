@@ -1,16 +1,8 @@
-import cliColor from 'cli-color'
 import parseCssFont from 'parse-css-font'
 
-const error = cliColor.red
-
-function handleCssParseFontError (e, position) {
-  console.log(error('Error parsing CSS font'))
-  console.log('Source: ' + position.source)
-  console.log('Line: ' + position.start.line)
-  console.log('Column: ' + position.start.column)
-  console.log(e)
-  process.exit(1)
-}
+import {
+  handleCssParseFontError
+} from '#utils/errors'
 
 export default function getValueOfFontProp (font, property, position) {
   if (font) {

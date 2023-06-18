@@ -1,12 +1,13 @@
 import debug from 'debug'
 
-import colors from '../colors.mjs'
-import extendedColors from '../extended-colors.mjs'
+import colors from '#default-options/colors' assert { type: 'json' }
+import extendedColors from '#default-options/extended-colors' assert { type: 'json' }
 
 import hslToRgb from '#utils/hsl-to-rgb'
 import componentFromString from '#utils/component-from-string'
 
 const log = debug('@sequencemedia/css-purge/process-color')
+const info = debug('@sequencemedia/css-purge:info')
 
 function getReduceColor (declaration, rule, OPTIONS, SUMMARY) {
   const {
@@ -197,7 +198,11 @@ function processHexColorPairs (value, declaration, rule, OPTIONS, SUMMARY) {
   return value
 }
 
+log('`css-purge` is awake')
+
 export default function processColor (value, declaration, rule, OPTIONS, SUMMARY) {
+  info('Process color')
+
   const {
     shorten: SHORTEN,
     shorten_hexcolor_extended: SHORTEN_HEXCOLOR_EXTENDED,

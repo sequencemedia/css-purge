@@ -6,9 +6,9 @@ import {
   createReadStream,
   existsSync
 } from 'node:fs'
+
 import EventEmitter from 'node:events'
 
-import clc from 'cli-color'
 import cssTools from '@adobe/css-tools'
 
 import validUrl from 'valid-url'
@@ -34,25 +34,31 @@ import getFileSizeInKB from '#utils/get-file-size-in-kb'
 import getSizeInKB from '#utils/get-size-in-kb'
 import roundTo from '#utils/round-to'
 
-import DEFAULT_OPTIONS from './default_options.json' assert { type: 'json' }
-import DEFAULT_DECLARATION_NAMES from './default-declaration-names.json' assert { type: 'json' }
+import {
+  handleCssParseError,
+  handleOptionsFileReadError,
+  handleOptionsFileWriteError,
+  handleCssFileReadError,
+  handleCssFileWriteError,
+  handleHtmlFileReadError
+} from '#utils/errors'
+
+import DEFAULT_OPTIONS from '#default-options/default-options' assert { type: 'json' }
+import DEFAULT_DECLARATION_NAMES from '#default-options/default-declaration-names' assert { type: 'json' }
 
 import removeUnused from './remove-unused.mjs'
 import processRules from './process-rules.mjs'
 import processValues from './process-values.mjs'
 
 const log = debug('@sequencemedia/css-purge')
+const info = debug('@sequencemedia/css-purge:info')
 
 const {
   JSDOM
 } = jsdom
 
-const info = clc.xterm(123)
-const error = clc.red
-const time = clc.xterm(197)
-
-const DEFAULT_FILE_LOCATION = './default.css'
-const DEFAULT_OPTIONS_FILE_LOCATION = './default_options.json'
+const DEFAULT_FILE_LOCATION = path.join(ROOT, './default.css')
+const DEFAULT_OPTIONS_FILE_LOCATION = path.join(ROOT, './src/default-options/default-options.json')
 
 function toTrim (value) {
   return String(value).trim()
@@ -113,7 +119,7 @@ function getSummaryStatsFor (collector) {
   }
 }
 
-function toGroups (rules, groupSize = 4095) {
+function toGroups (rules, limit = 4095) {
   const {
     groups
   } = rules.reduce(({ groups, count }, rule) => {
@@ -121,7 +127,7 @@ function toGroups (rules, groupSize = 4095) {
 
     group.push(rule)
 
-    if (group.length === groupSize) count += 1
+    if (group.length === limit) count += 1
 
     return { groups, count }
   }, { groups: [], count: 0 })
@@ -129,51 +135,8 @@ function toGroups (rules, groupSize = 4095) {
   return groups
 }
 
-function handleCssParseError (e) {
-  console.log(error('Error parsing CSS'))
-  console.table({
-    Reason: e.reason,
-    Line: e.line,
-    Column: e.column,
-    File: e.filename
-  })
-  process.exit(1)
-}
-
-function handleOptionsFileReadError (e, filePath) {
-  console.log(error(`Options file read error at "${filePath}"`))
-  console.log(e)
-  process.exit(1)
-}
-
-function handleOptionsFileWriteError (e, filePath) {
-  console.log(error(`Options file write error at "${filePath}"`))
-  console.log(e)
-  process.exit(1)
-}
-
-function handleCssFileReadError (e, filePath) {
-  console.log(error(`CSS file read error at "${filePath}"`))
-  console.log(e)
-  process.exit(1)
-}
-
-function handleCssFileWriteError (e, filePath) {
-  console.log(error(`CSS file write error at "${filePath}"`))
-  console.log(e)
-  process.exit(1)
-}
-
-function handleHtmlFileReadError (e, filePath) {
-  console.log(error(`HTML file read error at "${filePath}"`))
-  console.log(e)
-  process.exit(1)
-}
-
 class CSSPurge {
   constructor () {
-    let timeKey = new Date()
-
     const eventEmitter = new EventEmitter()
 
     const INITIAL_OPTIONS = {
@@ -502,9 +465,9 @@ class CSSPurge {
     } // end of readReduceDeclarationsFileLocation
 
     function prepareSelectorsForHTML (selectors = [], html = null, options = null) {
-      if (options) Object.assign(OPTIONS.html, options)
+      info('Prepare selectors for HTML')
 
-      if (OPTIONS.verbose) { console.log(info('Prepare - HTML')) }
+      if (options) Object.assign(OPTIONS.html, options)
 
       html = html ?? OPTIONS.fileData.join('')
       delete OPTIONS.fileData
@@ -582,11 +545,9 @@ class CSSPurge {
     } // end of prepareSelectorsForHTML
 
     function processSelectorsForHTML (rules = [], selectors = []) {
-      if (OPTIONS.verbose) { console.log(info('Process - HTML')) }
+      info('Process selectors for HTML')
 
       removeUnused(rules, selectors)
-
-      if (OPTIONS.verbose) { console.log(info('Process - HTML - Rules')) }
 
       processRules(rules, OPTIONS, SUMMARY, PARAMS)
 
@@ -640,6 +601,8 @@ class CSSPurge {
     } // end of processSelectorsForHTML
 
     async function processHTML (selectors = [], html = null, options = null) {
+      info('Process HTML')
+
       // read html files
       if (OPTIONS.html && OPTIONS.special_reduce_with_html) {
         let {
@@ -724,9 +687,11 @@ class CSSPurge {
     } // end of processHTML
 
     async function readHTMLFiles (files = [], fileIndex = 0, fileData = []) {
+      info('Read HTML files')
+
       const file = files[fileIndex]
 
-      if (OPTIONS.verbose) { console.log(info('Input - HTML File : ' + file)) }
+      log(file)
 
       if (validUrl.isUri(file)) {
         try {
@@ -787,6 +752,8 @@ class CSSPurge {
     } // end of readHTMLFiles
 
     function processCSS (css = null, options = null, complete = () => {}) {
+      info('Process CSS')
+
       function handleDefaultOptionReduceDeclarationsEnd () {
         eventEmitter.removeListener('DEFAULT_OPTIONS_REDUCE_DECLARATIONS_END', handleDefaultOptionReduceDeclarationsEnd)
 
@@ -806,14 +773,6 @@ class CSSPurge {
 
           OPTIONS.css = [FILE_PATH]
         }
-
-        if (OPTIONS.verbose) {
-          timeKey = (OPTIONS.css_file_location) ? OPTIONS.css_file_location : new Date()
-
-          console.time(time(`Purged "${timeKey}" in`))
-        }
-
-        if (OPTIONS.verbose) { console.log(info('Process - CSS')) }
 
         css = css ?? OPTIONS.fileData.join('')
         delete OPTIONS.fileData
@@ -880,7 +839,7 @@ class CSSPurge {
             const i = Object.keys(tokenComments).length + 1
             const k = '_cssp_sc' + i
             tokenComments[k] = match
-            return '; /*_cssp_sc' + i + '*/'
+            return `; /*_cssp_sc${i}*/`
           })
         }
 
@@ -908,8 +867,6 @@ class CSSPurge {
         rules
           .filter(Boolean)
           .forEach(getSummaryStatsFor(SUMMARY.stats.before))
-
-        if (OPTIONS.verbose) { console.log(info('Process - Rules - Base')) }
 
         processRules(rules, OPTIONS, SUMMARY, PARAMS)
         processValues(rules, OPTIONS, SUMMARY)
@@ -1130,7 +1087,7 @@ class CSSPurge {
         SUMMARY.stats.summary.noReductions.noNodes = SUMMARY.stats.before.noNodes - SUMMARY.stats.after.noNodes
 
         // prepare output
-        const outputCSS = cssTools.stringify({
+        let outputCSS = cssTools.stringify({
           type: 'stylesheet',
           stylesheet: {
             rules
@@ -1139,9 +1096,7 @@ class CSSPurge {
 
         // Detect via JS
         // Detect via HTML
-        if (OPTIONS.special_reduce_with_html && OPTIONS.html) {
-          if (OPTIONS.verbose) { console.log(info('Process - HTML')) }
-
+        if (OPTIONS.html && OPTIONS.special_reduce_with_html) {
           const {
             file_path: FILE_PATH = DEFAULT_FILE_LOCATION
           } = OPTIONS
@@ -1193,9 +1148,24 @@ class CSSPurge {
             .on('HTML_RESULTS_END', (selectorsRemoved) => {
               SUMMARY.selectors_removed = selectorsRemoved
 
-              const css = processSelectorsForHTML(rules, selectors)
+              let css = processSelectorsForHTML(rules, selectors)
 
-              complete(null, writeCSSFiles(css))
+              const {
+                css_file_location: CSS_FILE_LOCATION
+              } = OPTIONS
+
+              if (CSS_FILE_LOCATION) css = writeCSSFiles(css, CSS_FILE_LOCATION)
+              else {
+                css = trim(css, OPTIONS, SUMMARY)
+                css = hack(css, OPTIONS, SUMMARY, getTokens())
+                const fileSizeKB = getSizeInKB(css) // getSizeInKB(css) / 1000
+                SUMMARY.stats.after.totalFileSizeKB += fileSizeKB
+              }
+
+              SUMMARY.stats.summary.savingsKB = roundTo(SUMMARY.stats.before.totalFileSizeKB - SUMMARY.stats.after.totalFileSizeKB, 4)
+              SUMMARY.stats.summary.savingsPercentage = roundTo(SUMMARY.stats.summary.savingsKB / SUMMARY.stats.before.totalFileSizeKB * 100, 2)
+
+              complete(null, css)
 
               const {
                 report: REPORT
@@ -1243,7 +1213,22 @@ class CSSPurge {
 
           processHTML(selectors)
         } else { // end of special_reduce_with_html
-          complete(null, writeCSSFiles(outputCSS))
+          const {
+            css_file_location: CSS_FILE_LOCATION
+          } = OPTIONS
+
+          if (CSS_FILE_LOCATION) outputCSS = writeCSSFiles(outputCSS, CSS_FILE_LOCATION)
+          else {
+            outputCSS = trim(outputCSS, OPTIONS, SUMMARY)
+            outputCSS = hack(outputCSS, OPTIONS, SUMMARY, getTokens())
+            const fileSizeKB = getSizeInKB(outputCSS) // getSizeInKB(css) / 1000
+            SUMMARY.stats.after.totalFileSizeKB += fileSizeKB
+          }
+
+          SUMMARY.stats.summary.savingsKB = roundTo(SUMMARY.stats.before.totalFileSizeKB - SUMMARY.stats.after.totalFileSizeKB, 4)
+          SUMMARY.stats.summary.savingsPercentage = roundTo(SUMMARY.stats.summary.savingsKB / SUMMARY.stats.before.totalFileSizeKB * 100, 2)
+
+          complete(null, outputCSS)
 
           const {
             report: REPORT
@@ -1326,6 +1311,8 @@ class CSSPurge {
     } // end of processCSS
 
     function processCSSFiles (options = INITIAL_OPTIONS, fileLocation = DEFAULT_OPTIONS_FILE_LOCATION, complete) {
+      info('Process CSS files')
+
       async function handleDefaultOptionsReadEnd () {
         eventEmitter.removeListener('DEFAULT_OPTIONS_READ_END', handleDefaultOptionsReadEnd)
 
@@ -1455,9 +1442,11 @@ class CSSPurge {
     } // end of processCSSFiles
 
     async function readCSSFiles (files = [], fileIndex = 0, fileData = []) {
+      info('Read CSS files')
+
       const file = files[fileIndex]
 
-      if (OPTIONS.verbose) { console.log(info('Input - CSS File : ' + file)) }
+      log(file)
 
       if (validUrl.isUri(file)) {
         try {
@@ -1519,63 +1508,53 @@ class CSSPurge {
       }
     } // end of readCSSFiles
 
-    function writeCSSFiles (css = '') {
-      const {
-        css_file_location: CSS_FILE_LOCATION
-      } = OPTIONS
+    function writeCSSFiles (css = '', fileLocation) {
+      info('Write CSS files')
 
-      let fileSizeKB = 0
+      try {
+        let fileSizeKB = 0
 
-      if (CSS_FILE_LOCATION) {
-        const directoryPath = path.dirname(CSS_FILE_LOCATION)
+        const directoryPath = path.dirname(fileLocation)
         const {
           name
-        } = path.parse(CSS_FILE_LOCATION)
+        } = path.parse(fileLocation)
 
-        try {
-          const {
-            format_group_size: FORMAT_GROUP_SIZE
-          } = OPTIONS
+        const {
+          format_group_limit: FORMAT_GROUP_LIMIT
+        } = OPTIONS
 
-          if (FORMAT_GROUP_SIZE) {
-            if (Math.ceil(SUMMARY.stats.after.noRules / FORMAT_GROUP_SIZE) > 1) {
-              let ast
-              try {
-                ast = cssTools.parse(css, { source: CSS_FILE_LOCATION })
-              } catch (e) {
-                handleCssParseError(e)
+        if (FORMAT_GROUP_LIMIT) {
+          if (Math.ceil(SUMMARY.stats.after.noRules / FORMAT_GROUP_LIMIT) > 1) {
+            let ast
+            try {
+              ast = cssTools.parse(css, { source: fileLocation })
+            } catch (e) {
+              handleCssParseError(e)
+            }
+
+            const {
+              stylesheet: {
+                rules
               }
+            } = ast
 
-              const {
-                stylesheet: {
-                  rules
-                }
-              } = ast
-
-              toGroups(rules, FORMAT_GROUP_SIZE)
-                .forEach((rules, i) => {
-                  /**
+            toGroups(rules, FORMAT_GROUP_LIMIT)
+              .forEach((rules, i) => {
+                /**
                    *  Redeclared so as not to modify `css` in scope
                    */
-                  let css = cssTools.stringify({
-                    type: 'stylesheet',
-                    stylesheet: {
-                      rules
-                    }
-                  })
-                  css = trim(css, OPTIONS, SUMMARY)
-                  css = hack(css, OPTIONS, SUMMARY, getTokens())
-                  const filePath = path.join(directoryPath, `${name}_${i}.css`)
-                  writeFileSync(filePath, css)
-                  fileSizeKB += getFileSizeInKB(filePath)
+                let css = cssTools.stringify({
+                  type: 'stylesheet',
+                  stylesheet: {
+                    rules
+                  }
                 })
-            } else {
-              css = trim(css, OPTIONS, SUMMARY)
-              css = hack(css, OPTIONS, SUMMARY, getTokens())
-              const filePath = path.join(directoryPath, name + '.css')
-              writeFileSync(filePath, css)
-              fileSizeKB = getFileSizeInKB(filePath)
-            }
+                css = trim(css, OPTIONS, SUMMARY)
+                css = hack(css, OPTIONS, SUMMARY, getTokens())
+                const filePath = path.join(directoryPath, `${name}_${i}.css`)
+                writeFileSync(filePath, css)
+                fileSizeKB += getFileSizeInKB(filePath)
+              })
           } else {
             css = trim(css, OPTIONS, SUMMARY)
             css = hack(css, OPTIONS, SUMMARY, getTokens())
@@ -1583,20 +1562,19 @@ class CSSPurge {
             writeFileSync(filePath, css)
             fileSizeKB = getFileSizeInKB(filePath)
           }
-        } catch (e) {
-          handleCssFileWriteError(e, CSS_FILE_LOCATION)
+        } else {
+          css = trim(css, OPTIONS, SUMMARY)
+          css = hack(css, OPTIONS, SUMMARY, getTokens())
+          const filePath = path.join(directoryPath, name + '.css')
+          writeFileSync(filePath, css)
+          fileSizeKB = getFileSizeInKB(filePath)
         }
-      } else {
-        css = trim(css, OPTIONS, SUMMARY)
-        css = hack(css, OPTIONS, SUMMARY, getTokens())
-        fileSizeKB = getSizeInKB(css) // getSizeInKB(css) / 1000
+
+        SUMMARY.stats.after.totalFileSizeKB += fileSizeKB
+        return css
+      } catch (e) {
+        handleCssFileWriteError(e, fileLocation)
       }
-
-      SUMMARY.stats.after.totalFileSizeKB += fileSizeKB
-      SUMMARY.stats.summary.savingsKB = roundTo(SUMMARY.stats.before.totalFileSizeKB - SUMMARY.stats.after.totalFileSizeKB, 4)
-      SUMMARY.stats.summary.savingsPercentage = roundTo(SUMMARY.stats.summary.savingsKB / SUMMARY.stats.before.totalFileSizeKB * 100, 2)
-
-      return css
     } // end of writeCSSFiles
 
     this.purgeCSS = function purgeCSS (css, options, complete) {
@@ -1608,5 +1586,7 @@ class CSSPurge {
     }
   }
 } // end of CSSPurge
+
+log('`css-purge` is awake')
 
 export default new CSSPurge()

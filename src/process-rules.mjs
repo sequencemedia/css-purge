@@ -1,3 +1,5 @@
+import debug from 'debug'
+
 import {
   getCommonSelectors,
   getParentRules,
@@ -9,6 +11,9 @@ import {
 } from './process-rules/common-rules.mjs'
 
 import hasTypeComment from '#utils/declarations/has-type-comment'
+
+const log = debug('@sequencemedia/css-purge/process-rules')
+const info = debug('@sequencemedia/css-purge:info')
 
 function toDeclaration ({ selectors = [] }, property) {
   return {
@@ -71,7 +76,11 @@ function getPropertyMapFor (declarations = []) {
   return propertyMap
 }
 
+log('`css-purge` is awake')
+
 export default function processRules (rules, OPTIONS, SUMMARY, PARAMS) {
+  info('Process rules')
+
   if (rules) {
     const {
       move_common_declarations_into_parent: MOVE_COMMON_DECLARATIONS_INTO_PARENT

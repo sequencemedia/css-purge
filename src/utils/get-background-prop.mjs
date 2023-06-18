@@ -1,5 +1,5 @@
-import extendedColors from '../extended-colors.mjs'
-import colors from '../colors.mjs'
+import extendedColors from '#default-options/extended-colors' assert { type: 'json' }
+import colors from '#default-options/colors' assert { type: 'json' }
 
 export default function getBackgroundProp (background, prop) {
   switch (prop) {

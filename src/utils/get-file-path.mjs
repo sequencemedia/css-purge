@@ -10,28 +10,11 @@ import {
 
 import validUrl from 'valid-url'
 
-import cliColor from 'cli-color'
-
-const error = cliColor.red
-// const errorLine = cliColor.redBright
-
-function handleStatsReadError (e, value) {
-  console.log(error(`Stats read error at "${value}"`))
-  console.log(e)
-  process.exit(1)
-}
-
-function handleFileReadError (e, value) {
-  console.log(error(`File read error at "${value}"`))
-  console.log(e)
-  process.exit(1)
-}
-
-function handleDirectoryReadError (e, value) {
-  console.log(error(`Directory read error at "${value}"`))
-  console.log(e)
-  process.exit(1)
-}
+import {
+  handleStatsReadError,
+  handleFileReadError,
+  handleDirectoryReadError
+} from './errors/index.mjs'
 
 export default function getFilePath (value = '', exts = ['.css'], collector) {
   if (validUrl.isUri(value)) {

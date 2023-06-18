@@ -1,4 +1,9 @@
+import debug from 'debug'
+
 import escape from '#utils/escape'
+
+const log = debug('@sequencemedia/css-purge/remove-unused')
+const info = debug('@sequencemedia/css-purge:info')
 
 function has (collection) {
   return function match (member) {
@@ -65,7 +70,11 @@ function getRemoveUnusedSelectorsForRules (rules, selectors) {
   }
 }
 
+log('`css-purge` is awake')
+
 export default function removeUnused (rules, selectors) {
+  info('Remove unused')
+
   rules
     .forEach(getRemoveUnusedSelectorsForRules(rules, selectors))
 }

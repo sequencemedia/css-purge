@@ -51,7 +51,6 @@
   },
   "dependencies": {
     "@adobe/css-tools": "^4.3.0-beta.2",
-    "cli-color": "^1.4.0",
     "commander": "^2.19.0",
     "debug": "^4.3.4",
     "jsdom": "^16.5.0",
@@ -73,6 +72,8 @@
   },
   "imports": {
     "#css/*": "./src/css/*.mjs",
+    "#default-options/*": "./src/default-options/*.json",
+    "#utils/errors": "./src/utils/errors/index.mjs",
     "#utils/*": "./src/utils/*.mjs",
     "#css-purge": "./src/css-purge.mjs",
     "#where-am-i": "./where-am-i.mjs"

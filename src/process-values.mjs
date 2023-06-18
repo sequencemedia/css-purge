@@ -20,9 +20,12 @@ import processPadding from './process-values/process-padding.mjs'
 import processZero from './process-values/process-zero.mjs'
 
 const log = debug('@sequencemedia/css-purge/process-values')
+const info = debug('@sequencemedia/css-purge:info')
+
+log('`css-purge` is awake')
 
 export default function processValues (rules, OPTIONS, SUMMARY) {
-  log('processValues')
+  info('Process values')
 
   const {
     shorten: SHORTEN = false,
