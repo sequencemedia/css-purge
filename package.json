@@ -49,7 +49,8 @@
   "scripts": {
     "start": "node .",
     "lint": "eslint . --ext .mjs,.cjs",
-    "lint:fix": "npm run lint -- --fix"
+    "lint:fix": "npm run lint -- --fix",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@adobe/css-tools": "^4.3.1",
