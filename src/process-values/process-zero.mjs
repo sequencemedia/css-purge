@@ -22,8 +22,9 @@ export default function processZero (rule, OPTIONS, SUMMARY) {
         let value = declaration.value
 
         // leading zeros 000
-        if (value.match(/[^#]\b0+[^1-9a-zA-Z.,;%()\[\]\s\/\\!]/gm)) {
-          value = value.replace(/\b0+[^1-9a-zA-Z.,;%()\[\]\s\/\\!]/gm, '') // remove single duplicate 0
+        if (value.match(/[^#]\b0+[^1-9a-zA-Z.,;%()\[\]\s\/\\!]/gm)) { // eslint-disable-line no-useless-escape
+          // remove single duplicate 0
+          value = value.replace(/\b0+[^1-9a-zA-Z.,;%()\[\]\s\/\\!]/gm, '') // eslint-disable-line no-useless-escape
 
           SUMMARY.stats.summary.noZerosShortened += 1
 

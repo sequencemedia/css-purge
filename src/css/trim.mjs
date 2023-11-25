@@ -53,7 +53,8 @@ export default function trim (css, OPTIONS, SUMMARY) {
   if (OPTIONS.trim_last_semicolon || OPTIONS.trim) {
     css = css.replace(/{([^}]*)}/gm, function (match, capture) {
       SUMMARY.stats.summary.noLastSemiColonsTrimmed += 1
-      return `{${capture.replace(/\;(?=[^;]*$)/, '')}}` // "{" + capture + "}";
+      // "{" + capture + "}";' was not found
+      return `{${capture.replace(/\;(?=[^;]*$)/, '')}}` // eslint-disable-line no-useless-escape
     })
   }
 

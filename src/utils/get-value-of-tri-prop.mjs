@@ -46,14 +46,14 @@ export default function getValueOfTriProp (valueIn, prop) {
     case 'color':
     {
       // check for hex, rgb, hsl
-      const value = valueIn.match(/\btransparent\b|(#(?:[0-9a-f]{2}){2,4}|(#[0-9a-f]{3})|(rgb|hsl)a?\((-?\d+%?[,\s]+){2,3}\s*[\d\.]+%?\))/i)
+      const value = valueIn.match(/\btransparent\b|(#(?:[0-9a-f]{2}){2,4}|(#[0-9a-f]{3})|(rgb|hsl)a?\((-?\d+%?[,\s]+){2,3}\s*[\d\.]+%?\))/i) // eslint-disable-line no-useless-escape
       if (Array.isArray(value)) {
         return value.shift()
       }
 
       // check extended colors
       for (const color in extendedColors) {
-        const regExp = new RegExp(`(^|[^\"\'\.a-z0-9_-])${color}([^\"\'.a-z0-9_-]|$)`)
+        const regExp = new RegExp(`(^|[^\"\'\.a-z0-9_-])${color}([^\"\'.a-z0-9_-]|$)`) // eslint-disable-line no-useless-escape
         if (valueIn.match(regExp)) {
           return color
         }
@@ -61,7 +61,7 @@ export default function getValueOfTriProp (valueIn, prop) {
 
       // check normal colors
       for (const color in colors) {
-        const regExp = new RegExp(`(^|[^\"\'\.a-z0-9_-])${color}([^\"\'.a-z0-9_-]|$)`)
+        const regExp = new RegExp(`(^|[^\"\'\.a-z0-9_-])${color}([^\"\'.a-z0-9_-]|$)`) // eslint-disable-line no-useless-escape
         if (valueIn.match(regExp)) {
           return color
         }

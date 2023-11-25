@@ -786,13 +786,13 @@ class CSSPurge {
         } = getTokens()
 
         // tokens - allow multi-keyframe selectors
-        css = css.replace(/(@(-?)[a-zA-Z\-]*(keyframes)*\s[a-zA-Z\-]*(\s*,?\s*)){2,}/g, (match) => {
+        css = css.replace(/(@(-?)[a-zA-Z\-]*(keyframes)*\s[a-zA-Z\-]*(\s*,?\s*)){2,}/g, (match) => { // eslint-disable-line no-useless-escape
           _7tokenValues.push(match)
           return '@keyframes _7token_' + _7tokenValues.length + ''
         })
 
         // tokens - data:image
-        css = css.replace(/url\(\"data:image\/([a-zA-Z]*);base64,([^\"]*)\"\)/g, (match) => {
+        css = css.replace(/url\(\"data:image\/([a-zA-Z]*);base64,([^\"]*)\"\)/g, (match) => { // eslint-disable-line no-useless-escape
           _6tokenValues.push(match)
           return '_6token_dataimage_' + _6tokenValues.length + ':'
         })
@@ -815,26 +815,26 @@ class CSSPurge {
         css = css.replace(/\/\*\\\*\*\//gm, '_2token_hck')
 
         // hacks - (specialchar)property
-        css = css.replace(/[\!\$\&\*\(\)\=\%\+\@\,\.\/\`\[\]\#\~\?\:\<\>\|\*\/]{1}([\-\_\.]?)([a-zA-Z0-9]+):((\s\S*?));/g, (match) => {
+        css = css.replace(/[\!\$\&\*\(\)\=\%\+\@\,\.\/\`\[\]\#\~\?\:\<\>\|\*\/]{1}([\-\_\.]?)([a-zA-Z0-9]+):((\s\S*?));/g, (match) => { // eslint-disable-line no-useless-escape
           _3tokenValues.push(match.substring(0, match.length - 1))
           return '_3token_hck_' + _3tokenValues.length + ':'
         })
 
         // hacks - (;
-        css = css.replace(/(\(;)([\s\S]*?)(\})/g, (match) => {
+        css = css.replace(/(\(;)([\s\S]*?)(\})/g, (match) => { // eslint-disable-line no-useless-escape
           _4tokenValues.push(match)
           return '_4token_hck_' + _4tokenValues.length + ':}'
         })
 
         // hacks - [;
-        css = css.replace(/(\[;)([\s\S]*?)(\})/g, (match) => {
+        css = css.replace(/(\[;)([\s\S]*?)(\})/g, (match) => { // eslint-disable-line no-useless-escape
           _5tokenValues.push(match)
           return '_5token_hck_' + _5tokenValues.length + ':}'
         })
 
         // tokens - replace side comments
         if (OPTIONS.trim_comments !== true) {
-          css = css.replace(/[;]([^\n][\s]*?)\/\*([\s\S]*?)\*\//gm, (match) => {
+          css = css.replace(/[;]([^\n][\s]*?)\/\*([\s\S]*?)\*\//gm, (match) => { // eslint-disable-line no-useless-escape
             const i = Object.keys(tokenComments).length + 1
             const k = '_cssp_sc' + i
             tokenComments[k] = match

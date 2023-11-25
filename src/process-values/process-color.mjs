@@ -29,7 +29,8 @@ function getReduceColor (declaration, rule, OPTIONS, SUMMARY) {
     let colorIndex = value.toLowerCase().indexOf(key)
 
     while (colorIndex > -1) {
-      const regExp = new RegExp(key + "(?![\"\'.a-zA-Z0-9_-])", 'g') // global for multiple colors e.g. gradient
+      // global for multiple colors e.g. gradient
+      const regExp = new RegExp(key + "(?![\"\'.a-zA-Z0-9_-])", 'g') // eslint-disable-line no-useless-escape
 
       const was = value
       const now = was.replace(regExp, (capture) => {
