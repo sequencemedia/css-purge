@@ -53,9 +53,9 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@adobe/css-tools": "^4.3.1",
+    "@adobe/css-tools": "^4.3.2",
     "debug": "^4.3.4",
-    "jsdom": "^23.0.0",
+    "jsdom": "^23.0.1",
     "parse-css-font": "^4.0.0",
     "valid-url": "^1.0.9"
   },
@@ -64,7 +64,7 @@
     "@babel/eslint-parser": "^7.23.3",
     "@babel/plugin-syntax-import-assertions": "^7.23.3",
     "@babel/preset-env": "^7.23.5",
-    "@sequencemedia/hooks": "^1.0.464",
+    "@sequencemedia/hooks": "^1.0.465",
     "eslint": "^8.54.0",
     "eslint-config-standard": "^17.1.0",
     "husky": "^8.0.3"
