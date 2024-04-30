@@ -60,10 +60,10 @@
     "valid-url": "^1.0.9"
   },
   "devDependencies": {
-    "@babel/core": "^7.24.4",
-    "@babel/eslint-parser": "^7.24.1",
+    "@babel/core": "^7.24.5",
+    "@babel/eslint-parser": "^7.24.5",
     "@babel/plugin-syntax-import-assertions": "^7.24.1",
-    "@babel/preset-env": "^7.24.4",
+    "@babel/preset-env": "^7.24.5",
     "@sequencemedia/hooks": "^1.0.489",
     "eslint": "8.57.0",
     "eslint-config-standard": "^17.1.0",
