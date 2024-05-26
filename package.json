@@ -47,10 +47,10 @@
     "url": "https://github.com/sequencemedia/css-purge/issues"
   },
   "scripts": {
-    "start": "node .",
     "lint": "eslint . --ext .mjs,.cjs",
     "lint:fix": "npm run lint -- --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "start": "node ."
   },
   "dependencies": {
     "@adobe/css-tools": "^4.3.3",
@@ -64,17 +64,17 @@
     "@babel/eslint-parser": "^7.24.6",
     "@babel/plugin-syntax-import-assertions": "^7.24.6",
     "@babel/preset-env": "^7.24.6",
-    "@sequencemedia/hooks": "^1.0.491",
+    "@sequencemedia/hooks": "^1.0.492",
     "eslint": "8.57.0",
     "eslint-config-standard": "^17.1.0",
     "husky": "^9.0.11"
   },
   "imports": {
+    "#css-purge": "./src/css-purge.mjs",
     "#css/*": "./src/css/*.mjs",
     "#default-options/*": "./src/default-options/*.json",
-    "#utils/errors": "./src/utils/errors/index.mjs",
     "#utils/*": "./src/utils/*.mjs",
-    "#css-purge": "./src/css-purge.mjs",
+    "#utils/errors": "./src/utils/errors/index.mjs",
     "#where-am-i": "./where-am-i.mjs"
   },
   "exports": {
