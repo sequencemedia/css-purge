@@ -1,7 +1,7 @@
 import debug from 'debug'
 
-import colors from '#default-options/colors' assert { type: 'json' }
-import extendedColors from '#default-options/extended-colors' assert { type: 'json' }
+import colors from '#default-options/colors' with { type: 'json' }
+import extendedColors from '#default-options/extended-colors' with { type: 'json' }
 
 import hslToRgb from '#utils/hsl-to-rgb'
 import componentFromString from '#utils/component-from-string'

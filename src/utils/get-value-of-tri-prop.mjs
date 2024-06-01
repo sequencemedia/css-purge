@@ -1,5 +1,5 @@
-import extendedColors from '#default-options/extended-colors' assert { type: 'json' }
-import colors from '#default-options/colors' assert { type: 'json' }
+import extendedColors from '#default-options/extended-colors' with { type: 'json' }
+import colors from '#default-options/colors' with { type: 'json' }
 
 export default function getValueOfTriProp (valueIn, prop) {
   switch (prop) {

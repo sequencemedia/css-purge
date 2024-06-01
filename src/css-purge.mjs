@@ -42,8 +42,8 @@ import {
   handleHtmlFileReadError
 } from '#utils/errors'
 
-import DEFAULT_OPTIONS from '#default-options/default-options' assert { type: 'json' }
-import DEFAULT_DECLARATION_NAMES from '#default-options/default-declaration-names' assert { type: 'json' }
+import DEFAULT_OPTIONS from '#default-options/default-options' with { type: 'json' }
+import DEFAULT_DECLARATION_NAMES from '#default-options/default-declaration-names' with { type: 'json' }
 
 import removeUnused from './remove-unused.mjs'
 import processRules from './process-rules.mjs'
