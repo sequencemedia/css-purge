@@ -37,7 +37,7 @@
   "contributors": [
     "Andrew Quan <andrewq@redblueprint.com> (http://redblueprint.com)"
   ],
-  "license": "MIT",
+  "license": "ISC",
   "repository": {
     "type": "git",
     "url": "https://github.com/sequencemedia/css-purge.git"
