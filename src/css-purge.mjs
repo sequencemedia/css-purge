@@ -821,20 +821,20 @@ class CSSPurge {
         })
 
         // hacks - (;
-        css = css.replace(/(\(;)([\s\S]*?)(\})/g, (match) => { // eslint-disable-line no-useless-escape
+        css = css.replace(/(\(;)([\s\S]*?)(\})/g, (match) => {
           _4tokenValues.push(match)
           return '_4token_hck_' + _4tokenValues.length + ':}'
         })
 
         // hacks - [;
-        css = css.replace(/(\[;)([\s\S]*?)(\})/g, (match) => { // eslint-disable-line no-useless-escape
+        css = css.replace(/(\[;)([\s\S]*?)(\})/g, (match) => {
           _5tokenValues.push(match)
           return '_5token_hck_' + _5tokenValues.length + ':}'
         })
 
         // tokens - replace side comments
         if (OPTIONS.trim_comments !== true) {
-          css = css.replace(/[;]([^\n][\s]*?)\/\*([\s\S]*?)\*\//gm, (match) => { // eslint-disable-line no-useless-escape
+          css = css.replace(/[;]([^\n][\s]*?)\/\*([\s\S]*?)\*\//gm, (match) => {
             const i = Object.keys(tokenComments).length + 1
             const k = '_cssp_sc' + i
             tokenComments[k] = match
