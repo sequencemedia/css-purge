@@ -18,11 +18,9 @@ export default (
         ...globals.browser,
         ...globals.node
       }
+    },
+    rules: {
+      'no-useless-escape': 'warn'
     }
   })
-    .concat({
-      rules: {
-        'no-useless-escape': 'warn'
-      }
-    })
 )
