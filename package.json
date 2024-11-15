@@ -53,7 +53,7 @@
     "start": "node ."
   },
   "dependencies": {
-    "@adobe/css-tools": "^4.4.0",
+    "@adobe/css-tools": "^4.4.1",
     "debug": "^4.3.7",
     "jsdom": "^25.0.1",
     "parse-css-font": "^4.0.0",
