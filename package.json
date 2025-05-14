@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@adobe/css-tools": "^4.4.2",
-    "debug": "^4.4.0",
+    "debug": "^4.4.1",
     "jsdom": "^26.1.0",
     "parse-css-font": "^4.0.0",
     "valid-url": "^1.0.9"
