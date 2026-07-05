@@ -53,9 +53,9 @@
     "start": "node ."
   },
   "dependencies": {
-    "@adobe/css-tools": "^4.4.4",
+    "@adobe/css-tools": "^4.5.0",
     "debug": "^4.4.3",
-    "jsdom": "^27.4.0",
+    "jsdom": "^29.1.1",
     "parse-css-font": "^4.0.0",
     "valid-url": "^1.0.9"
   },
@@ -65,7 +65,7 @@
     "@babel/plugin-syntax-import-assertions": "^7.27.1",
     "@babel/preset-env": "^7.28.5",
     "@sequencemedia/eslint-config-standard": "^0.2.107",
-    "eslint": "^9.39.2",
+    "eslint": "9.38.0",
     "globals": "^17.0.0",
     "husky": "^9.1.7"
   },
