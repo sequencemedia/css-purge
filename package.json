@@ -55,7 +55,7 @@
   "dependencies": {
     "@adobe/css-tools": "^4.5.0",
     "debug": "^4.4.3",
-    "jsdom": "^30.1.1",
+    "jsdom": "^30.1.2",
     "parse-css-font": "^4.0.0",
     "valid-url": "^1.0.9"
   },
@@ -64,7 +64,7 @@
     "@babel/eslint-parser": "7.29.7",
     "@babel/plugin-syntax-import-assertions": "7.29.7",
     "@babel/preset-env": "7.29.7",
-    "@sequencemedia/eslint-config-standard": "^0.2.130",
+    "@sequencemedia/eslint-config-standard": "^0.2.131",
     "eslint": "9.38.0",
     "globals": "^17.13.0",
     "husky": "^9.1.7"
